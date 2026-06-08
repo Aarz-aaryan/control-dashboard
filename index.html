@@ -5,87 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hermes Multi-Agent Monitor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --bg: #0a0e14; /* Deep dark near-black blue background */
-            --card-bg: rgba(15, 20, 30, 0.85); /* Dark glass panel */
-            --card-border: rgba(0, 212, 255, 0.15); /* Subtle cyan glow edge */
-            --primary: #00d4ff; /* Cyan primary tech glow */
-            --accent: #ff6b35; /* Orange accent */
-            --accent2: #c084fc; /* Magenta accent */
-            --lime: #a3e635; /* Success indicator */
-            --text-main: #e2e8f0; /* Cool white */
-            --text-muted: rgba(148, 163, 184, 0.7); /* Muted slate */
-            --glass-shadow: rgba(0, 0, 0, 0.6);
+            --bg: #0a0e14; /* Deep dark near-black background */
+            --card-bg: rgba(14, 20, 30, 0.7); /* Cozy dark glass */
+            --card-border: rgba(196, 154, 108, 0.12); /* Subtle gold edge */
+            
+            /* Ghibli warm color palette */
+            --gold: #c49a6c;
+            --sage: #7eb5a6;
+            --sky: #8bbccc;
+            --cream: #f5f0e6;
+            --terracotta: #d97d64;
+            --lime: #8fcb9e; /* Cozy leaf green */
+            
+            --text-main: #f5f0e6; /* Warm cream */
+            --text-muted: rgba(245, 240, 230, 0.55); /* Muted warm cream */
+            --glass-shadow: rgba(0, 0, 0, 0.65);
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'DM Sans', sans-serif;
             min-height: 100vh;
             background-color: var(--bg);
             background-image: 
-                radial-gradient(circle at 15% 20%, rgba(10, 25, 47, 0.5) 0%, transparent 80%),
-                radial-gradient(circle at 85% 80%, rgba(26, 11, 46, 0.4) 0%, transparent 80%);
+                radial-gradient(circle at 50% 0%, rgba(196, 154, 108, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 15% 30%, rgba(126, 181, 166, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 85% 70%, rgba(139, 188, 204, 0.03) 0%, transparent 50%);
             color: var(--text-main);
             overflow-x: hidden;
             position: relative;
         }
 
-        /* Subtle dot grid + horizontal scanlines */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-image: 
-                radial-gradient(rgba(0, 212, 255, 0.04) 1.5px, transparent 1.5px),
-                linear-gradient(rgba(0, 0, 0, 0.3) 50%, rgba(0, 212, 255, 0.015) 50%);
-            background-size: 24px 24px, 100% 4px;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        /* Ghost in the Shell style top holographic glow */
-        body::after {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            height: 40vh;
-            background: linear-gradient(
-                180deg,
-                rgba(0, 212, 255, 0.08) 0%,
-                rgba(255, 107, 53, 0.03) 40%,
-                rgba(192, 132, 252, 0.01) 80%,
-                transparent 100%
-            );
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        /* Global scanline overlay */
-        .scanlines {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: linear-gradient(
-                rgba(0, 212, 255, 0) 50%, 
-                rgba(0, 212, 255, 0.02) 50%
-            );
-            background-size: 100% 8px;
-            z-index: 999;
-            pointer-events: none;
-        }
-
+        /* Ambient shimmer sweep overlay */
         .shimmer-overlay {
             position: fixed;
             top: -50%; left: -50%; right: -50%; bottom: -50%;
             background: linear-gradient(
                 135deg,
                 rgba(255, 255, 255, 0) 0%,
-                rgba(0, 212, 255, 0.02) 25%,
-                rgba(255, 107, 53, 0.01) 50%,
-                rgba(192, 132, 252, 0.01) 75%,
+                rgba(196, 154, 108, 0.015) 25%,
+                rgba(126, 181, 166, 0.01) 50%,
+                rgba(139, 188, 204, 0.01) 75%,
                 rgba(255, 255, 255, 0) 100%
             );
             animation: shimmerSweep 20s ease-in-out infinite;
@@ -99,25 +64,6 @@
             100% { transform: translateY(-10%) rotate(0deg); }
         }
 
-        /* Faint circuit lines background */
-        .circuit-container {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 0;
-            opacity: 0.5;
-            overflow: hidden;
-        }
-        .pulse-line {
-            opacity: 0.8;
-            stroke-linecap: round;
-            animation: circuitPulse 12s linear infinite;
-        }
-        @keyframes circuitPulse {
-            0% { stroke-dashoffset: 400; }
-            100% { stroke-dashoffset: 0; }
-        }
-
         .container {
             position: relative;
             z-index: 2;
@@ -129,13 +75,13 @@
         /* ── Header ── */
         header {
             text-align: center;
-            margin-bottom: 56px;
+            margin-bottom: 48px;
         }
 
         header .logo-container {
             width: 100px;
             height: 100px;
-            margin: 0 auto 24px;
+            margin: 0 auto 20px;
             position: relative;
             animation: float 6s ease-in-out infinite;
         }
@@ -144,73 +90,49 @@
             width: 100%;
             height: 100%;
             display: block;
-            filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.4));
+            filter: drop-shadow(0 0 12px rgba(196, 154, 108, 0.3));
             z-index: 2;
             position: relative;
         }
 
-        /* Animated radar element around logo */
-        .radar-scanner {
+        .logo-glow {
             position: absolute;
             top: 50%; left: 50%;
-            width: 140px; height: 140px;
+            width: 120px; height: 120px;
             transform: translate(-50%, -50%);
             border-radius: 50%;
-            border: 1px dashed rgba(0, 212, 255, 0.25);
+            background: radial-gradient(circle, rgba(196, 154, 108, 0.15) 0%, transparent 70%);
             pointer-events: none;
             z-index: 0;
-        }
-        .radar-scanner::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            border-radius: 50%;
-            background: conic-gradient(from 0deg, rgba(0, 212, 255, 0.15) 0deg, rgba(0, 212, 255, 0) 120deg);
-            animation: radarSweep 8s linear infinite;
-        }
-        .radar-scanner::after {
-            content: '';
-            position: absolute;
-            top: 15px; left: 15px; right: 15px; bottom: 15px;
-            border-radius: 50%;
-            border: 1px solid rgba(255, 107, 53, 0.15);
-            stroke-dasharray: 6 6;
-        }
-        @keyframes radarSweep {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
 
         @keyframes float {
             0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-8px) rotate(1deg); }
+            50% { transform: translateY(-6px) rotate(1deg); }
         }
 
         header h1 {
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 2.8rem;
-            font-weight: 700;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.2rem;
+            font-weight: 600;
             color: var(--text-main);
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            text-shadow:
-                0 0 10px rgba(0, 212, 255, 0.4),
-                0 0 20px rgba(0, 212, 255, 0.1);
-            margin-bottom: 8px;
+            letter-spacing: 0.02em;
+            text-shadow: 0 0 15px rgba(196, 154, 108, 0.35);
+            margin-bottom: 6px;
         }
 
         header p {
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.38em;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.22em;
             text-transform: uppercase;
-            color: var(--primary);
-            text-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
-            margin-bottom: 20px;
+            color: var(--gold);
+            text-shadow: 0 0 8px rgba(196, 154, 108, 0.2);
+            margin-bottom: 24px;
         }
 
-        /* Tech line divider */
+        /* Cozy line divider */
         .divider {
             display: flex;
             align-items: center;
@@ -223,43 +145,85 @@
         .divider::before, .divider::after {
             content: '';
             flex: 1;
-            height: 1.5px;
-            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
         }
         .divider span {
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.85rem;
-            color: var(--accent);
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-            font-weight: 600;
-            text-shadow: 0 0 8px rgba(255, 107, 53, 0.3);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.15rem;
+            font-style: italic;
+            color: var(--sage);
+            letter-spacing: 0.05em;
+            font-weight: 500;
+            text-shadow: 0 0 8px rgba(126, 181, 166, 0.2);
         }
 
-        /* ── Cards Grid ── */
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px;
+        /* ── Tree Layout Structure ── */
+        .tree-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 72px; /* space between rows */
+            width: 100%;
+            max-width: 1200px;
+            margin: 40px auto 0;
+            padding: 20px 0;
+        }
+
+        .tree-row {
+            display: flex;
+            justify-content: center;
+            gap: 48px; /* space between cards in the same row */
+            position: relative;
+            z-index: 2;
+        }
+
+        .tree-node {
+            display: flex;
+            justify-content: center;
+            width: 290px;
+            flex-shrink: 0;
+        }
+        
+        .tree-lines-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .tree-vine {
+            filter: drop-shadow(0 0 3px rgba(196, 154, 108, 0.15));
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: growVine 2s ease-out forwards;
+        }
+        
+        @keyframes growVine {
+            to { stroke-dashoffset: 0; }
         }
 
         /* ── Card Styling ── */
         .card {
             background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1.5px solid var(--card-border);
-            border-radius: 14px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1.2px solid var(--card-border);
+            border-radius: 16px;
             padding: 24px;
             position: relative;
             overflow: hidden;
             transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
             box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.5),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+                0 8px 32px rgba(0, 0, 0, 0.55),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
             animation: cardIn 0.8s cubic-bezier(0.19, 1, 0.22, 1) both;
             color: var(--text-main);
             z-index: 1;
+            width: 100%;
         }
 
         /* Shimmer on card */
@@ -269,8 +233,8 @@
             background: linear-gradient(
                 120deg,
                 transparent 30%,
-                rgba(0, 212, 255, 0.08) 40%,
-                rgba(255, 107, 53, 0.03) 50%,
+                rgba(196, 154, 108, 0.06) 40%,
+                rgba(245, 240, 230, 0.02) 50%,
                 transparent 70%
             );
             transform: skewX(-20deg);
@@ -280,20 +244,20 @@
             z-index: 3;
         }
         .card:hover .card-shimmer {
-            animation: hoverShimmer 2s ease-out infinite;
+            animation: hoverShimmer 2.2s ease-out infinite;
         }
         @keyframes hoverShimmer {
             0% { left: -150%; }
             100% { left: 150%; }
         }
 
-        /* Cyber glow border on hover */
+        /* Soft warm boundary glow border on hover */
         .card::before {
             content: '';
             position: absolute;
-            inset: -1.5px;
-            border-radius: 14px;
-            background: linear-gradient(120deg, var(--primary), var(--accent), var(--accent2), var(--primary));
+            inset: -1.2px;
+            border-radius: 16px;
+            background: linear-gradient(120deg, var(--gold), var(--sage), var(--sky), var(--gold));
             background-size: 300% 300%;
             z-index: -1;
             opacity: 0;
@@ -301,7 +265,7 @@
             animation: holoShift 6s linear infinite;
         }
         .card:hover::before {
-            opacity: 0.95;
+            opacity: 0.4;
         }
         @keyframes holoShift {
             0% { background-position: 0% 50%; }
@@ -309,46 +273,34 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* Staggered load animation */
-        .card:nth-child(1) { animation-delay: 0.05s; }
-        .card:nth-child(2) { animation-delay: 0.10s; }
-        .card:nth-child(3) { animation-delay: 0.15s; }
-        .card:nth-child(4) { animation-delay: 0.20s; }
-        .card:nth-child(5) { animation-delay: 0.25s; }
-        .card:nth-child(6) { animation-delay: 0.30s; }
-        .card:nth-child(7) { animation-delay: 0.35s; }
-
         @keyframes cardIn {
-            from { opacity: 0; transform: translateY(15px) scale(0.98); }
+            from { opacity: 0; transform: translateY(12px) scale(0.98); }
             to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .card:hover {
             transform: translateY(-5px);
-            background: rgba(20, 28, 42, 0.95);
-            border-color: transparent;
+            background: rgba(22, 28, 38, 0.85);
+            border-color: rgba(196, 154, 108, 0.25);
             box-shadow:
-                0 16px 40px rgba(0, 0, 0, 0.6),
-                0 0 25px var(--agent-dim),
-                0 0 12px rgba(0, 212, 255, 0.15);
+                0 16px 40px rgba(0, 0, 0, 0.65),
+                0 0 25px var(--agent-dim);
         }
 
-        /* HUD coordinates on top right */
+        /* Sparkle mark on top right */
         .card::after {
-            content: 'SYS_LOC_E0';
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.58rem;
+            content: '✦';
+            font-size: 0.8rem;
             position: absolute;
-            top: 10px;
-            right: 12px;
-            color: var(--agent-color);
-            opacity: 0.4;
+            top: 12px;
+            right: 14px;
+            color: var(--gold);
+            opacity: 0.3;
             transition: all 0.4s ease;
-            letter-spacing: 0.05em;
         }
         .card:hover::after {
-            opacity: 0.9;
-            text-shadow: 0 0 4px var(--agent-color);
+            opacity: 0.85;
+            text-shadow: 0 0 6px var(--gold);
         }
 
         /* ── Card top row ── */
@@ -359,7 +311,7 @@
             margin-bottom: 22px;
         }
 
-        /* Glowing status arcs around avatar */
+        /* Boundary status rings around avatar */
         .avatar-container {
             position: relative;
             width: 70px;
@@ -385,16 +337,17 @@
             z-index: 2;
         }
         .card:hover .avatar {
-            transform: scale(1.05) rotate(2deg);
+            transform: scale(1.04) rotate(1deg);
         }
 
         .avatar img {
-            width: 40px;
-            height: 40px;
+            width: 42px;
+            height: 42px;
             display: block;
             z-index: 3;
         }
 
+        /* Non-animated boundary for IDLE agents */
         .status-arc {
             position: absolute;
             inset: 0;
@@ -402,31 +355,33 @@
             border: 1.5px solid transparent;
             border-top-color: var(--agent-color);
             border-bottom-color: var(--agent-color);
-            opacity: 0.45;
-            animation: arcRotate 8s linear infinite;
+            opacity: 0.25;
             z-index: 1;
+            transition: all 0.4s ease;
         }
         .status-arc-inner {
             position: absolute;
             inset: 4px;
             border-radius: 50%;
             border: 1px dashed var(--agent-color);
-            opacity: 0.35;
-            animation: arcRotateBack 4s linear infinite;
+            opacity: 0.18;
             z-index: 1;
+            transition: all 0.4s ease;
         }
         .card:hover .status-arc {
-            opacity: 0.95;
-            filter: drop-shadow(0 0 5px var(--agent-color));
-        }
-        .card.active-core .status-arc {
-            opacity: 0.9;
-            animation-duration: 4s;
+            opacity: 0.75;
             filter: drop-shadow(0 0 4px var(--agent-color));
         }
+
+        /* Circular boundary animations ONLY for ACTIVE agents */
+        .card.active-core .status-arc {
+            opacity: 0.85;
+            animation: arcRotate 8s linear infinite;
+            filter: drop-shadow(0 0 5px var(--agent-color));
+        }
         .card.active-core .status-arc-inner {
-            opacity: 0.7;
-            animation-duration: 2.2s;
+            opacity: 0.6;
+            animation: arcRotateBack 4.5s linear infinite;
         }
 
         @keyframes arcRotate {
@@ -444,28 +399,28 @@
         }
 
         .card-name {
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 1.25rem;
-            font-weight: 700;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.35rem;
+            font-weight: 600;
             color: var(--text-main);
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
+            letter-spacing: 0.02em;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            text-shadow: 0 0 5px rgba(0, 212, 255, 0.1);
+            text-shadow: 0 0 5px rgba(196, 154, 108, 0.15);
         }
 
         .card-role {
-            font-size: 0.68rem;
-            color: var(--primary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.72rem;
+            color: var(--gold);
             text-transform: uppercase;
-            letter-spacing: 0.12em;
+            letter-spacing: 0.08em;
             margin-top: 3px;
-            font-weight: 600;
+            font-weight: 500;
         }
 
-        /* ── Status indicator ── */
+        /* ── Status indicator dot ── */
         .dot {
             width: 10px;
             height: 10px;
@@ -509,7 +464,7 @@
         }
         .status-label.working {
             color: var(--lime);
-            text-shadow: 0 0 6px rgba(163, 230, 53, 0.4);
+            text-shadow: 0 0 6px rgba(143, 203, 158, 0.4);
         }
 
         .time-ago {
@@ -523,15 +478,15 @@
         .bar-track {
             height: 6px;
             border-radius: 4px;
-            background: rgba(0, 212, 255, 0.05);
-            border: 1px solid rgba(0, 212, 255, 0.1);
+            background: rgba(196, 154, 108, 0.05);
+            border: 1px solid rgba(196, 154, 108, 0.08);
             margin-top: 10px;
             overflow: hidden;
         }
         .bar-fill {
             height: 100%;
             border-radius: 3px;
-            background: linear-gradient(90deg, var(--agent-color), var(--primary));
+            background: linear-gradient(90deg, var(--agent-color), var(--gold));
             transition: width 1.5s cubic-bezier(0.1, 0.8, 0.2, 1);
             box-shadow: 0 0 8px var(--agent-color);
         }
@@ -540,7 +495,7 @@
         .card-foot {
             margin-top: 18px;
             padding-top: 12px;
-            border-top: 1px solid rgba(0, 212, 255, 0.1);
+            border-top: 1px solid rgba(196, 154, 108, 0.1);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -560,7 +515,7 @@
             font-weight: 600;
         }
 
-        /* ── Floating particles ── */
+        /* ── Floating particles (Forest soot sprites / warm fireflies) ── */
         .particle {
             position: fixed;
             border-radius: 50%;
@@ -579,21 +534,21 @@
         
         @keyframes floatStar {
             0% { transform: translateY(105vh) translateX(0) scale(0.6); opacity: 0; }
-            10% { opacity: 0.7; }
-            50% { transform: translateY(50vh) translateX(20px) scale(1); opacity: 0.9; }
-            90% { opacity: 0.7; }
-            100% { transform: translateY(-10vh) translateX(-10px) scale(0.8); opacity: 0; }
+            10% { opacity: 0.6; }
+            50% { transform: translateY(50vh) translateX(15px) scale(0.9); opacity: 0.8; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(-10vh) translateX(-5px) scale(0.7); opacity: 0; }
         }
 
         @keyframes floatOrb {
             0% { transform: translateY(105vh) translateX(0) scale(0.8); opacity: 0; }
-            15% { opacity: 0.5; }
-            50% { transform: translateY(50vh) translateX(-30px) scale(1.1); opacity: 0.7; }
-            85% { opacity: 0.5; }
-            100% { transform: translateY(-10vh) translateX(15px) scale(0.9); opacity: 0; }
+            15% { opacity: 0.4; }
+            50% { transform: translateY(50vh) translateX(-20px) scale(1.05); opacity: 0.6; }
+            85% { opacity: 0.4; }
+            100% { transform: translateY(-10vh) translateX(10px) scale(0.85); opacity: 0; }
         }
 
-        /* ── Cyber Refresh Gear ── */
+        /* ── Cozy Refresh Wheel ── */
         .refresh {
             position: fixed;
             bottom: 30px;
@@ -601,22 +556,22 @@
             width: 44px;
             height: 44px;
             border-radius: 50%;
-            background: rgba(15, 20, 30, 0.9);
-            border: 1.5px solid rgba(0, 212, 255, 0.25);
+            background: rgba(15, 20, 30, 0.95);
+            border: 1.5px solid rgba(196, 154, 108, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
             box-shadow: 
                 0 6px 20px rgba(0, 0, 0, 0.6),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
             opacity: 0;
             transition: all 0.3s ease;
             z-index: 100;
         }
         .refresh.on {
             opacity: 1;
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+            border-color: var(--gold);
+            box-shadow: 0 0 15px rgba(196, 154, 108, 0.4);
         }
         .refresh svg {
             position: absolute;
@@ -641,54 +596,44 @@
             font-weight: 500;
         }
 
-        /* Responsive */
-        @media (max-width: 600px) {
-            header h1 {
-                font-size: 2.0rem;
+        /* ── Responsive Tree Layout styling ── */
+        @media (max-width: 960px) {
+            .tree-container {
+                gap: 48px;
             }
-            .container {
-                padding: 40px 16px 60px;
+            .tree-row {
+                gap: 24px;
+            }
+            .row-3 {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .row-3 .tree-node, .tree-node {
+                width: 265px;
+            }
+        }
+        @media (max-width: 540px) {
+            .tree-row {
+                flex-direction: column;
+                align-items: center;
+                gap: 32px;
+            }
+            .tree-container {
+                gap: 48px;
+            }
+            .tree-node {
+                width: 280px;
             }
         }
     </style>
 </head>
 <body>
-<!-- Scanline overlay -->
-<div class="scanlines"></div>
 <div class="shimmer-overlay"></div>
-
-<!-- Faint circuit/data-stream lines in background -->
-<div class="circuit-container">
-    <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 1200 1000">
-        <!-- Circuit line 1 -->
-        <path d="M 100,0 L 100,200 L 300,400 L 900,400 L 1100,600 L 1100,1000" stroke="rgba(0, 212, 255, 0.08)" stroke-width="1.5" fill="none" />
-        <path d="M 100,0 L 100,200 L 300,400 L 900,400 L 1100,600 L 1100,1000" stroke="#00d4ff" stroke-width="1.5" fill="none" stroke-dasharray="25 180" class="pulse-line" />
-        
-        <!-- Circuit line 2 -->
-        <path d="M 1100,0 L 1100,150 L 950,300 L 250,300 L 100,450 L 100,1000" stroke="rgba(255, 107, 53, 0.08)" stroke-width="1.5" fill="none" />
-        <path d="M 1100,0 L 1100,150 L 950,300 L 250,300 L 100,450 L 100,1000" stroke="#ff6b35" stroke-width="1.5" fill="none" stroke-dasharray="35 220" class="pulse-line" />
-
-        <!-- Circuit line 3 -->
-        <path d="M 600,0 L 600,150 L 400,350 L 400,700 L 800,900 L 800,1000" stroke="rgba(192, 132, 252, 0.08)" stroke-width="1.5" fill="none" />
-        <path d="M 600,0 L 600,150 L 400,350 L 400,700 L 800,900 L 800,1000" stroke="#c084fc" stroke-width="1.5" fill="none" stroke-dasharray="20 150" class="pulse-line" />
-
-        <!-- Circle pads at intersections -->
-        <circle cx="100" cy="200" r="3" fill="#00d4ff" opacity="0.4" />
-        <circle cx="300" cy="400" r="3" fill="#00d4ff" opacity="0.4" />
-        <circle cx="900" cy="400" r="3" fill="#00d4ff" opacity="0.4" />
-        <circle cx="1100" cy="600" r="3" fill="#00d4ff" opacity="0.4" />
-
-        <circle cx="1100" cy="150" r="3" fill="#ff6b35" opacity="0.3" />
-        <circle cx="950" cy="300" r="3" fill="#ff6b35" opacity="0.3" />
-        <circle cx="250" cy="300" r="3" fill="#ff6b35" opacity="0.3" />
-        <circle cx="100" cy="450" r="3" fill="#ff6b35" opacity="0.3" />
-    </svg>
-</div>
 
 <div class="container">
     <header>
         <div class="logo-container">
-            <div class="radar-scanner"></div>
+            <div class="logo-glow"></div>
             <img src="assets/logo.svg" alt="Hermes Logo" class="logo">
         </div>
         <h1>Agents Dashboard</h1>
@@ -698,26 +643,49 @@
         </div>
     </header>
     
-    <div class="cards" id="cardsGrid"></div>
+    <!-- Dynamic Tree Layout -->
+    <div class="tree-container">
+        <svg id="treeLinesSvg" class="tree-lines-svg"></svg>
+        
+        <!-- Row 1: AARZ -->
+        <div class="tree-row row-1">
+            <div class="tree-node" id="node-aarz"></div>
+        </div>
+        
+        <!-- Row 2: AGY, COPILOT -->
+        <div class="tree-row row-2">
+            <div class="tree-node" id="node-agy"></div>
+            <div class="tree-node" id="node-copilot"></div>
+        </div>
+        
+        <!-- Row 3: NEO, JARVIS, BYMAX, NINA -->
+        <div class="tree-row row-3">
+            <div class="tree-node" id="node-neo"></div>
+            <div class="tree-node" id="node-jarvis"></div>
+            <div class="tree-node" id="node-bymax"></div>
+            <div class="tree-node" id="node-nina"></div>
+        </div>
+    </div>
     
     <footer>Auto-refreshes every 30s · system active</footer>
 </div>
 
 <div class="refresh" id="refreshRing">
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="10" stroke="#00d4ff" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="32 8"/>
+      <circle cx="12" cy="12" r="10" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="32 8"/>
     </svg>
 </div>
 
 <script>
+// Agents data structure with cozy Ghibli colors and icons
 const AGENTS = [
-    { id: 'agy',     name: 'agy',          role: 'Anti-Gravity CLI',   color: '#00d4ff', dim: 'rgba(0,212,255,0.15)',  icon: 'agy.svg' },
-    { id: 'copilot', name: 'Copilot CLI',  role: 'Primary Coder',      color: '#ffffff', dim: 'rgba(255,255,255,0.15)', icon: 'copilot.svg' },
-    { id: 'aarz',    name: 'Aarz',         role: 'Chief Orchestrator', color: '#ffb700', dim: 'rgba(255,183,0,0.15)',   icon: 'aarz.svg' },
-    { id: 'nina',    name: 'Nina',         role: 'Research Agent',     color: '#c084fc', dim: 'rgba(192,132,252,0.15)', icon: 'nina.svg' },
-    { id: 'jarvis',  name: 'Jarvis',       role: 'n8n Automation',     color: '#8b5cf6', dim: 'rgba(139,92,246,0.15)',  icon: 'jarvis.svg' },
-    { id: 'bymax',   name: 'Bymax',        role: 'LLM Provider',       color: '#ff6b35', dim: 'rgba(255,107,53,0.15)',  icon: 'bymax.svg' },
-    { id: 'neo',     name: 'Neo',          role: 'Agent Mesh',         color: '#00d4ff', dim: 'rgba(0,212,255,0.15)',  icon: 'neo.svg' },
+    { id: 'aarz',    name: 'Aarz',         role: 'Chief Orchestrator', color: '#c49a6c', dim: 'rgba(196, 154, 108, 0.15)',  icon: 'aarz.svg' },
+    { id: 'agy',     name: 'agy',          role: 'Anti-Gravity CLI',   color: '#8bbccc', dim: 'rgba(139, 188, 204, 0.15)',  icon: 'agy.svg' },
+    { id: 'copilot', name: 'Copilot CLI',  role: 'Primary Coder',      color: '#7eb5a6', dim: 'rgba(126, 181, 166, 0.15)',  icon: 'copilot.svg' },
+    { id: 'neo',     name: 'Neo',          role: 'Agent Mesh',         color: '#e88f70', dim: 'rgba(232, 143, 112, 0.15)',  icon: 'neo.svg' },
+    { id: 'jarvis',  name: 'Jarvis',       role: 'n8n Automation',     color: '#d97d64', dim: 'rgba(217, 125, 100, 0.15)',  icon: 'jarvis.svg' },
+    { id: 'bymax',   name: 'Bymax',        role: 'LLM Provider',       color: '#a8cbd7', dim: 'rgba(168, 203, 215, 0.15)',  icon: 'bymax.svg' },
+    { id: 'nina',    name: 'Nina',         role: 'Research Agent',     color: '#e2b98a', dim: 'rgba(226, 185, 138, 0.15)',  icon: 'nina.svg' },
 ];
 
 const WORKING_MS = 5 * 60 * 1000;
@@ -743,7 +711,6 @@ async function fetchDirList(path, ptrn) {
     } catch { return []; }
 }
 
-// Optimized fetching with localStorage metadata caching to avoid redundant HTTP requests
 async function getAgyData() {
     const files = await fetchDirList('/.gemini/antigravity-cli/log/', '[^"]+\\.log');
     if (files.length === 0) return null;
@@ -759,7 +726,6 @@ async function getAgyData() {
     } catch (e) {}
     
     let latest = 0;
-    // Only fetch Last-Modified for the last 2 files alphabetically, as older logs are static
     const thresholdIndex = Math.max(0, files.length - 2);
     let cacheUpdated = false;
     
@@ -808,7 +774,6 @@ async function getCopilotData() {
     } catch (e) {}
     
     let latest = 0;
-    // copilot.log is always checked. process-*.log are checked only if they are the latest 2 or uncached.
     const processFiles = files.filter(f => f.startsWith('process-'));
     const copilotLog = files.find(f => f === 'copilot.log');
     const processThresholdIndex = Math.max(0, processFiles.length - 2);
@@ -852,7 +817,6 @@ async function getCopilotData() {
 
 async function getHermesData(profile) {
     const base = '/.hermes/profiles/' + profile;
-    // 1. Try sessions.json index
     const sj = await fetchJSON(base + '/sessions/sessions.json');
     if (sj) {
         let latest = 0;
@@ -865,7 +829,6 @@ async function getHermesData(profile) {
         if (latest) return { ts: latest };
     }
     
-    // 2. Fetch directory list
     const files = await fetchDirList(base + '/sessions/', '[^"]+\\.json');
     if (files.length === 0) return null;
     
@@ -880,7 +843,6 @@ async function getHermesData(profile) {
     } catch (e) {}
     
     let latest = 0;
-    // Only fetch JSON content for the latest 2 files alphabetically or uncached files
     const thresholdIndex = Math.max(0, files.length - 2);
     let cacheUpdated = false;
     
@@ -981,7 +943,68 @@ function cardHTML(agent, data) {
 </div>`;
 }
 
-// ── Main ─────────────────────────────────────────────────────────────────
+// ── Dynamic Tree Connecting Lines ───────────────────────────────────────────
+
+function drawTreeLines() {
+    const svg = document.getElementById('treeLinesSvg');
+    if (!svg) return;
+    svg.innerHTML = '';
+    
+    const container = document.querySelector('.tree-container');
+    if (!container) return;
+    const containerRect = container.getBoundingClientRect();
+    
+    // Connections defining the tree hierarchy
+    const connections = [
+        { from: 'aarz', to: 'agy' },
+        { from: 'aarz', to: 'copilot' },
+        { from: 'agy', to: 'neo' },
+        { from: 'agy', to: 'jarvis' },
+        { from: 'copilot', to: 'bymax' },
+        { from: 'copilot', to: 'nina' }
+    ];
+    
+    connections.forEach(conn => {
+        const fromEl = document.getElementById('card-' + conn.from);
+        const toEl = document.getElementById('card-' + conn.to);
+        if (!fromEl || !toEl) return;
+        
+        const fromRect = fromEl.getBoundingClientRect();
+        const toRect = toEl.getBoundingClientRect();
+        
+        // Coordinates relative to tree container
+        const x1 = fromRect.left + fromRect.width / 2 - containerRect.left;
+        const y1 = fromRect.bottom - containerRect.top;
+        
+        const x2 = toRect.left + toRect.width / 2 - containerRect.left;
+        const y2 = toRect.top - containerRect.top;
+        
+        // Beautiful organic s-curve path
+        const controlY1 = y1 + (y2 - y1) * 0.45;
+        const controlY2 = y1 + (y2 - y1) * 0.55;
+        const pathData = `M ${x1} ${y1} C ${x1} ${controlY1}, ${x2} ${controlY2}, ${x2} ${y2}`;
+        
+        // Main gold vine thread
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathData);
+        path.setAttribute('stroke', 'rgba(196, 154, 108, 0.35)');
+        path.setAttribute('stroke-width', '2.2');
+        path.setAttribute('fill', 'none');
+        path.classList.add('tree-vine');
+        svg.appendChild(path);
+        
+        // Secondary wrapping sage vine tendril
+        const pathTendril = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const pathDataTendril = `M ${x1} ${y1} C ${x1 + 8} ${controlY1 - 2}, ${x2 - 8} ${controlY2 + 2}, ${x2} ${y2}`;
+        pathTendril.setAttribute('d', pathDataTendril);
+        pathTendril.setAttribute('stroke', 'rgba(126, 181, 166, 0.22)');
+        pathTendril.setAttribute('stroke-width', '1.2');
+        pathTendril.setAttribute('fill', 'none');
+        svg.appendChild(pathTendril);
+    });
+}
+
+// ── Cache management ────────────────────────────────────────────────────────
 
 function getCached(id) {
     try {
@@ -1001,13 +1024,21 @@ function setCache(id, data) {
 }
 
 function renderCards(results) {
-    document.getElementById('cardsGrid').innerHTML =
-        results.map(({ a, d }) => cardHTML(a, d)).join('');
+    results.forEach(({ a, d }) => {
+        const node = document.getElementById('node-' + a.id);
+        if (node) {
+            node.innerHTML = cardHTML(a, d);
+        }
+    });
+    drawTreeLines();
 }
 
 function updateCard(agent, data) {
     const el = document.getElementById('card-' + agent.id);
-    if (el) el.outerHTML = cardHTML(agent, data);
+    if (el) {
+        el.outerHTML = cardHTML(agent, data);
+        drawTreeLines();
+    }
 }
 
 let isFetching = false;
@@ -1017,13 +1048,14 @@ async function loadAll() {
     isFetching = true;
     document.getElementById('refreshRing').classList.add('on');
     
-    // 1. Instantly render from cache if page is currently empty
-    if (!document.getElementById('cardsGrid').innerHTML.trim()) {
+    // Instantly render from cache if tree nodes are currently empty
+    const firstNode = document.getElementById('node-aarz');
+    if (firstNode && !firstNode.innerHTML.trim()) {
         const results = AGENTS.map(a => ({ a, d: getCached(a.id) }));
         renderCards(results);
     }
 
-    // 2. Queue for staggered fetches
+    // Queue for staggered fetches
     const queue = [...AGENTS];
     
     const fetchWorker = async () => {
@@ -1040,7 +1072,7 @@ async function loadAll() {
                     setCache(a.id, d);
                     updateCard(a, d);
                 } else {
-                    setCache(a.id, old); // Refresh cache timestamp
+                    setCache(a.id, old); // Refresh cache TTL
                 }
             } catch (err) {
                 console.error('Fetch error for', a.id, err);
@@ -1053,9 +1085,10 @@ async function loadAll() {
 
     document.getElementById('refreshRing').classList.remove('on');
     isFetching = false;
+    drawTreeLines();
 }
 
-// ── Floating particles (Holographic tech grid sparks) ──────────────────────
+// ── Floating particles (Forest soot sprites / warm fireflies) ────────────────
 
 function spawnParticle() {
     const isOrb = Math.random() > 0.75;
@@ -1064,32 +1097,30 @@ function spawnParticle() {
     p.style.left = (Math.random() * 100) + 'vw';
     
     if (isOrb) {
-        // Large soft glowing holographic grid orb
-        const size = 60 + Math.random() * 100;
+        // Large soft glowing warm ambient orb
+        const size = 60 + Math.random() * 80;
         p.style.width = size + 'px';
         p.style.height = size + 'px';
-        p.style.animationDuration = (20 + Math.random() * 10) + 's';
+        p.style.animationDuration = (22 + Math.random() * 8) + 's';
         
         const colors = [
-            'rgba(0, 212, 255, 0.06)',  // Cyan
-            'rgba(255, 107, 53, 0.04)',  // Orange GITS
-            'rgba(192, 132, 252, 0.03)'  // Magenta
+            'rgba(196, 154, 108, 0.05)',  // Warm gold
+            'rgba(126, 181, 166, 0.04)',  // Cozy sage
+            'rgba(139, 188, 204, 0.04)'   // Soft sky
         ];
         p.style.background = colors[Math.floor(Math.random() * colors.length)];
-        p.style.filter = 'blur(16px)';
+        p.style.filter = 'blur(20px)';
     } else {
-        // High-tech drifting digital bit / spark
-        const size = 1.5 + Math.random() * 3;
+        // Soft drifting forest firefly star
+        const size = 1.5 + Math.random() * 2.5;
         p.style.width = size + 'px';
         p.style.height = size + 'px';
-        if (Math.random() > 0.5) {
-            p.style.borderRadius = '0px'; // Make some particles square data bits
-        }
-        p.style.animationDuration = (10 + Math.random() * 8) + 's';
+        p.style.borderRadius = '50%';
+        p.style.animationDuration = (12 + Math.random() * 8) + 's';
         
-        const colors = ['#00d4ff', '#ff6b35', '#ffffff', '#c084fc'];
+        const colors = ['#c49a6c', '#7eb5a6', '#f5f0e6', '#8bbccc'];
         p.style.background = colors[Math.floor(Math.random() * colors.length)];
-        p.style.boxShadow = `0 0 8px ${p.style.background}`;
+        p.style.boxShadow = `0 0 6px ${p.style.background}`;
     }
     
     document.body.appendChild(p);
@@ -1100,11 +1131,18 @@ function spawnParticle() {
 
 loadAll();
 setInterval(loadAll, REFRESH_MS);
-setInterval(spawnParticle, 1500);
+setInterval(spawnParticle, 1600);
 
-for (let i = 0; i < 15; i++) {
-    setTimeout(spawnParticle, i * 500);
+for (let i = 0; i < 12; i++) {
+    setTimeout(spawnParticle, i * 600);
 }
+
+// Redraw connecting lines on window resize/load to keep alignment perfect
+window.addEventListener('resize', drawTreeLines);
+window.addEventListener('load', () => {
+    drawTreeLines();
+    setTimeout(drawTreeLines, 500);
+});
 
 // Update card durations/timers every 30 seconds
 setInterval(() => {

@@ -1,56 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <defs>
-    <linearGradient id="owlGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#f2c94c" />
-      <stop offset="100%" stop-color="#c49a6c" />
-    </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#7a6255" flood-opacity="0.15" />
-    </filter>
-  </defs>
-
-  <!-- Cute owl body -->
-  <rect x="26" y="24" width="48" height="56" rx="24" fill="url(#owlGrad)" filter="url(#shadow)" stroke="#e8dcc4" stroke-width="1" />
-
-  <!-- Wise cute ears/horns -->
-  <path d="M 28 26 C 24 16 36 20 38 25" fill="none" stroke="#c49a6c" stroke-width="4.5" stroke-linecap="round" />
-  <path d="M 72 26 C 76 16 64 20 62 25" fill="none" stroke="#c49a6c" stroke-width="4.5" stroke-linecap="round" />
-
-  <!-- Cream face/eyes backing -->
-  <ellipse cx="40" cy="42" rx="11" ry="10" fill="#fffdf8" />
-  <ellipse cx="60" cy="42" rx="11" ry="10" fill="#fffdf8" />
-
-  <!-- Big wise eyes -->
-  <circle cx="40" cy="42" r="6.5" fill="#4a3728" />
-  <circle cx="60" cy="42" r="6.5" fill="#4a3728" />
-  <!-- Highlights -->
-  <circle cx="38" cy="40" r="2" fill="#ffffff" />
-  <circle cx="58" cy="40" r="2" fill="#ffffff" />
-  <circle cx="42" cy="44" r="0.8" fill="#ffffff" />
-  <circle cx="62" cy="44" r="0.8" fill="#ffffff" />
-
-  <!-- Cute orange beak -->
-  <polygon points="50,45 47,51 53,51" fill="#e28a75" />
-
-  <!-- Cream belly patch -->
-  <path d="M 33 60 C 33 52 67 52 67 60 C 67 72 33 72 33 60 Z" fill="#fffdf8" opacity="0.9" />
-  
-  <!-- Feather chevrons on belly -->
-  <path d="M 46 62 L 50 60 L 54 62" fill="none" stroke="#7a6255" stroke-width="1.5" stroke-linecap="round" />
-  <path d="M 42 67 L 46 65 L 50 67" fill="none" stroke="#7a6255" stroke-width="1.5" stroke-linecap="round" />
-  <path d="M 50 67 L 54 65 L 58 67" fill="none" stroke="#7a6255" stroke-width="1.5" stroke-linecap="round" />
-
-  <!-- Wings on the side (warm brown) -->
-  <path d="M 27 38 C 20 45 20 65 28 72 Z" fill="#7a6255" />
-  <path d="M 73 38 C 80 45 80 65 72 72 Z" fill="#7a6255" />
-
-  <!-- Feet (little orange claws) -->
-  <path d="M 38 80 L 38 84" stroke="#e28a75" stroke-width="3" stroke-linecap="round" />
-  <path d="M 42 80 L 42 84" stroke="#e28a75" stroke-width="3" stroke-linecap="round" />
-  <path d="M 58 80 L 58 84" stroke="#e28a75" stroke-width="3" stroke-linecap="round" />
-  <path d="M 62 80 L 62 84" stroke="#e28a75" stroke-width="3" stroke-linecap="round" />
-
-  <!-- Blush cheeks -->
-  <ellipse cx="28" cy="48" rx="3.5" ry="2" fill="#e8b4a0" opacity="0.7" />
-  <ellipse cx="72" cy="48" rx="3.5" ry="2" fill="#e8b4a0" opacity="0.7" />
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Soft forest spirit body -->
+  <path d="M 50 15 C 32 15 25 35 25 60 C 25 75 32 85 50 85 C 68 85 75 75 75 60 C 75 35 68 15 50 15 Z" fill="#7eb5a6" />
+  <!-- Cute ears/horns -->
+  <path d="M 32 18 C 30 5 20 8 23 25 Z" fill="#7eb5a6" />
+  <path d="M 68 18 C 70 5 80 8 77 25 Z" fill="#7eb5a6" />
+  <!-- Big soft cream belly -->
+  <path d="M 50 42 C 38 42 33 52 33 67 C 33 78 38 82 50 82 C 62 82 67 78 67 67 C 67 52 62 42 50 42 Z" fill="#f5f0e6" />
+  <!-- Belly markings (little arrows ^ ^ ^) -->
+  <path d="M 45 52 L 50 48 L 55 52" stroke="#7eb5a6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <path d="M 40 60 L 44 57 L 48 60" stroke="#7eb5a6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <path d="M 52 60 L 56 57 L 60 60" stroke="#7eb5a6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <!-- Big curious eyes -->
+  <circle cx="40" cy="35" r="5" fill="#f5f0e6" />
+  <circle cx="40" cy="35" r="2.5" fill="#3a4f41" />
+  <circle cx="60" cy="35" r="5" fill="#f5f0e6" />
+  <circle cx="60" cy="35" r="2.5" fill="#3a4f41" />
+  <!-- Small nose/mouth -->
+  <path d="M 48 38 L 52 38" stroke="#3a4f41" stroke-width="2" stroke-linecap="round" />
+  <!-- Blushing cheeks -->
+  <circle cx="33" cy="39" r="3" fill="#d97d64" opacity="0.6" />
+  <circle cx="67" cy="39" r="3" fill="#d97d64" opacity="0.6" />
 </svg>

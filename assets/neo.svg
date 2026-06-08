@@ -1,36 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <defs>
-    <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#a4ded1" />
-      <stop offset="100%" stop-color="#7ec4b6" />
-    </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#7a6255" flood-opacity="0.12" />
-    </filter>
-  </defs>
-
-  <!-- Geometric body (rounded diamond/hexagon, yet soft and cute) -->
-  <g filter="url(#shadow)">
-    <path d="M 50 18 L 76 38 L 72 70 L 50 84 L 28 70 L 24 38 Z" fill="url(#tealGrad)" stroke="#e8dcc4" stroke-width="1" />
-  </g>
-
-  <!-- Cream geometric face panel inside -->
-  <path d="M 50 25 L 68 40 L 65 65 L 50 76 L 35 65 L 32 40 Z" fill="#fffdf8" stroke="#e8dcc4" stroke-width="0.8" />
-
-  <!-- Cute big friendly eyes (placed geometrically) -->
-  <circle cx="42" cy="46" r="4.5" fill="#4a3728" />
-  <circle cx="58" cy="46" r="4.5" fill="#4a3728" />
-  <!-- Eye highlights -->
-  <circle cx="40.5" cy="44.5" r="1.5" fill="#ffffff" />
-  <circle cx="57.5" cy="44.5" r="1.5" fill="#ffffff" />
-
-  <!-- Smiling mouth -->
-  <path d="M 47 52 Q 50 54 53 52" fill="none" stroke="#4a3728" stroke-width="1.5" stroke-linecap="round" />
-
-  <!-- Soft geometric blush -->
-  <polygon points="34,50 38,48 40,52 36,54" fill="#e8b4a0" opacity="0.8" />
-  <polygon points="66,50 62,48 60,52 64,54" fill="#e8b4a0" opacity="0.8" />
-
-  <!-- Soft teal geometric head spikes/ears -->
-  <path d="M 45 22 L 50 12 L 55 22" fill="#7ec4b6" />
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Flame background glow -->
+  <path d="M 50 8 C 22 40 20 60 20 72 C 20 84 32 92 50 92 C 68 92 80 84 80 72 C 80 60 78 40 50 8 Z" fill="#c49a6c" opacity="0.3" />
+  <!-- Flame inner body -->
+  <path d="M 50 18 C 26 44 25 62 25 72 C 25 82 35 88 50 88 C 65 88 75 82 75 72 C 75 62 74 44 50 18 Z" fill="#d97d64" />
+  <!-- Bright center -->
+  <path d="M 50 32 C 34 52 33 66 33 72 C 33 80 40 82 50 82 C 60 82 67 80 67 72 C 67 66 66 52 50 32 Z" fill="#f5f0e6" />
+  <!-- Cute fire eyes (with worried/excited expression) -->
+  <circle cx="42" cy="56" r="6" fill="#f5f0e6" stroke="#c49a6c" stroke-width="1.5" />
+  <circle cx="42" cy="56" r="3.5" fill="#4d3b2b" />
+  <circle cx="44" cy="54" r="1" fill="#fff" />
+  <circle cx="58" cy="56" r="6" fill="#f5f0e6" stroke="#c49a6c" stroke-width="1.5" />
+  <circle cx="58" cy="56" r="3.5" fill="#4d3b2b" />
+  <circle cx="60" cy="54" r="1" fill="#fff" />
+  <!-- Little flame mouth (open O shape, surprised) -->
+  <circle cx="50" cy="68" r="3.5" fill="#4d3b2b" />
+  <!-- Little red tongue/center -->
+  <path d="M 48 68 C 48 70 52 70 52 68 Z" fill="#d97d64" />
 </svg>
