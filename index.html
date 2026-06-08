@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes Multi-Agent Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0e14; /* Deep dark near-black blue background */
+            --card-bg: rgba(15, 20, 30, 0.85); /* Dark glass panel */
+            --card-border: rgba(0, 212, 255, 0.15); /* Subtle cyan glow edge */
+            --primary: #00d4ff; /* Cyan primary tech glow */
+            --accent: #ff6b35; /* Orange accent */
+            --accent2: #c084fc; /* Magenta accent */
+            --lime: #a3e635; /* Success indicator */
+            --text-main: #e2e8f0; /* Cool white */
+            --text-muted: rgba(148, 163, 184, 0.7); /* Muted slate */
+            --glass-shadow: rgba(0, 0, 0, 0.6);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(10, 25, 47, 0.5) 0%, transparent 80%),
+                radial-gradient(circle at 85% 80%, rgba(26, 11, 46, 0.4) 0%, transparent 80%);
+            color: var(--text-main);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Subtle dot grid + horizontal scanlines */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                radial-gradient(rgba(0, 212, 255, 0.04) 1.5px, transparent 1.5px),
+                linear-gradient(rgba(0, 0, 0, 0.3) 50%, rgba(0, 212, 255, 0.015) 50%);
+            background-size: 24px 24px, 100% 4px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Ghost in the Shell style top holographic glow */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 40vh;
+            background: linear-gradient(
+                180deg,
+                rgba(0, 212, 255, 0.08) 0%,
+                rgba(255, 107, 53, 0.03) 40%,
+                rgba(192, 132, 252, 0.01) 80%,
+                transparent 100%
+            );
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Global scanline overlay */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(
+                rgba(0, 212, 255, 0) 50%, 
+                rgba(0, 212, 255, 0.02) 50%
+            );
+            background-size: 100% 8px;
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        .shimmer-overlay {
+            position: fixed;
+            top: -50%; left: -50%; right: -50%; bottom: -50%;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(0, 212, 255, 0.02) 25%,
+                rgba(255, 107, 53, 0.01) 50%,
+                rgba(192, 132, 252, 0.01) 75%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            animation: shimmerSweep 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 998;
+        }
+
+        @keyframes shimmerSweep {
+            0% { transform: translateY(-10%) rotate(0deg); }
+            50% { transform: translateY(10%) rotate(2deg); }
+            100% { transform: translateY(-10%) rotate(0deg); }
+        }
+
+        /* Faint circuit lines background */
+        .circuit-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.5;
+            overflow: hidden;
+        }
+        .pulse-line {
+            opacity: 0.8;
+            stroke-linecap: round;
+            animation: circuitPulse 12s linear infinite;
+        }
+        @keyframes circuitPulse {
+            0% { stroke-dashoffset: 400; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 24px 80px;
+        }
+
+        /* ── Header ── */
+        header {
+            text-align: center;
+            margin-bottom: 56px;
+        }
+
+        header .logo-container {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 24px;
+            position: relative;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        header .logo {
+            width: 100%;
+            height: 100%;
+            display: block;
+            filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.4));
+            z-index: 2;
+            position: relative;
+        }
+
+        /* Animated radar element around logo */
+        .radar-scanner {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 140px; height: 140px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 1px dashed rgba(0, 212, 255, 0.25);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .radar-scanner::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, rgba(0, 212, 255, 0.15) 0deg, rgba(0, 212, 255, 0) 120deg);
+            animation: radarSweep 8s linear infinite;
+        }
+        .radar-scanner::after {
+            content: '';
+            position: absolute;
+            top: 15px; left: 15px; right: 15px; bottom: 15px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 107, 53, 0.15);
+            stroke-dasharray: 6 6;
+        }
+        @keyframes radarSweep {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(1deg); }
+        }
+
+        header h1 {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            text-shadow:
+                0 0 10px rgba(0, 212, 255, 0.4),
+                0 0 20px rgba(0, 212, 255, 0.1);
+            margin-bottom: 8px;
+        }
+
+        header p {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.38em;
+            text-transform: uppercase;
+            color: var(--primary);
+            text-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+            margin-bottom: 20px;
+        }
+
+        /* Tech line divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            max-width: 320px;
+            margin: 0 auto;
+            opacity: 0.85;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1.5px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+        .divider span {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent);
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            font-weight: 600;
+            text-shadow: 0 0 8px rgba(255, 107, 53, 0.3);
+        }
+
+        /* ── Cards Grid ── */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        /* ── Card Styling ── */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1.5px solid var(--card-border);
+            border-radius: 14px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            animation: cardIn 0.8s cubic-bezier(0.19, 1, 0.22, 1) both;
+            color: var(--text-main);
+            z-index: 1;
+        }
+
+        /* Shimmer on card */
+        .card-shimmer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(
+                120deg,
+                transparent 30%,
+                rgba(0, 212, 255, 0.08) 40%,
+                rgba(255, 107, 53, 0.03) 50%,
+                transparent 70%
+            );
+            transform: skewX(-20deg);
+            left: -150%;
+            transition: none;
+            pointer-events: none;
+            z-index: 3;
+        }
+        .card:hover .card-shimmer {
+            animation: hoverShimmer 2s ease-out infinite;
+        }
+        @keyframes hoverShimmer {
+            0% { left: -150%; }
+            100% { left: 150%; }
+        }
+
+        /* Cyber glow border on hover */
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: -1.5px;
+            border-radius: 14px;
+            background: linear-gradient(120deg, var(--primary), var(--accent), var(--accent2), var(--primary));
+            background-size: 300% 300%;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            animation: holoShift 6s linear infinite;
+        }
+        .card:hover::before {
+            opacity: 0.95;
+        }
+        @keyframes holoShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Staggered load animation */
+        .card:nth-child(1) { animation-delay: 0.05s; }
+        .card:nth-child(2) { animation-delay: 0.10s; }
+        .card:nth-child(3) { animation-delay: 0.15s; }
+        .card:nth-child(4) { animation-delay: 0.20s; }
+        .card:nth-child(5) { animation-delay: 0.25s; }
+        .card:nth-child(6) { animation-delay: 0.30s; }
+        .card:nth-child(7) { animation-delay: 0.35s; }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(15px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            background: rgba(20, 28, 42, 0.95);
+            border-color: transparent;
+            box-shadow:
+                0 16px 40px rgba(0, 0, 0, 0.6),
+                0 0 25px var(--agent-dim),
+                0 0 12px rgba(0, 212, 255, 0.15);
+        }
+
+        /* HUD coordinates on top right */
+        .card::after {
+            content: 'SYS_LOC_E0';
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.58rem;
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            color: var(--agent-color);
+            opacity: 0.4;
+            transition: all 0.4s ease;
+            letter-spacing: 0.05em;
+        }
+        .card:hover::after {
+            opacity: 0.9;
+            text-shadow: 0 0 4px var(--agent-color);
+        }
+
+        /* ── Card top row ── */
+        .card-top {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        /* Glowing status arcs around avatar */
+        .avatar-container {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .avatar {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: #0d121f;
+            border: 1.5px solid var(--agent-color);
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+            transition: transform 0.4s ease, border-color 0.4s ease;
+            z-index: 2;
+        }
+        .card:hover .avatar {
+            transform: scale(1.05) rotate(2deg);
+        }
+
+        .avatar img {
+            width: 40px;
+            height: 40px;
+            display: block;
+            z-index: 3;
+        }
+
+        .status-arc {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 1.5px solid transparent;
+            border-top-color: var(--agent-color);
+            border-bottom-color: var(--agent-color);
+            opacity: 0.45;
+            animation: arcRotate 8s linear infinite;
+            z-index: 1;
+        }
+        .status-arc-inner {
+            position: absolute;
+            inset: 4px;
+            border-radius: 50%;
+            border: 1px dashed var(--agent-color);
+            opacity: 0.35;
+            animation: arcRotateBack 4s linear infinite;
+            z-index: 1;
+        }
+        .card:hover .status-arc {
+            opacity: 0.95;
+            filter: drop-shadow(0 0 5px var(--agent-color));
+        }
+        .card.active-core .status-arc {
+            opacity: 0.9;
+            animation-duration: 4s;
+            filter: drop-shadow(0 0 4px var(--agent-color));
+        }
+        .card.active-core .status-arc-inner {
+            opacity: 0.7;
+            animation-duration: 2.2s;
+        }
+
+        @keyframes arcRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes arcRotateBack {
+            0% { transform: rotate(360deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        .card-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .card-name {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 0 5px rgba(0, 212, 255, 0.1);
+        }
+
+        .card-role {
+            font-size: 0.68rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-top: 3px;
+            font-weight: 600;
+        }
+
+        /* ── Status indicator ── */
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: auto;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        .dot.working {
+            background: var(--lime);
+            border-color: var(--lime);
+            box-shadow: 
+                0 0 8px var(--lime),
+                0 0 15px var(--lime);
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.7; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.15); }
+        }
+
+        /* ── Status Row ── */
+        .status-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .status-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            transition: color 0.3s;
+        }
+        .status-label.working {
+            color: var(--lime);
+            text-shadow: 0 0 6px rgba(163, 230, 53, 0.4);
+        }
+
+        .time-ago {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+        }
+
+        /* ── Progress/Activity Bar ── */
+        .bar-track {
+            height: 6px;
+            border-radius: 4px;
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, var(--agent-color), var(--primary));
+            transition: width 1.5s cubic-bezier(0.1, 0.8, 0.2, 1);
+            box-shadow: 0 0 8px var(--agent-color);
+        }
+
+        /* ── Card footer ── */
+        .card-foot {
+            margin-top: 18px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(0, 212, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        .foot-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.10em;
+        }
+        .foot-value {
+            font-size: 0.68rem;
+            color: var(--text-main);
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+        }
+
+        /* ── Floating particles ── */
+        .particle {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in-out;
+            animation-fill-mode: forwards;
+        }
+        .particle.star {
+            animation-name: floatStar;
+        }
+        .particle.orb {
+            animation-name: floatOrb;
+        }
+        
+        @keyframes floatStar {
+            0% { transform: translateY(105vh) translateX(0) scale(0.6); opacity: 0; }
+            10% { opacity: 0.7; }
+            50% { transform: translateY(50vh) translateX(20px) scale(1); opacity: 0.9; }
+            90% { opacity: 0.7; }
+            100% { transform: translateY(-10vh) translateX(-10px) scale(0.8); opacity: 0; }
+        }
+
+        @keyframes floatOrb {
+            0% { transform: translateY(105vh) translateX(0) scale(0.8); opacity: 0; }
+            15% { opacity: 0.5; }
+            50% { transform: translateY(50vh) translateX(-30px) scale(1.1); opacity: 0.7; }
+            85% { opacity: 0.5; }
+            100% { transform: translateY(-10vh) translateX(15px) scale(0.9); opacity: 0; }
+        }
+
+        /* ── Cyber Refresh Gear ── */
+        .refresh {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(15, 20, 30, 0.9);
+            border: 1.5px solid rgba(0, 212, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+        .refresh.on {
+            opacity: 1;
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+        }
+        .refresh svg {
+            position: absolute;
+            inset: 4px;
+            animation: spin 1.8s linear infinite;
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-bottom: 24px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 2.0rem;
+            }
+            .container {
+                padding: 40px 16px 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Scanline overlay -->
+<div class="scanlines"></div>
+<div class="shimmer-overlay"></div>
+
+<!-- Faint circuit/data-stream lines in background -->
+<div class="circuit-container">
+    <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 1200 1000">
+        <!-- Circuit line 1 -->
+        <path d="M 100,0 L 100,200 L 300,400 L 900,400 L 1100,600 L 1100,1000" stroke="rgba(0, 212, 255, 0.08)" stroke-width="1.5" fill="none" />
+        <path d="M 100,0 L 100,200 L 300,400 L 900,400 L 1100,600 L 1100,1000" stroke="#00d4ff" stroke-width="1.5" fill="none" stroke-dasharray="25 180" class="pulse-line" />
+        
+        <!-- Circuit line 2 -->
+        <path d="M 1100,0 L 1100,150 L 950,300 L 250,300 L 100,450 L 100,1000" stroke="rgba(255, 107, 53, 0.08)" stroke-width="1.5" fill="none" />
+        <path d="M 1100,0 L 1100,150 L 950,300 L 250,300 L 100,450 L 100,1000" stroke="#ff6b35" stroke-width="1.5" fill="none" stroke-dasharray="35 220" class="pulse-line" />
+
+        <!-- Circuit line 3 -->
+        <path d="M 600,0 L 600,150 L 400,350 L 400,700 L 800,900 L 800,1000" stroke="rgba(192, 132, 252, 0.08)" stroke-width="1.5" fill="none" />
+        <path d="M 600,0 L 600,150 L 400,350 L 400,700 L 800,900 L 800,1000" stroke="#c084fc" stroke-width="1.5" fill="none" stroke-dasharray="20 150" class="pulse-line" />
+
+        <!-- Circle pads at intersections -->
+        <circle cx="100" cy="200" r="3" fill="#00d4ff" opacity="0.4" />
+        <circle cx="300" cy="400" r="3" fill="#00d4ff" opacity="0.4" />
+        <circle cx="900" cy="400" r="3" fill="#00d4ff" opacity="0.4" />
+        <circle cx="1100" cy="600" r="3" fill="#00d4ff" opacity="0.4" />
+
+        <circle cx="1100" cy="150" r="3" fill="#ff6b35" opacity="0.3" />
+        <circle cx="950" cy="300" r="3" fill="#ff6b35" opacity="0.3" />
+        <circle cx="250" cy="300" r="3" fill="#ff6b35" opacity="0.3" />
+        <circle cx="100" cy="450" r="3" fill="#ff6b35" opacity="0.3" />
+    </svg>
+</div>
+
+<div class="container">
+    <header>
+        <div class="logo-container">
+            <div class="radar-scanner"></div>
+            <img src="assets/logo.svg" alt="Hermes Logo" class="logo">
+        </div>
+        <h1>Agents Dashboard</h1>
+        <p>Hermes Multi-Agent Monitor</p>
+        <div class="divider">
+            <span>Control Core</span>
+        </div>
+    </header>
+    
+    <div class="cards" id="cardsGrid"></div>
+    
+    <footer>Auto-refreshes every 30s · system active</footer>
+</div>
+
+<div class="refresh" id="refreshRing">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" stroke="#00d4ff" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="32 8"/>
+    </svg>
+</div>
+
+<script>
+const AGENTS = [
+    { id: 'agy',     name: 'agy',          role: 'Anti-Gravity CLI',   color: '#00d4ff', dim: 'rgba(0,212,255,0.15)',  icon: 'agy.svg' },
+    { id: 'copilot', name: 'Copilot CLI',  role: 'Primary Coder',      color: '#ffffff', dim: 'rgba(255,255,255,0.15)', icon: 'copilot.svg' },
+    { id: 'aarz',    name: 'Aarz',         role: 'Chief Orchestrator', color: '#ffb700', dim: 'rgba(255,183,0,0.15)',   icon: 'aarz.svg' },
+    { id: 'nina',    name: 'Nina',         role: 'Research Agent',     color: '#c084fc', dim: 'rgba(192,132,252,0.15)', icon: 'nina.svg' },
+    { id: 'jarvis',  name: 'Jarvis',       role: 'n8n Automation',     color: '#8b5cf6', dim: 'rgba(139,92,246,0.15)',  icon: 'jarvis.svg' },
+    { id: 'bymax',   name: 'Bymax',        role: 'LLM Provider',       color: '#ff6b35', dim: 'rgba(255,107,53,0.15)',  icon: 'bymax.svg' },
+    { id: 'neo',     name: 'Neo',          role: 'Agent Mesh',         color: '#00d4ff', dim: 'rgba(0,212,255,0.15)',  icon: 'neo.svg' },
+];
+
+const WORKING_MS = 5 * 60 * 1000;
+const REFRESH_MS = 30 * 1000;
+const CACHE_TTL_MS = 60 * 1000;
+
+// ── Data fetchers ───────────────────────────────────────────────────────────
+
+async function fetchJSON(url) {
+    try {
+        const r = await fetch(url);
+        return r.ok ? await r.json() : null;
+    } catch { return null; }
+}
+
+async function fetchDirList(path, ptrn) {
+    try {
+        const r = await fetch(path);
+        if (!r.ok) return [];
+        const text = await r.text();
+        const rx = new RegExp('<a href="(' + ptrn + ')">', 'g');
+        return [...text.matchAll(rx)].map(m => m[1]);
+    } catch { return []; }
+}
+
+// Optimized fetching with localStorage metadata caching to avoid redundant HTTP requests
+async function getAgyData() {
+    const files = await fetchDirList('/.gemini/antigravity-cli/log/', '[^"]+\\.log');
+    if (files.length === 0) return null;
+    
+    files.sort();
+    
+    let logCache = {};
+    try {
+        const cachedStr = localStorage.getItem('agy_log_cache');
+        if (cachedStr) {
+            logCache = JSON.parse(cachedStr);
+        }
+    } catch (e) {}
+    
+    let latest = 0;
+    // Only fetch Last-Modified for the last 2 files alphabetically, as older logs are static
+    const thresholdIndex = Math.max(0, files.length - 2);
+    let cacheUpdated = false;
+    
+    for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        let ts = null;
+        
+        if (i >= thresholdIndex || !logCache[f]) {
+            try {
+                const r = await fetch('/.gemini/antigravity-cli/log/' + f, { method: 'HEAD' });
+                const t = r.headers.get('Last-Modified');
+                if (t) {
+                    ts = new Date(t).getTime();
+                    logCache[f] = ts;
+                    cacheUpdated = true;
+                }
+            } catch (err) {}
+        } else {
+            ts = logCache[f];
+        }
+        
+        if (ts && ts > latest) latest = ts;
+    }
+    
+    if (cacheUpdated) {
+        try {
+            localStorage.setItem('agy_log_cache', JSON.stringify(logCache));
+        } catch (e) {}
+    }
+    
+    return latest ? { ts: latest } : null;
+}
+
+async function getCopilotData() {
+    const files = await fetchDirList('/.copilot/logs/', '[^"]+\\.log');
+    if (files.length === 0) return null;
+    
+    files.sort();
+    
+    let logCache = {};
+    try {
+        const cachedStr = localStorage.getItem('copilot_log_cache');
+        if (cachedStr) {
+            logCache = JSON.parse(cachedStr);
+        }
+    } catch (e) {}
+    
+    let latest = 0;
+    // copilot.log is always checked. process-*.log are checked only if they are the latest 2 or uncached.
+    const processFiles = files.filter(f => f.startsWith('process-'));
+    const copilotLog = files.find(f => f === 'copilot.log');
+    const processThresholdIndex = Math.max(0, processFiles.length - 2);
+    let cacheUpdated = false;
+    
+    const checkFile = async (f, isAlwaysCheck) => {
+        let ts = null;
+        if (isAlwaysCheck || !logCache[f]) {
+            try {
+                const r = await fetch('/.copilot/logs/' + f, { method: 'HEAD' });
+                const t = r.headers.get('Last-Modified');
+                if (t) {
+                    ts = new Date(t).getTime();
+                    logCache[f] = ts;
+                    cacheUpdated = true;
+                }
+            } catch (err) {}
+        } else {
+            ts = logCache[f];
+        }
+        if (ts && ts > latest) latest = ts;
+    };
+    
+    if (copilotLog) {
+        await checkFile(copilotLog, true);
+    }
+    for (let i = 0; i < processFiles.length; i++) {
+        const pf = processFiles[i];
+        const isRecent = i >= processThresholdIndex;
+        await checkFile(pf, isRecent);
+    }
+    
+    if (cacheUpdated) {
+        try {
+            localStorage.setItem('copilot_log_cache', JSON.stringify(logCache));
+        } catch (e) {}
+    }
+    
+    return latest ? { ts: latest } : null;
+}
+
+async function getHermesData(profile) {
+    const base = '/.hermes/profiles/' + profile;
+    // 1. Try sessions.json index
+    const sj = await fetchJSON(base + '/sessions/sessions.json');
+    if (sj) {
+        let latest = 0;
+        for (const s of Object.values(sj)) {
+            if (s?.updated_at) {
+                const ms = new Date(s.updated_at).getTime();
+                if (ms > latest) latest = ms;
+            }
+        }
+        if (latest) return { ts: latest };
+    }
+    
+    // 2. Fetch directory list
+    const files = await fetchDirList(base + '/sessions/', '[^"]+\\.json');
+    if (files.length === 0) return null;
+    
+    files.sort();
+    
+    let sessionCache = {};
+    try {
+        const cachedStr = localStorage.getItem('hermes_cache_' + profile);
+        if (cachedStr) {
+            sessionCache = JSON.parse(cachedStr);
+        }
+    } catch (e) {}
+    
+    let latest = 0;
+    // Only fetch JSON content for the latest 2 files alphabetically or uncached files
+    const thresholdIndex = Math.max(0, files.length - 2);
+    let cacheUpdated = false;
+    
+    for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        let ts = null;
+        
+        if (i >= thresholdIndex || !sessionCache[f]) {
+            const d = await fetchJSON(base + '/sessions/' + f);
+            if (d) {
+                const val = d.timestamp || d.last_updated;
+                if (val) {
+                    ts = new Date(val).getTime();
+                    sessionCache[f] = ts;
+                    cacheUpdated = true;
+                }
+            }
+        } else {
+            ts = sessionCache[f];
+        }
+        
+        if (ts && ts > latest) latest = ts;
+    }
+    
+    if (cacheUpdated) {
+        try {
+            localStorage.setItem('hermes_cache_' + profile, JSON.stringify(sessionCache));
+        } catch (e) {}
+    }
+    
+    return latest ? { ts: latest } : null;
+}
+
+// ── Formatters ─────────────────────────────────────────────────────────────
+
+function formatAge(ms) {
+    if (!ms || ms < 0) return null;
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    const h = Math.floor(m / 60);
+    const d = Math.floor(h / 24);
+    if (s < 60)    return s + 's ago';
+    if (m < 60)    return m + 'm ' + (s % 60) + 's ago';
+    if (h < 24)    return h + 'h ' + (m % 60) + 'm ago';
+    return '~' + d + 'd ' + (h % 24) + 'h ago';
+}
+
+function exactTime(ms) {
+    return ms ? new Date(ms).toLocaleString() : '—';
+}
+
+function barWidth(ms) {
+    if (!ms) return 0;
+    const h = ms / 1000 / 60 / 60;
+    if (h < 1)  return 100;
+    if (h < 24) return Math.max(8, 100 - h * 1.5);
+    if (h < 168)return Math.max(4, 60 - (h - 24) * 0.5);
+    return 4;
+}
+
+// ── Renderer ───────────────────────────────────────────────────────────────
+
+function cardHTML(agent, data) {
+    const now = Date.now();
+    const ts = data?.ts || 0;
+    const age = ts ? now - ts : 0;
+    const working = age < WORKING_MS && age > 0;
+    const ageStr = formatAge(age);
+    const bar = barWidth(age);
+
+    return `<div class="card ${working ? 'active-core' : ''}" id="card-${agent.id}" style="--agent-color: ${agent.color}; --agent-dim: ${agent.dim};">
+  <div class="card-shimmer"></div>
+  <div class="card-top">
+    <div class="avatar-container">
+        <div class="status-arc"></div>
+        <div class="status-arc-inner"></div>
+        <div class="avatar">
+            <img src="assets/${agent.icon}" alt="${agent.name} icon">
+        </div>
+    </div>
+    <div class="card-info">
+      <div class="card-name">${agent.name}</div>
+      <div class="card-role">${agent.role}</div>
+    </div>
+    <div class="dot ${working ? 'working' : ''}"></div>
+  </div>
+  <div class="status-row">
+    <span class="status-label ${working ? 'working' : ''}">${working ? 'ACTIVE CORE' : 'STANDBY'}</span>
+    <span class="time-ago" title="${exactTime(ts)}">${ageStr || 'NO SIGNALS'}</span>
+  </div>
+  <div class="bar-track">
+    <div class="bar-fill" style="width:${bar}%;"></div>
+  </div>
+  <div class="card-foot">
+    <span class="foot-label">Last signal:</span>
+    <span class="foot-value">${ts ? new Date(ts).toLocaleString() : 'No connection'}</span>
+  </div>
+</div>`;
+}
+
+// ── Main ─────────────────────────────────────────────────────────────────
+
+function getCached(id) {
+    try {
+        const c = localStorage.getItem('agent_' + id);
+        if (c) {
+            const parsed = JSON.parse(c);
+            if (Date.now() - parsed.time < CACHE_TTL_MS) return parsed.data;
+        }
+    } catch {}
+    return null;
+}
+
+function setCache(id, data) {
+    try {
+        localStorage.setItem('agent_' + id, JSON.stringify({ time: Date.now(), data }));
+    } catch {}
+}
+
+function renderCards(results) {
+    document.getElementById('cardsGrid').innerHTML =
+        results.map(({ a, d }) => cardHTML(a, d)).join('');
+}
+
+function updateCard(agent, data) {
+    const el = document.getElementById('card-' + agent.id);
+    if (el) el.outerHTML = cardHTML(agent, data);
+}
+
+let isFetching = false;
+
+async function loadAll() {
+    if (isFetching) return;
+    isFetching = true;
+    document.getElementById('refreshRing').classList.add('on');
+    
+    // 1. Instantly render from cache if page is currently empty
+    if (!document.getElementById('cardsGrid').innerHTML.trim()) {
+        const results = AGENTS.map(a => ({ a, d: getCached(a.id) }));
+        renderCards(results);
+    }
+
+    // 2. Queue for staggered fetches
+    const queue = [...AGENTS];
+    
+    const fetchWorker = async () => {
+        while (queue.length > 0) {
+            const a = queue.shift();
+            try {
+                let d = null;
+                if (a.id === 'agy') d = await getAgyData();
+                else if (a.id === 'copilot') d = await getCopilotData();
+                else d = await getHermesData(a.id);
+                
+                const old = getCached(a.id);
+                if (!old || (d && d.ts !== old.ts)) {
+                    setCache(a.id, d);
+                    updateCard(a, d);
+                } else {
+                    setCache(a.id, old); // Refresh cache timestamp
+                }
+            } catch (err) {
+                console.error('Fetch error for', a.id, err);
+            }
+        }
+    };
+
+    // Staggered execution of workers to ensure low load and high stability
+    await Promise.all([fetchWorker(), fetchWorker()]);
+
+    document.getElementById('refreshRing').classList.remove('on');
+    isFetching = false;
+}
+
+// ── Floating particles (Holographic tech grid sparks) ──────────────────────
+
+function spawnParticle() {
+    const isOrb = Math.random() > 0.75;
+    const p = document.createElement('div');
+    p.className = isOrb ? 'particle orb' : 'particle star';
+    p.style.left = (Math.random() * 100) + 'vw';
+    
+    if (isOrb) {
+        // Large soft glowing holographic grid orb
+        const size = 60 + Math.random() * 100;
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        p.style.animationDuration = (20 + Math.random() * 10) + 's';
+        
+        const colors = [
+            'rgba(0, 212, 255, 0.06)',  // Cyan
+            'rgba(255, 107, 53, 0.04)',  // Orange GITS
+            'rgba(192, 132, 252, 0.03)'  // Magenta
+        ];
+        p.style.background = colors[Math.floor(Math.random() * colors.length)];
+        p.style.filter = 'blur(16px)';
+    } else {
+        // High-tech drifting digital bit / spark
+        const size = 1.5 + Math.random() * 3;
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        if (Math.random() > 0.5) {
+            p.style.borderRadius = '0px'; // Make some particles square data bits
+        }
+        p.style.animationDuration = (10 + Math.random() * 8) + 's';
+        
+        const colors = ['#00d4ff', '#ff6b35', '#ffffff', '#c084fc'];
+        p.style.background = colors[Math.floor(Math.random() * colors.length)];
+        p.style.boxShadow = `0 0 8px ${p.style.background}`;
+    }
+    
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 25000);
+}
+
+// ── Boot ────────────────────────────────────────────────────────────────
+
+loadAll();
+setInterval(loadAll, REFRESH_MS);
+setInterval(spawnParticle, 1500);
+
+for (let i = 0; i < 15; i++) {
+    setTimeout(spawnParticle, i * 500);
+}
+
+// Update card durations/timers every 30 seconds
+setInterval(() => {
+    if (!isFetching) {
+        AGENTS.forEach(a => updateCard(a, getCached(a.id)));
+    }
+}, 30000);
+
+</script>
+</body>
+</html>

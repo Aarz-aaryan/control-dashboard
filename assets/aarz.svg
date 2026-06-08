@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="owlGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f2c94c" />
+      <stop offset="100%" stop-color="#c49a6c" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#7a6255" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <!-- Cute owl body -->
+  <rect x="26" y="24" width="48" height="56" rx="24" fill="url(#owlGrad)" filter="url(#shadow)" stroke="#e8dcc4" stroke-width="1" />
+
+  <!-- Wise cute ears/horns -->
+  <path d="M 28 26 C 24 16 36 20 38 25" fill="none" stroke="#c49a6c" stroke-width="4.5" stroke-linecap="round" />
+  <path d="M 72 26 C 76 16 64 20 62 25" fill="none" stroke="#c49a6c" stroke-width="4.5" stroke-linecap="round" />
+
+  <!-- Cream face/eyes backing -->
+  <ellipse cx="40" cy="42" rx="11" ry="10" fill="#fffdf8" />
+  <ellipse cx="60" cy="42" rx="11" ry="10" fill="#fffdf8" />
+
+  <!-- Big wise eyes -->
+  <circle cx="40" cy="42" r="6.5" fill="#4a3728" />
+  <circle cx="60" cy="42" r="6.5" fill="#4a3728" />
+  <!-- Highlights -->
+  <circle cx="38" cy="40" r="2" fill="#ffffff" />
+  <circle cx="58" cy="40" r="2" fill="#ffffff" />
+  <circle cx="42" cy="44" r="0.8" fill="#ffffff" />
+  <circle cx="62" cy="44" r="0.8" fill="#ffffff" />
+
+  <!-- Cute orange beak -->
+  <polygon points="50,45 47,51 53,51" fill="#e28a75" />
+
+  <!-- Cream belly patch -->
+  <path d="M 33 60 C 33 52 67 52 67 60 C 67 72 33 72 33 60 Z" fill="#fffdf8" opacity="0.9" />
+  
+  <!-- Feather chevrons on belly -->
+  <path d="M 46 62 L 50 60 L 54 62" fill="none" stroke="#7a6255" stroke-width="1.5" stroke-linecap="round" />
+  <path d="M 42 67 L 46 65 L 50 67" fill="none" stroke="#7a6255" stroke-width="1.5" stroke-linecap="round" />
+  <path d="M 50 67 L 54 65 L 58 67" fill="none" stroke="#7a6255" stroke-width="1.5" stroke-linecap="round" />
+
+  <!-- Wings on the side (warm brown) -->
+  <path d="M 27 38 C 20 45 20 65 28 72 Z" fill="#7a6255" />
+  <path d="M 73 38 C 80 45 80 65 72 72 Z" fill="#7a6255" />
+
+  <!-- Feet (little orange claws) -->
+  <path d="M 38 80 L 38 84" stroke="#e28a75" stroke-width="3" stroke-linecap="round" />
+  <path d="M 42 80 L 42 84" stroke="#e28a75" stroke-width="3" stroke-linecap="round" />
+  <path d="M 58 80 L 58 84" stroke="#e28a75" stroke-width="3" stroke-linecap="round" />
+  <path d="M 62 80 L 62 84" stroke="#e28a75" stroke-width="3" stroke-linecap="round" />
+
+  <!-- Blush cheeks -->
+  <ellipse cx="28" cy="48" rx="3.5" ry="2" fill="#e8b4a0" opacity="0.7" />
+  <ellipse cx="72" cy="48" rx="3.5" ry="2" fill="#e8b4a0" opacity="0.7" />
+</svg>

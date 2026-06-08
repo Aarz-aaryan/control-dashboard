@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a122c" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d4ff" />
+      <stop offset="100%" stop-color="#005f73" />
+    </linearGradient>
+  </defs>
+
+  <!-- HUD Grid (Cyan and Orange) -->
+  <g opacity="0.6" stroke="#00d4ff" stroke-width="0.8" fill="none">
+    <circle cx="50" cy="50" r="44" stroke-dasharray="2 4" />
+    <circle cx="50" cy="50" r="47" stroke-dasharray="8 20" stroke="#ff6b35" />
+    <line x1="50" y1="3" x2="50" y2="8" />
+    <line x1="50" y1="92" x2="50" y2="97" />
+    <line x1="3" y1="50" x2="8" y2="50" />
+    <line x1="92" y1="50" x2="97" y2="50" />
+    <path d="M 10 18 L 10 10 L 18 10" />
+    <path d="M 90 18 L 90 10 L 82 10" />
+    <path d="M 10 82 L 10 90 L 18 90" />
+    <path d="M 90 82 L 90 90 L 82 90" />
+  </g>
+  
+  <!-- Mini Tech Text -->
+  <text x="14" y="15" font-family="monospace" font-size="5" fill="#00d4ff" opacity="0.8" font-weight="bold">HERMES.CORE</text>
+  <text x="66" y="89" font-family="monospace" font-size="5" fill="#ff6b35" opacity="0.8" font-weight="bold">SYS_v1.0</text>
+
+  <!-- Wings / Propellers (Sleek Cybernetic Wings) -->
+  <path d="M12 55 C2 45 22 46 30 50 Z" fill="url(#bodyGrad)" stroke="#00d4ff" stroke-width="1"/>
+  <path d="M88 55 C98 45 78 46 70 50 Z" fill="url(#bodyGrad)" stroke="#00d4ff" stroke-width="1"/>
+  
+  <!-- Wing Glow Ticks -->
+  <line x1="15" y1="51" x2="25" y2="49" stroke="#ff6b35" stroke-width="1" />
+  <line x1="85" y1="51" x2="75" y2="49" stroke="#ff6b35" stroke-width="1" />
+
+  <!-- Drone Body (Metallic Sphere) -->
+  <circle cx="50" cy="55" r="28" fill="url(#bodyGrad)" stroke="#00d4ff" stroke-width="2"/>
+  
+  <!-- Tactical Aperture Rings -->
+  <circle cx="50" cy="55" r="20" fill="none" stroke="#ff6b35" stroke-width="1.2" stroke-dasharray="10 6" />
+  
+  <!-- Lens/Eye Core -->
+  <circle cx="50" cy="55" r="14" fill="url(#lensGrad)" filter="url(#glow)"/>
+  
+  <!-- Cyber Crosshair inside Lens -->
+  <line x1="50" y1="46" x2="50" y2="64" stroke="#ffffff" stroke-width="0.6" opacity="0.7" />
+  <line x1="41" y1="55" x2="59" y2="55" stroke="#ffffff" stroke-width="0.6" opacity="0.7" />
+  <circle cx="50" cy="55" r="4" fill="none" stroke="#ffffff" stroke-width="0.8" opacity="0.8"/>
+  <circle cx="50" cy="55" r="1" fill="#ffffff"/>
+
+  <!-- Mechanical Feet (Sleek Struts) -->
+  <path d="M38 78 L34 88 L40 88" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+  <path d="M62 78 L66 88 L60 88" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Tech status bars (replaces blush cheeks) -->
+  <rect x="28" y="60" width="6" height="2" fill="#ff6b35" opacity="0.8" />
+  <rect x="66" y="60" width="6" height="2" fill="#ff6b35" opacity="0.8" />
+</svg>
