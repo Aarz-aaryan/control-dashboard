@@ -1,64 +1,69 @@
 # Agents Dashboard — Mission
 
 **Live:** http://100.100.35.6:8000/agent-dashboard/
-**Repo:** https://github.com/Aarz-aaryan/agent-dashboard
+**Repo:** https://github.com/Aarz-aaryan/agent-dashboard (branch: main)
+**Last commit:** `0744001` — Dashboard v2 redesign (2026-06-08)
 
 ## Mission
-Build a premium dark-mode anime-styled multi-agent monitor dashboard for Hermes. Goal: Ghibli-meets-tech-anime aesthetic — warm, cozy, and cool — not cute, not cyber-cold.
+Premium dark-mode Ghibli tech-anime multi-agent monitor dashboard for Hermes.
 
 ## Status
-**Phase3 — Polish& Iterate**
+**Completed** — Phase 3 done, agy self-tested + committed.
 
-## Theme (current)
+## Theme
 - Background: Deep dark `#0a0e14`
-- Cards: Dark glass `rgba(15,20,30,0.85)` with subtle cyan glow on hover
-- Accents: Warm gold (`#c49a6c`), sage teal (`#7eb5a6`), sky blue (`#8bbccc`)
-- Text: Cool white (`#e2e8f0`), muted slate (`rgba(148,163,184,0.6)`)
+- Cards: Dark glass `rgba(14,20,30,0.7)` with warm gold glow on hover
+- Accents: Warm gold (`#c49a6c`), sage (`#7eb5a6`), sky (`#8bbccc`), terracotta (`#d97d64`)
+- Text: Warm cream (`#f5f0e6`), muted cream
 - Fonts: `Cormorant Garamond` (headers — Ghibli serif), `DM Sans` (body), `Share Tech Mono` (timestamps)
-- Icons: Warm Ghibli-anime styled SVGs — golden drone, sage wisp, chibi robots, fox, owl
+- No scanlines, no circuit/network lines, no cyan tech glow
 
-## What Aaryan Likes
-- Dark background, warm accents
-- Cormorant Garamond for headers
-- Floating particles + circuit lines (restore-able)
-- Agent logos: warm Ghibli style, NOT dark/cyber
-- Live agent status, timestamps, session polling
+## Layout (Tree Structure)
+```
+            [AARZ] ← top center
+           /      \
+    [AGY]           [COPILOT] ← second row
+    /    \              /    \
+[NEO] [JARVIS]      [BMAX] [NINA] ← bottom row
+```
+- Subtle SVG vine connecting lines between nodes
+- Tree layout redraws on window resize
 
-## What Aaryan Dislikes
-- Horizontal scanlines
-- Circuit-board overlay lines (disable-able)
-- Dark/cyber-anime logos
-- Too-cute bright pastels
-- "SkyEye" branding
-- Emojis in UI
+## Agent Logos (Ghibli Anime Style)
+- Aarz: Forest spirit (sage/cream, like Totoro companion)
+- agy: Floating bird with halo (gold/sky blue)
+- Copilot: Robot companion with star (sage/gold)
+- Jarvis: Fox spirit (terracotta/cream)
+- Neo: Fire spirit / Calcifer (terracotta/gold)
+- Bymax: Round fluffy robot (cream/sky blue)
+- Nina: Wise owl with spectacles (sky blue/gold)
+
+## Animations
+- Active agents: circular boundary rings spin (8s outer, 4.5s inner reverse)
+- Idle agents: static rings, no animation
+- Cards hover: warm glow + subtle scale/rotate
 
 ## What's Done
-- [x] Dark mode with warm accents
-- [x] Ghibli font (Cormorant Garamond) on headers
-- [x] Warm SVG logos for all 7 agents
-- [x] Agent session polling (30s refresh)
-- [x] Card hover glow animations
-- [x] Floating particles (currently ON)
-- [x] Circuit SVG lines (currently ON)
-- [x] Scanlines disabled
-- [x] Fast load (~0.0007s)
-- [x] 0 JS errors
-- [x] GitHub repo + initial commit
+- [x] Removed ALL horizontal scanlines
+- [x] Removed moving circuit/network background lines
+- [x] Ghibli serif font (Cormorant Garamond) on headers
+- [x] Warm color palette (no cyan/tech blue)
+- [x] Tree layout with SVG vine connections
+- [x] Ghibli anime logos for all 7 agents (SVG, warm palette)
+- [x] Active/idle animation separation
+- [x] Fast load, lightweight single-file HTML
+- [x] GitHub committed (0744001)
 
 ## What's Left
-- [ ] Generate premium Ghibli tech-anime assets (logos, header art) via agy
-- [ ] Performance: optimize if needed
-- [ ] New agent additions or role changes
-- [ ] Consider JSON/websocket data source instead of file polling
+- [ ] Aaryan visual validation + any iteration requests
 
 ## Files
-- `index.html` — Main single-file app (HTML/CSS/JS inline)
-- `assets/` — SVG logos per agent (aarz, agy, bymax, copilot, jarvis, nina, neo, logo)
-- `bg.png` — Background image
-- `index_dark_backup.html` — Backup before overlay removal
+- `index.html` — Main single-file app (1156 lines, inline CSS/JS)
+- `assets/*.svg` — Agent logos (aarz, agy, bymax, copilot, jarvis, nina, neo, logo)
 
 ## Architecture
 - Static HTML served by Python HTTP server on port 8000
 - JS polls Hermes session files every 30s
 - LocalStorage caching for instant render on reload
 - Staggered fetch workers for low load
+- Tree layout: flexbox rows + SVG connecting lines
