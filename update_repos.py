@@ -55,23 +55,27 @@ def fetch_all_repos():
         return None
 
 def main():
-    print("Fetching GitHub repos...")
-    repos = fetch_all_repos()
-    if repos is None:
-        print("Failed to fetch repos, exiting.")
-        return
-
-    # Attach fetch timestamp so UI can show "last synced"
-    payload = {
-        "_fetched_at": datetime.now(timezone.utc).isoformat(),
-        "repos": repos
-    }
-
+    print("Dashboard repos collector started (daemon mode).")
     output_path = "/home/Aarz/agent-dashboard/repos.json"
-    with open(output_path, "w") as f:
-        json.dump(payload, f, indent=2)
 
-    print(f"Wrote {len(repos)} repos to {output_path}")
+    while True:
+        try:
+            print("Fetching GitHub repos...")
+            repos = fetch_all_repos()
+            if repos is not None:
+                payload = {
+                    "_fetched_at": datetime.now(timezone.utc).isoformat(),
+                    "repos": repos
+                }
+                with open(output_path, "w") as f:
+                    json.dump(payload, f, indent=2)
+                print(f"Wrote {len(repos)} repos to {output_path}")
+            else:
+                print("Failed to fetch repos, will retry in 30s.")
+        except Exception as e:
+            print(f"Error in repos collector loop: {e}")
+
+        time.sleep(30)
 
 if __name__ == "__main__":
     main()
