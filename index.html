@@ -708,14 +708,14 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 16px;
-            margin-bottom: 32px;
+            margin-bottom: 16px;
         }
         .stat-card {
             background: var(--card-bg);
             border: 1.2px solid var(--card-border);
             border-radius: 12px;
             padding: 16px;
-            height: 100px;
+            height: 80px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -1014,21 +1014,21 @@
         .docker-tables-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 32px;
+            gap: 16px;
+            margin-bottom: 16px;
         }
         .docker-panel {
             background: var(--card-bg);
             border: 1.2px solid var(--card-border);
             border-radius: 16px;
-            padding: 20px;
+            padding: 14px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
         .docker-hdr {
             font-family: 'Cormorant Garamond', serif;
             font-size: 1.4rem;
             color: var(--gold);
-            margin-bottom: 14px;
+            margin-bottom: 8px;
         }
         .docker-table {
             width: 100%;
@@ -1063,8 +1063,12 @@
             border: 1.2px solid var(--card-border);
             border-radius: 16px;
             overflow: hidden;
-            margin-bottom: 32px;
+            margin-bottom: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
         }
         .homepage-embed-header {
             display: flex;
@@ -1096,10 +1100,11 @@
         }
         .homepage-iframe {
             width: 100%;
-            height: 600px;
+            height: 100%;
             border: none;
             background: #0a0e14;
             display: block;
+            flex: 1;
         }
 
         /* ── Loading skeleton ── */
@@ -1288,6 +1293,11 @@
         /* ── iframe error overlay ── */
         .iframe-wrapper {
             position: relative;
+            overflow: hidden;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
         }
         .iframe-error-overlay {
             position: absolute;
@@ -1688,7 +1698,20 @@
     <div class="panel" id="panel-r-server">
         <h2 class="panel-title">r-server Control Hub</h2>
         
-
+        <div class="homepage-embed-section">
+            <div class="homepage-embed-header">
+                <span class="homepage-embed-label">r-server Homepage <span class="ping-indicator" id="r-server-ping"><span class="ping-dot"></span><span id="r-server-ping-text">—</span></span></span>
+                <a href="http://100.84.224.18:8383" target="_blank" class="homepage-open-btn">Open in new tab ↗</a>
+            </div>
+            <div class="iframe-wrapper" style="overflow:hidden; flex:1; min-height:0; display:flex; flex-direction:column;">
+                <iframe src="http://100.84.224.18:8383" class="homepage-iframe" id="homepage-iframe" onload="onIframeLoad()" onerror="onIframeError()"></iframe>
+                <div class="iframe-error-overlay" id="iframe-error-overlay">
+                    <div class="iframe-error-icon">⚠</div>
+                    <div class="iframe-error-text">r-server homepage is unreachable</div>
+                    <button class="iframe-error-retry" onclick="retryIframe()">Retry connection</button>
+                </div>
+            </div>
+        </div>
 
         <!-- SYSTEM stats cards row -->
         <div class="stats-summary-row" id="r-server-sys-stats">
@@ -1739,21 +1762,6 @@
                             <!-- Rows -->
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="homepage-embed-section">
-            <div class="homepage-embed-header">
-                <span class="homepage-embed-label">r-server Homepage <span class="ping-indicator" id="r-server-ping"><span class="ping-dot"></span><span id="r-server-ping-text">—</span></span></span>
-                <a href="http://100.84.224.18:8383" target="_blank" class="homepage-open-btn">Open in new tab ↗</a>
-            </div>
-            <div class="iframe-wrapper">
-                <iframe src="http://100.84.224.18:8383" class="homepage-iframe" id="homepage-iframe" onload="onIframeLoad()" onerror="onIframeError()"></iframe>
-                <div class="iframe-error-overlay" id="iframe-error-overlay">
-                    <div class="iframe-error-icon">⚠</div>
-                    <div class="iframe-error-text">r-server homepage is unreachable</div>
-                    <button class="iframe-error-retry" onclick="retryIframe()">Retry connection</button>
                 </div>
             </div>
         </div>
