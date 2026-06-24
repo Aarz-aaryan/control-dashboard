@@ -37,125 +37,170 @@
                 radial-gradient(circle at 15% 30%, rgba(126, 181, 166, 0.03) 0%, transparent 50%),
                 radial-gradient(circle at 85% 70%, rgba(139, 188, 204, 0.03) 0%, transparent 50%);
             color: var(--text-main);
-            overflow-x: hidden;
+            overflow: hidden;
             position: relative;
         }
 
-        /* Ambient shimmer sweep overlay */
-        .shimmer-overlay {
+        /* ── Sidebar dock ── */
+        .sidebar {
             position: fixed;
-            top: -50%; left: -50%; right: -50%; bottom: -50%;
-            background: linear-gradient(
-                135deg,
-                rgba(255, 255, 255, 0) 0%,
-                rgba(196, 154, 108, 0.015) 25%,
-                rgba(126, 181, 166, 0.01) 50%,
-                rgba(139, 188, 204, 0.01) 75%,
-                rgba(255, 255, 255, 0) 100%
-            );
-            animation: shimmerSweep 20s ease-in-out infinite;
-            pointer-events: none;
-            z-index: 998;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 56px;
+            background: rgba(14, 20, 30, 0.95);
+            border-right: 1.5px solid rgba(196, 154, 108, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 24px 0;
+            gap: 24px;
+            z-index: 1000;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
         }
-
-        @keyframes shimmerSweep {
-            0% { transform: translateY(-10%) rotate(0deg); }
-            50% { transform: translateY(10%) rotate(2deg); }
-            100% { transform: translateY(-10%) rotate(0deg); }
+        .sidebar:hover {
+            width: 200px;
         }
-
-        .container {
-            position: relative;
-            z-index: 2;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 60px 24px 80px;
-        }
-
-        /* ── Header ── */
-        header {
-            text-align: center;
-            margin-bottom: 48px;
-        }
-
-        header .logo-container {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 20px;
-            position: relative;
-            animation: float 6s ease-in-out infinite;
-        }
-
-        header .logo {
-            width: 100%;
-            height: 100%;
-            display: block;
-            filter: drop-shadow(0 0 12px rgba(196, 154, 108, 0.3));
-            z-index: 2;
-            position: relative;
-        }
-
-        .logo-glow {
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 120px; height: 120px;
-            transform: translate(-50%, -50%);
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(196, 154, 108, 0.15) 0%, transparent 70%);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-6px) rotate(1deg); }
-        }
-
-        header h1 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 3.2rem;
-            font-weight: 600;
-            color: var(--text-main);
-            letter-spacing: 0.02em;
-            text-shadow: 0 0 15px rgba(196, 154, 108, 0.35);
-            margin-bottom: 6px;
-        }
-
-        header p {
-            font-family: 'DM Sans', sans-serif;
-            font-size: 0.85rem;
-            font-weight: 500;
-            letter-spacing: 0.22em;
-            text-transform: uppercase;
-            color: var(--gold);
-            text-shadow: 0 0 8px rgba(196, 154, 108, 0.2);
-            margin-bottom: 24px;
-        }
-
-        /* Cozy line divider */
-        .divider {
+        .sidebar-logo {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 16px;
-            max-width: 320px;
-            margin: 0 auto;
-            opacity: 0.85;
+            width: 56px;
+            height: 48px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+            border-bottom: 1.5px solid rgba(196, 154, 108, 0.08);
+            margin-bottom: 8px;
+            padding-bottom: 12px;
         }
-        .divider::before, .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        .sidebar:hover .sidebar-logo {
+            width: 200px;
+            justify-content: flex-start;
+            padding-left: 18px;
         }
-        .divider span {
+        .sidebar-logo img {
+            width: 28px;
+            height: 28px;
+            filter: drop-shadow(0 0 6px rgba(196, 154, 108, 0.3));
+        }
+        .sidebar-logo-text {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 1.15rem;
-            font-style: italic;
-            color: var(--sage);
-            letter-spacing: 0.05em;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gold);
+            margin-left: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .sidebar:hover .sidebar-logo-text {
+            opacity: 1;
+        }
+        .sidebar-tabs {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+        .tab-item {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: 48px;
+            padding: 0 18px;
+            gap: 16px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .tab-item.active {
+            border-left: 3px solid var(--gold);
+            background: rgba(196, 154, 108, 0.05);
+        }
+        .tab-item:not(.active) {
+            border-left: 3px solid transparent;
+        }
+        .tab-icon {
+            width: 20px;
+            height: 20px;
+            color: rgba(245, 240, 230, 0.4);
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .tab-item.active .tab-icon {
+            color: var(--gold);
+            filter: drop-shadow(0 0 6px rgba(196, 154, 108, 0.4));
+        }
+        .tab-item:hover .tab-icon {
+            transform: scale(1.1);
+            color: var(--gold);
+            filter: drop-shadow(0 0 4px rgba(196, 154, 108, 0.3));
+        }
+        .tab-label {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
             font-weight: 500;
-            text-shadow: 0 0 8px rgba(126, 181, 166, 0.2);
+            color: rgba(245, 240, 230, 0.4);
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .sidebar:hover .tab-label {
+            opacity: 1;
+        }
+        .tab-item.active .tab-label {
+            color: var(--gold);
+            font-weight: 600;
+        }
+        .tab-item:hover .tab-label {
+            color: var(--cream);
+        }
+
+        /* ── Content Panels ── */
+        .content-panels {
+            position: fixed;
+            top: 0;
+            left: 56px;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .panel {
+            display: none;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            padding: 32px 48px;
+        }
+        .panel.active {
+            display: block;
+        }
+        
+        .panel::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .panel::-webkit-scrollbar-track {
+            background: rgba(10, 14, 20, 0.5);
+        }
+        .panel::-webkit-scrollbar-thumb {
+            background: rgba(196, 154, 108, 0.2);
+            border-radius: 4px;
+        }
+        .panel::-webkit-scrollbar-thumb:hover {
+            background: rgba(196, 154, 108, 0.4);
+        }
+
+        .panel-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.2rem;
+            font-weight: 500;
+            color: var(--text-main);
+            margin-bottom: 24px;
+            border-bottom: 1.5px solid rgba(196, 154, 108, 0.15);
+            padding-bottom: 12px;
         }
 
         /* ── Tree Layout Structure ── */
@@ -166,7 +211,7 @@
             gap: 72px; /* space between rows */
             width: 100%;
             max-width: 1200px;
-            margin: 40px auto 0;
+            margin: 20px auto 0;
             padding: 20px 0;
         }
 
@@ -208,13 +253,13 @@
 
         /* ── Card Styling ── */
         .card {
+            position: relative;
             background: var(--card-bg);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1.2px solid var(--card-border);
             border-radius: 16px;
             padding: 24px;
-            position: relative;
             overflow: hidden;
             transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
             box-shadow: 
@@ -287,9 +332,8 @@
                 0 0 25px var(--agent-dim);
         }
 
-        /* Sparkle mark on top right */
-        .card::after {
-            content: '✦';
+        /* Sparkle badge and session tooltip */
+        .sparkle-badge {
             font-size: 0.8rem;
             position: absolute;
             top: 12px;
@@ -297,10 +341,72 @@
             color: var(--gold);
             opacity: 0.3;
             transition: all 0.4s ease;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: bold;
+            z-index: 5;
+            pointer-events: none;
         }
-        .card:hover::after {
+        .card:hover .sparkle-badge {
             opacity: 0.85;
             text-shadow: 0 0 6px var(--gold);
+        }
+        .session-tooltip {
+            position: absolute;
+            top: 35px;
+            right: 14px;
+            background: rgba(10, 14, 20, 0.95);
+            border: 1px solid rgba(196, 154, 108, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            z-index: 10;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+            width: max-content;
+            pointer-events: none;
+        }
+        .card:hover .session-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .session-tooltip-title {
+            font-size: 0.75rem;
+            color: var(--gold);
+            margin-bottom: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid rgba(196, 154, 108, 0.2);
+            padding-bottom: 4px;
+        }
+        .session-tooltip-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 0.75rem;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        .session-tooltip-item:last-child {
+            margin-bottom: 0;
+        }
+        .session-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--lime);
+            box-shadow: 0 0 4px var(--lime);
+        }
+        .session-time {
+            color: var(--text-main);
+            width: 60px;
+        }
+        .session-exact {
+            color: var(--text-muted);
+            font-size: 0.7rem;
         }
 
         /* ── Card top row ── */
@@ -431,6 +537,53 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             transition: all 0.3s ease;
         }
+        
+        .session-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gold);
+            color: #0a0e14;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 700;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-left: 6px;
+            vertical-align: middle;
+            box-shadow: 0 0 6px rgba(196, 154, 108, 0.6);
+        }
+        
+        .session-tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            gap: 12px;
+        }
+        
+        .session-tooltip-row:last-child {
+            border-bottom: none;
+        }
+        
+        .st-name {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
+        }
+        
+        .st-time {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
         .dot.working {
             background: var(--lime);
             border-color: var(--lime);
@@ -515,39 +668,6 @@
             font-weight: 600;
         }
 
-        /* ── Floating particles (Forest soot sprites / warm fireflies) ── */
-        .particle {
-            position: fixed;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 0;
-            animation-iteration-count: infinite;
-            animation-timing-function: ease-in-out;
-            animation-fill-mode: forwards;
-        }
-        .particle.star {
-            animation-name: floatStar;
-        }
-        .particle.orb {
-            animation-name: floatOrb;
-        }
-        
-        @keyframes floatStar {
-            0% { transform: translateY(105vh) translateX(0) scale(0.6); opacity: 0; }
-            10% { opacity: 0.6; }
-            50% { transform: translateY(50vh) translateX(15px) scale(0.9); opacity: 0.8; }
-            90% { opacity: 0.6; }
-            100% { transform: translateY(-10vh) translateX(-5px) scale(0.7); opacity: 0; }
-        }
-
-        @keyframes floatOrb {
-            0% { transform: translateY(105vh) translateX(0) scale(0.8); opacity: 0; }
-            15% { opacity: 0.4; }
-            50% { transform: translateY(50vh) translateX(-20px) scale(1.05); opacity: 0.6; }
-            85% { opacity: 0.4; }
-            100% { transform: translateY(-10vh) translateX(10px) scale(0.85); opacity: 0; }
-        }
-
         /* ── Cozy Refresh Wheel ── */
         .refresh {
             position: fixed;
@@ -583,21 +703,461 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* ── Footer ── */
-        footer {
-            text-align: center;
-            margin-top: 60px;
-            padding-bottom: 24px;
+        /* ── Stats Tab Styles ── */
+        .stats-summary-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            border: 1.2px solid var(--card-border);
+            border-radius: 12px;
+            padding: 16px;
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--gold);
+            line-height: 1;
             font-family: 'Share Tech Mono', monospace;
+            text-shadow: 0 0 10px rgba(196, 154, 108, 0.3);
+        }
+        .stat-label {
             font-size: 0.7rem;
-            letter-spacing: 0.16em;
             text-transform: uppercase;
             color: var(--text-muted);
-            font-weight: 500;
+            letter-spacing: 0.1em;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+        .stat-icon-wrap {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            opacity: 0.12;
+        }
+        .stat-icon {
+            width: 28px;
+            height: 28px;
+            color: var(--gold);
         }
 
-        /* ── Responsive Tree Layout styling ── */
-        @media (max-width: 960px) {
+        .health-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 24px;
+        }
+        .health-panel {
+            background: var(--card-bg);
+            border: 1.2px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        .health-panel-hdr {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            color: var(--gold);
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .ip-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .health-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .health-item {
+            background: rgba(10, 14, 20, 0.5);
+            border: 1px solid rgba(196, 154, 108, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .health-item-hdr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--cream);
+            margin-bottom: 6px;
+        }
+        .health-item-value {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-dot.green {
+            background: var(--lime);
+            box-shadow: 0 0 6px var(--lime);
+        }
+        .status-dot.red {
+            background: var(--terracotta);
+            box-shadow: 0 0 6px var(--terracotta);
+        }
+
+        /* ── Missions Tab Styles ── */
+        .repos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding-bottom: 24px;
+        }
+        .repo-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .repo-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(196, 154, 108, 0.3);
+            background: rgba(22, 28, 38, 0.85);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        }
+        .repo-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .repo-name {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--gold);
+            word-break: break-word;
+        }
+        .repo-visibility {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.65rem;
+            padding: 2px 7px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .repo-visibility.public {
+            background: rgba(126, 181, 166, 0.12);
+            color: var(--sage);
+            border: 1px solid rgba(126, 181, 166, 0.25);
+        }
+        .repo-visibility.private {
+            background: rgba(196, 154, 108, 0.12);
+            color: var(--gold);
+            border: 1px solid rgba(196, 154, 108, 0.25);
+        }
+        .repo-description {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        .repo-description.empty {
+            font-style: italic;
+            color: rgba(245, 240, 230, 0.25);
+        }
+        .repo-meta {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            border-top: 1px solid rgba(196, 154, 108, 0.08);
+            padding-top: 10px;
+        }
+        .repo-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .repo-last-updated {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            opacity: 0.6;
+            text-align: right;
+        }
+        .repos-last-updated {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            opacity: 0.5;
+            text-align: center;
+            padding-bottom: 8px;
+        }
+        .kanban-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            height: 100%;
+        }
+        .kanban-column {
+            background: rgba(10, 14, 20, 0.4);
+            border: 1.2px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 400px;
+        }
+        .kanban-col-hdr {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.15rem;
+            color: var(--gold);
+            text-align: center;
+            border-bottom: 1px solid rgba(196, 154, 108, 0.15);
+            padding-bottom: 8px;
+            font-weight: 600;
+        }
+        .kanban-col-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        .kanban-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        .kanban-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(196, 154, 108, 0.25);
+            background: rgba(22, 28, 38, 0.85);
+        }
+        .kanban-card-title {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--cream);
+        }
+        .kanban-card-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        .priority-indicator {
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .priority-high {
+            background: rgba(217, 125, 100, 0.15);
+            color: var(--terracotta);
+        }
+        .priority-med {
+            background: rgba(196, 154, 108, 0.15);
+            color: var(--gold);
+        }
+        .priority-low {
+            background: rgba(126, 181, 166, 0.15);
+            color: var(--sage);
+        }
+        .empty-missions-state {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 250px;
+            width: 100%;
+        }
+        .empty-state-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-style: italic;
+            color: var(--text-muted);
+        }
+
+        /* ── r-server Tab Styles ── */
+        .r-server-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            background: rgba(14, 20, 30, 0.5);
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(196, 154, 108, 0.1);
+        }
+        .ssh-btn {
+            background: var(--gold);
+            color: #0a0e14;
+            border: none;
+            padding: 8px 16px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .ssh-btn:hover {
+            background: var(--cream);
+            box-shadow: 0 0 12px rgba(196, 154, 108, 0.4);
+            transform: translateY(-1px);
+        }
+        .ssh-btn-icon {
+            width: 16px;
+            height: 16px;
+        }
+        .ssh-instruction-text {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            word-break: break-all;
+        }
+        .docker-tables-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        .docker-panel {
+            background: var(--card-bg);
+            border: 1.2px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        .docker-hdr {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            color: var(--gold);
+            margin-bottom: 14px;
+        }
+        .docker-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-main);
+        }
+        .docker-table th {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1.5px solid rgba(196, 154, 108, 0.2);
+            color: var(--gold);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.05rem;
+            font-weight: bold;
+        }
+        .docker-table td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(196, 154, 108, 0.08);
+        }
+        .docker-table tbody tr:hover {
+            background: rgba(196, 154, 108, 0.03);
+        }
+        .docker-status-col {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .homepage-embed-section {
+            background: var(--card-bg);
+            border: 1.2px solid var(--card-border);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        .homepage-embed-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: rgba(10, 14, 20, 0.6);
+            border-bottom: 1px solid rgba(196, 154, 108, 0.12);
+        }
+        .homepage-embed-label {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gold);
+        }
+        .homepage-open-btn {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 4px 12px;
+            border: 1px solid rgba(196, 154, 108, 0.2);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        .homepage-open-btn:hover {
+            color: var(--gold);
+            border-color: rgba(196, 154, 108, 0.5);
+        }
+        .homepage-iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            background: #0a0e14;
+            display: block;
+        }
+
+        /* ── Responsive styling ── */
+        @media (max-width: 1024px) {
+            .stats-summary-row {
+                grid-template-columns: 1fr 1fr;
+            }
+            .health-grid {
+                grid-template-columns: 1fr;
+            }
+            .docker-tables-grid {
+                grid-template-columns: 1fr;
+            }
+            .repos-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 768px) {
             .tree-container {
                 gap: 48px;
             }
@@ -624,58 +1184,230 @@
             .tree-node {
                 width: 280px;
             }
+            .stats-summary-row {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-<div class="shimmer-overlay"></div>
-
-<div class="container">
-    <header>
-        <div class="logo-container">
-            <div class="logo-glow"></div>
-            <img src="assets/logo.svg" alt="Hermes Logo" class="logo">
+<!-- Left vertical ribbon dock -->
+<div class="sidebar">
+    <div class="sidebar-logo">
+        <img src="assets/logo.svg" alt="Hermes Logo">
+        <span class="sidebar-logo-text">Hermes Monitor</span>
+    </div>
+    <div class="sidebar-tabs">
+        <div class="tab-item active" data-tab="agents" onclick="switchTab('agents')">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span class="tab-label">Agents</span>
         </div>
-        <h1>Agents Dashboard</h1>
-        <p>Hermes Multi-Agent Monitor</p>
-        <div class="divider">
-            <span>Control Core</span>
+        <div class="tab-item" data-tab="stats" onclick="switchTab('stats')">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            <span class="tab-label">Stats</span>
         </div>
-    </header>
-    
-    <!-- Dynamic Tree Layout -->
-    <div class="tree-container">
-        <svg id="treeLinesSvg" class="tree-lines-svg"></svg>
-        
-        <!-- Row 1: AARZ -->
-        <div class="tree-row row-1">
-            <div class="tree-node" id="node-aarz"></div>
+        <div class="tab-item" data-tab="missions" onclick="switchTab('missions')">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4.5 16.5c-1.5 1.25-2.5 3.5-2.5 3.5s2.25-1 3.5-2.5M12 2C6.5 2 2 6.5 2 12c0 2.5 1 4.5 2.5 6 1 .5 2 1.5 3 2.5 1-1 2-2 2.5-3 1.5 1.5 3.5 2.5 6 2.5 5.5 0 10-4.5 10-10S17.5 2 12 2z"></path>
+              <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path>
+            </svg>
+            <span class="tab-label">Missions</span>
         </div>
-        
-        <!-- Row 2: AGY, COPILOT -->
-        <div class="tree-row row-2">
-            <div class="tree-node" id="node-agy"></div>
-            <div class="tree-node" id="node-copilot"></div>
-        </div>
-        
-        <!-- Row 3: NEO, JARVIS, BYMAX, NINA -->
-        <div class="tree-row row-3">
-            <div class="tree-node" id="node-neo"></div>
-            <div class="tree-node" id="node-jarvis"></div>
-            <div class="tree-node" id="node-bymax"></div>
-            <div class="tree-node" id="node-nina"></div>
+        <div class="tab-item" data-tab="r-server" onclick="switchTab('r-server')">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+              <line x1="6" y1="6" x2="6.01" y2="6"></line>
+              <line x1="6" y1="18" x2="6.01" y2="18"></line>
+            </svg>
+            <span class="tab-label">r-server</span>
         </div>
     </div>
-    
-    <footer>Auto-refreshes every 30s · system active</footer>
 </div>
 
+<!-- Tab Content Panels -->
+<div class="content-panels">
+    
+    <!-- 1. AGENTS TAB -->
+    <div class="panel active" id="panel-agents">
+        <h2 class="panel-title">Agents Tree Layout</h2>
+        <div class="tree-container">
+            <svg id="treeLinesSvg" class="tree-lines-svg"></svg>
+            
+            <!-- Row 1: AARZ -->
+            <div class="tree-row row-1">
+                <div class="tree-node" id="node-aarz"></div>
+            </div>
+            
+            <!-- Row 2: AGY, COPILOT -->
+            <div class="tree-row row-2">
+                <div class="tree-node" id="node-agy"></div>
+                <div class="tree-node" id="node-copilot"></div>
+            </div>
+            
+            <!-- Row 3: NEO, JARVIS, BYMAX, NINA -->
+            <div class="tree-row row-3">
+                <div class="tree-node" id="node-neo"></div>
+                <div class="tree-node" id="node-jarvis"></div>
+                <div class="tree-node" id="node-bymax"></div>
+                <div class="tree-node" id="node-nina"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. STATS TAB -->
+    <div class="panel" id="panel-stats">
+        <h2 class="panel-title">System & Session Stats</h2>
+        
+        <!-- SECTION A: Session Stats -->
+        <div class="stats-summary-row">
+            <div class="stat-card">
+                <div class="stat-number" id="stat-total-sessions">0</div>
+                <div class="stat-label">Total Active Sessions</div>
+                <div class="stat-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-aarz-sessions">0</div>
+                <div class="stat-label">Aarz Sessions</div>
+                <div class="stat-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-agy-sessions">0</div>
+                <div class="stat-label">Agy Sessions</div>
+                <div class="stat-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></svg>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-copilot-sessions">0</div>
+                <div class="stat-label">Copilot Sessions</div>
+                <div class="stat-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-icon"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION B: System Health side-by-side -->
+        <div class="health-grid">
+            <div class="health-panel">
+                <h3 class="health-panel-hdr">Local Device <span class="ip-label">100.100.35.6</span></h3>
+                <div class="health-list" id="local-health-list">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+            <div class="health-panel">
+                <h3 class="health-panel-hdr">r-server Health <span class="ip-label">100.84.224.18</span></h3>
+                <div class="health-list" id="r-server-health-list">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. MISSIONS TAB -->
+    <div class="panel" id="panel-missions">
+        <h2 class="panel-title">Missions Monitor</h2>
+        
+        <div class="repos-grid" id="repos-grid">
+            <!-- Dynamic — populated by renderMissions() from repos.json -->
+        </div>
+        <div class="repos-last-updated" id="repos-last-updated"></div>
+
+        <div class="empty-missions-state" id="empty-missions-msg" style="display:none;">
+            <div class="empty-state-text">No active missions</div>
+        </div>
+    </div>
+
+    <!-- 4. r-server TAB -->
+    <div class="panel" id="panel-r-server">
+        <h2 class="panel-title">r-server Control Hub</h2>
+        
+        <div class="r-server-controls">
+            <button class="ssh-btn" onclick="copySSHCommand()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ssh-btn-icon"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><path d="M9 22V12h6v10M2 17h20M2 7h20"></path></svg>
+                Copy SSH Access Command
+            </button>
+            <span class="ssh-instruction-text">`sshpass -p 'aarz1947' ssh -o StrictHostKeyChecking=no r-server@100.84.224.18`</span>
+        </div>
+
+        <!-- SYSTEM stats cards row -->
+        <div class="stats-summary-row" id="r-server-sys-stats">
+            <div class="stat-card">
+                <div class="stat-label">System Uptime</div>
+                <div class="stat-number" id="r-up-val" style="font-size:1.1rem; word-break:break-all; font-weight:normal; margin-top:8px;">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Memory Stats</div>
+                <div class="stat-number" id="r-mem-val" style="font-size:1.1rem; word-break:break-all; font-weight:normal; margin-top:8px;">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Disk Storage</div>
+                <div class="stat-number" id="r-disk-val" style="font-size:1.1rem; word-break:break-all; font-weight:normal; margin-top:8px;">—</div>
+            </div>
+        </div>
+
+        <div class="docker-tables-grid">
+            <div class="docker-panel">
+                <h3 class="docker-hdr">Docker Status</h3>
+                <div style="overflow-x:auto;">
+                    <table class="docker-table">
+                        <thead>
+                            <tr>
+                                <th>Container Name</th>
+                                <th>Status</th>
+                                <th>Ports</th>
+                            </tr>
+                        </thead>
+                        <tbody id="r-docker-status-tbody">
+                            <!-- Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="docker-panel">
+                <h3 class="docker-hdr">Docker Images</h3>
+                <div style="overflow-x:auto;">
+                    <table class="docker-table">
+                        <thead>
+                            <tr>
+                                <th>Repository</th>
+                                <th>Tag</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody id="r-docker-images-tbody">
+                            <!-- Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="homepage-embed-section">
+            <div class="homepage-embed-header">
+                <span class="homepage-embed-label">r-server Homepage</span>
+                <a href="http://100.84.224.18:8383" target="_blank" class="homepage-open-btn">Open in new tab ↗</a>
+            </div>
+            <iframe src="http://100.84.224.18:8383" class="homepage-iframe" id="homepage-iframe"></iframe>
+        </div>
 <div class="refresh" id="refreshRing">
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="12" r="10" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="32 8"/>
     </svg>
 </div>
-
 <script>
 // Agents data structure with cozy Ghibli colors and icons
 const AGENTS = [
@@ -688,7 +1420,8 @@ const AGENTS = [
     { id: 'nina',    name: 'Nina',         role: 'Research Agent',     color: '#e2b98a', dim: 'rgba(226, 185, 138, 0.15)',  icon: 'nina.svg' },
 ];
 
-const WORKING_MS = 5 * 60 * 1000;
+const WORKING_MS = 4 * 60 * 60 * 1000; // 4 hours — active session tracking threshold
+const SESSION_MS = 12 * 60 * 60 * 1000; // 12 hours — session tracking threshold
 const REFRESH_MS = 30 * 1000;
 const CACHE_TTL_MS = 60 * 1000;
 
@@ -726,28 +1459,39 @@ async function getAgyData() {
     } catch (e) {}
     
     let latest = 0;
-    const thresholdIndex = Math.max(0, files.length - 2);
     let cacheUpdated = false;
+    const now = Date.now();
+    let activeSessions = [];
     
-    for (let i = 0; i < files.length; i++) {
-        const f = files[i];
+    for (const f of files) {
         let ts = null;
         
-        if (i >= thresholdIndex || !logCache[f]) {
-            try {
-                const r = await fetch('/.gemini/antigravity-cli/log/' + f, { method: 'HEAD' });
-                const t = r.headers.get('Last-Modified');
-                if (t) {
-                    ts = new Date(t).getTime();
-                    logCache[f] = ts;
-                    cacheUpdated = true;
-                }
-            } catch (err) {}
+        if (!logCache[f]) {
+            const m = f.match(/cli-(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})\.log/);
+            if (m) {
+                ts = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}`).getTime();
+            }
+            if (!ts) {
+                try {
+                    const r = await fetch('/.gemini/antigravity-cli/log/' + f, { method: 'HEAD' });
+                    const t = r.headers.get('Last-Modified');
+                    if (t) ts = new Date(t).getTime();
+                } catch (_) {}
+            }
+            if (ts) {
+                logCache[f] = ts;
+                cacheUpdated = true;
+            }
         } else {
             ts = logCache[f];
         }
         
-        if (ts && ts > latest) latest = ts;
+        if (ts) {
+            if (ts > latest) latest = ts;
+            if (now - ts > 0 && now - ts < WORKING_MS) {
+                activeSessions.push({ key: f, ts: ts });
+            }
+        }
     }
     
     if (cacheUpdated) {
@@ -756,84 +1500,58 @@ async function getAgyData() {
         } catch (e) {}
     }
     
-    return latest ? { ts: latest } : null;
+    activeSessions.sort((a, b) => b.ts - a.ts);
+    return latest ? { ts: latest, sessions: activeSessions } : null;
 }
 
 async function getCopilotData() {
     const files = await fetchDirList('/.copilot/logs/', '[^"]+\\.log');
     if (files.length === 0) return null;
     
-    files.sort();
+    let latest = 0;
+    const now = Date.now();
+    let activeSessions = [];
     
-    let logCache = {};
+    for (const f of files) {
+        if (f.startsWith('process-')) {
+            const match = f.match(/process-(\d+)-/);
+            if (match) {
+                const ts = parseInt(match[1], 10);
+                if (ts > latest) latest = ts;
+                if (now - ts > 0 && now - ts < WORKING_MS) {
+                    activeSessions.push({ key: f, ts: ts });
+                }
+            }
+        }
+    }
+    
     try {
-        const cachedStr = localStorage.getItem('copilot_log_cache');
-        if (cachedStr) {
-            logCache = JSON.parse(cachedStr);
+        const r = await fetch('/.copilot/logs/copilot.log');
+        if (r.ok) {
+            const text = await r.text();
+            const matches = [...text.matchAll(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z/g)];
+            if (matches.length > 0) {
+                const ts = new Date(matches[matches.length - 1][0]).getTime();
+                if (ts > latest) latest = ts;
+                if (now - ts > 0 && now - ts < WORKING_MS) {
+                    activeSessions.push({ key: 'copilot.log', ts: ts });
+                }
+            }
         }
     } catch (e) {}
     
-    let latest = 0;
-    const processFiles = files.filter(f => f.startsWith('process-'));
-    const copilotLog = files.find(f => f === 'copilot.log');
-    const processThresholdIndex = Math.max(0, processFiles.length - 2);
-    let cacheUpdated = false;
-    
-    const checkFile = async (f, isAlwaysCheck) => {
-        let ts = null;
-        if (isAlwaysCheck || !logCache[f]) {
-            try {
-                const r = await fetch('/.copilot/logs/' + f, { method: 'HEAD' });
-                const t = r.headers.get('Last-Modified');
-                if (t) {
-                    ts = new Date(t).getTime();
-                    logCache[f] = ts;
-                    cacheUpdated = true;
-                }
-            } catch (err) {}
-        } else {
-            ts = logCache[f];
-        }
-        if (ts && ts > latest) latest = ts;
-    };
-    
-    if (copilotLog) {
-        await checkFile(copilotLog, true);
-    }
-    for (let i = 0; i < processFiles.length; i++) {
-        const pf = processFiles[i];
-        const isRecent = i >= processThresholdIndex;
-        await checkFile(pf, isRecent);
-    }
-    
-    if (cacheUpdated) {
-        try {
-            localStorage.setItem('copilot_log_cache', JSON.stringify(logCache));
-        } catch (e) {}
-    }
-    
-    return latest ? { ts: latest } : null;
+    activeSessions.sort((a, b) => b.ts - a.ts);
+    return latest ? { ts: latest, sessions: activeSessions } : null;
 }
 
 async function getHermesData(profile) {
     const base = '/.hermes/profiles/' + profile;
-    const sj = await fetchJSON(base + '/sessions/sessions.json');
-    if (sj) {
-        let latest = 0;
-        for (const s of Object.values(sj)) {
-            if (s?.updated_at) {
-                const ms = new Date(s.updated_at).getTime();
-                if (ms > latest) latest = ms;
-            }
-        }
-        if (latest) return { ts: latest };
-    }
+    const now = Date.now();
     
-    const files = await fetchDirList(base + '/sessions/', '[^"]+\\.json');
-    if (files.length === 0) return null;
+    let activeSessionsMap = new Map();
+    let latest = 0;
     
-    files.sort();
-    
+    // Retrieve cache
     let sessionCache = {};
     try {
         const cachedStr = localStorage.getItem('hermes_cache_' + profile);
@@ -842,29 +1560,102 @@ async function getHermesData(profile) {
         }
     } catch (e) {}
     
-    let latest = 0;
-    const thresholdIndex = Math.max(0, files.length - 2);
     let cacheUpdated = false;
     
-    for (let i = 0; i < files.length; i++) {
-        const f = files[i];
-        let ts = null;
-        
-        if (i >= thresholdIndex || !sessionCache[f]) {
-            const d = await fetchJSON(base + '/sessions/' + f);
-            if (d) {
-                const val = d.timestamp || d.last_updated;
-                if (val) {
-                    ts = new Date(val).getTime();
-                    sessionCache[f] = ts;
-                    cacheUpdated = true;
+    // 1. sessions.json (aarz only, but generic check)
+    try {
+        const sj = await fetchJSON(base + '/sessions/sessions.json');
+        if (sj) {
+            let rawSessions = [];
+            if (Array.isArray(sj)) {
+                rawSessions = sj;
+            } else if (sj.sessions && Array.isArray(sj.sessions)) {
+                rawSessions = sj.sessions;
+            } else if (typeof sj === 'object') {
+                rawSessions = Object.values(sj);
+            }
+            
+            for (const s of rawSessions) {
+                if (s) {
+                    const val = s.ts || s.timestamp || s.updated_at || s.last_updated;
+                    if (val) {
+                        const ms = typeof val === 'number' ? val : new Date(val).getTime();
+                        if (!isNaN(ms)) {
+                            if (ms > latest) latest = ms;
+                            if (now - ms > 0 && now - ms < WORKING_MS) {
+                                const key = s.session_id || s.session_key || 'session';
+                                activeSessionsMap.set(key, { key, ts: ms });
+                            }
+                        }
+                    }
                 }
+            }
+        }
+    } catch (e) {
+        console.error('Error fetching sessions.json for', profile, e);
+    }
+    
+    // 2. Scan sessions/ for other json files
+    const files = await fetchDirList(base + '/sessions/', '[^"]+\\.json');
+    const sessionFiles = files.filter(f => f !== 'sessions.json');
+    
+    sessionFiles.sort((a, b) => {
+        const tA = (a.match(/\d{8}_\d{6}/) || [''])[0];
+        const tB = (b.match(/\d{8}_\d{6}/) || [''])[0];
+        return tA.localeCompare(tB) || a.localeCompare(b);
+    });
+    
+    const uncachedFiles = sessionFiles.filter(f => !sessionCache[f]);
+    const maxUncachedToFetch = 15;
+    const filesToFetch = new Set(sessionFiles.slice(-15));
+    
+    for (const f of sessionFiles) {
+        let ts = null;
+        const shouldFetch = filesToFetch.has(f) || (!sessionCache[f] && uncachedFiles.indexOf(f) >= uncachedFiles.length - maxUncachedToFetch);
+        
+        if (shouldFetch) {
+            try {
+                const d = await fetchJSON(base + '/sessions/' + f);
+                if (d) {
+                    let val = null;
+                    if (f.startsWith('session_')) {
+                        val = d.ts || d.timestamp || d.last_updated || d.session_start;
+                    } else if (f.startsWith('request_dump_')) {
+                        val = d.timestamp || d.ts;
+                    } else {
+                        val = d.ts || d.timestamp || d.last_updated || d.updated_at;
+                    }
+                    
+                    if (val) {
+                        ts = typeof val === 'number' ? val : new Date(val).getTime();
+                        if (!isNaN(ts)) {
+                            sessionCache[f] = ts;
+                            cacheUpdated = true;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Error fetching session file', f, e);
             }
         } else {
             ts = sessionCache[f];
         }
         
-        if (ts && ts > latest) latest = ts;
+        if (ts) {
+            if (ts > latest) latest = ts;
+            if (now - ts > 0 && now - ts < WORKING_MS) {
+                let key = f;
+                if (f.startsWith('session_')) {
+                    key = f.replace(/^session_/, '').replace(/\.json$/, '');
+                } else if (f.startsWith('request_dump_')) {
+                    key = f.replace(/^request_dump_/, '').replace(/\.json$/, '');
+                }
+                
+                if (!activeSessionsMap.has(key) || activeSessionsMap.get(key).ts < ts) {
+                    activeSessionsMap.set(key, { key: f, ts: ts });
+                }
+            }
+        }
     }
     
     if (cacheUpdated) {
@@ -873,7 +1664,10 @@ async function getHermesData(profile) {
         } catch (e) {}
     }
     
-    return latest ? { ts: latest } : null;
+    const activeSessions = Array.from(activeSessionsMap.values());
+    activeSessions.sort((a, b) => b.ts - a.ts);
+    
+    return latest ? { ts: latest, sessions: activeSessions } : { ts: 0, sessions: [] };
 }
 
 // ── Formatters ─────────────────────────────────────────────────────────────
@@ -909,9 +1703,33 @@ function cardHTML(agent, data) {
     const now = Date.now();
     const ts = data?.ts || 0;
     const age = ts ? now - ts : 0;
-    const working = age < WORKING_MS && age > 0;
+    const sessions = data?.sessions || [];
+    const activeSessions = sessions.filter(s => now - s.ts > 0 && now - s.ts < WORKING_MS);
+    const working = activeSessions.length > 0 || (age < WORKING_MS && age > 0);
+    const activeCount = activeSessions.length > 0 ? activeSessions.length : (working ? 1 : 0);
     const ageStr = formatAge(age);
     const bar = barWidth(age);
+
+    let sessionListHtml = '';
+    if (activeCount > 0) {
+        let listItems = '';
+        if (activeSessions.length > 0) {
+            listItems = activeSessions.map(s => {
+                const sageStr = formatAge(now - s.ts);
+                return `<div class="session-tooltip-item"><span class="session-dot"></span><span class="session-time">${sageStr}</span><span class="session-exact">${new Date(s.ts).toLocaleTimeString()}</span></div>`;
+            }).join('');
+        } else {
+            const sageStr = formatAge(age);
+            listItems = `<div class="session-tooltip-item"><span class="session-dot"></span><span class="session-time">${sageStr}</span><span class="session-exact">${new Date(ts).toLocaleTimeString()}</span></div>`;
+        }
+        
+        sessionListHtml = `
+            <div class="session-tooltip">
+                <div class="session-tooltip-title">${activeCount} Active Session${activeCount > 1 ? 's' : ''}</div>
+                ${listItems}
+            </div>
+        `;
+    }
 
     return `<div class="card ${working ? 'active-core' : ''}" id="card-${agent.id}" style="--agent-color: ${agent.color}; --agent-dim: ${agent.dim};">
   <div class="card-shimmer"></div>
@@ -930,8 +1748,12 @@ function cardHTML(agent, data) {
     <div class="dot ${working ? 'working' : ''}"></div>
   </div>
   <div class="status-row">
-    <span class="status-label ${working ? 'working' : ''}">${working ? 'ACTIVE CORE' : 'STANDBY'}</span>
+    <span class="status-label ${working ? 'working' : ''}">${working ? 'ACTIVE' : 'STANDBY'}</span>
     <span class="time-ago" title="${exactTime(ts)}">${ageStr || 'NO SIGNALS'}</span>
+  </div>
+  <div style="font-family: 'Share Tech Mono', monospace; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: space-between;">
+    <span>SESSIONS:</span>
+    <span style="color: var(--gold); font-weight: bold;">${activeCount}</span>
   </div>
   <div class="bar-track">
     <div class="bar-fill" style="width:${bar}%;"></div>
@@ -940,6 +1762,8 @@ function cardHTML(agent, data) {
     <span class="foot-label">Last signal:</span>
     <span class="foot-value">${ts ? new Date(ts).toLocaleString() : 'No connection'}</span>
   </div>
+  <div class="sparkle-badge" title="Active Sessions">✦${activeCount > 1 ? ' ×' + activeCount : ''}</div>
+  ${sessionListHtml}
 </div>`;
 }
 
@@ -954,7 +1778,6 @@ function drawTreeLines() {
     if (!container) return;
     const containerRect = container.getBoundingClientRect();
     
-    // Connections defining the tree hierarchy
     const connections = [
         { from: 'aarz', to: 'agy' },
         { from: 'aarz', to: 'copilot' },
@@ -972,19 +1795,16 @@ function drawTreeLines() {
         const fromRect = fromEl.getBoundingClientRect();
         const toRect = toEl.getBoundingClientRect();
         
-        // Coordinates relative to tree container
         const x1 = fromRect.left + fromRect.width / 2 - containerRect.left;
         const y1 = fromRect.bottom - containerRect.top;
         
         const x2 = toRect.left + toRect.width / 2 - containerRect.left;
         const y2 = toRect.top - containerRect.top;
         
-        // Beautiful organic s-curve path
         const controlY1 = y1 + (y2 - y1) * 0.45;
         const controlY2 = y1 + (y2 - y1) * 0.55;
         const pathData = `M ${x1} ${y1} C ${x1} ${controlY1}, ${x2} ${controlY2}, ${x2} ${y2}`;
         
-        // Main gold vine thread
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', pathData);
         path.setAttribute('stroke', 'rgba(196, 154, 108, 0.35)');
@@ -993,7 +1813,6 @@ function drawTreeLines() {
         path.classList.add('tree-vine');
         svg.appendChild(path);
         
-        // Secondary wrapping sage vine tendril
         const pathTendril = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         const pathDataTendril = `M ${x1} ${y1} C ${x1 + 8} ${controlY1 - 2}, ${x2 - 8} ${controlY2 + 2}, ${x2} ${y2}`;
         pathTendril.setAttribute('d', pathDataTendril);
@@ -1041,6 +1860,272 @@ function updateCard(agent, data) {
     }
 }
 
+// ── Tabs controller ─────────────────────────────────────────────────────────
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+    
+    const activeTab = document.querySelector(`.tab-item[data-tab="${tabId}"]`);
+    const activePanel = document.getElementById(`panel-${tabId}`);
+    
+    if (activeTab) activeTab.classList.add('active');
+    if (activePanel) activePanel.classList.add('active');
+    
+    if (tabId === 'agents') {
+        setTimeout(drawTreeLines, 80);
+    }
+}
+
+let agyProfileSessionsCount = 0;
+
+function updateStatsCounts() {
+    let aarzCount = 0;
+    let agyCount = agyProfileSessionsCount; // Specifically from profile
+    let copilotCount = 0;
+    let totalCount = 0;
+    
+    AGENTS.forEach(a => {
+        const cached = getCached(a.id);
+        const sessions = cached?.sessions || [];
+        const count = sessions.filter(s => Date.now() - s.ts > 0 && Date.now() - s.ts < WORKING_MS).length;
+        
+        // Sum counts for overall total
+        if (a.id === 'aarz') {
+            aarzCount = count;
+            totalCount += count;
+        } else if (a.id === 'copilot') {
+            copilotCount = count;
+            totalCount += count;
+        } else if (a.id === 'agy') {
+            // We use the profile sessions count for total sessions count (which is 0 or low)
+            totalCount += agyCount;
+        } else {
+            totalCount += count;
+        }
+    });
+    
+    const elTotal = document.getElementById('stat-total-sessions');
+    const elAarz = document.getElementById('stat-aarz-sessions');
+    const elAgy = document.getElementById('stat-agy-sessions');
+    const elCopilot = document.getElementById('stat-copilot-sessions');
+    
+    if (elTotal) elTotal.textContent = totalCount;
+    if (elAarz) elAarz.textContent = aarzCount;
+    if (elAgy) elAgy.textContent = agyCount;
+    if (elCopilot) elCopilot.textContent = copilotCount;
+}
+
+// ── Dynamic renderers for panels ───────────────────────────────────────────
+
+function renderStatsPanel(h) {
+    if (!h) return;
+    
+    const local = h.local || {};
+    const localContainer = document.getElementById('local-health-list');
+    if (localContainer) {
+        localContainer.innerHTML = `
+            <div class="health-item">
+                <div class="health-item-hdr"><span>Uptime</span><span class="status-dot green"></span></div>
+                <div class="health-item-value">${local.uptime || 'Unavailable'}</div>
+            </div>
+            <div class="health-item">
+                <div class="health-item-hdr"><span>CPU Load</span><span class="status-dot green"></span></div>
+                <div class="health-item-value">${local.cpu || 'Unavailable'}</div>
+            </div>
+            <div class="health-item">
+                <div class="health-item-hdr"><span>Memory</span><span class="status-dot green"></span></div>
+                <div class="health-item-value">${local.memory || 'Unavailable'}</div>
+            </div>
+            <div class="health-item">
+                <div class="health-item-hdr"><span>Disk Usage</span><span class="status-dot green"></span></div>
+                <div class="health-item-value">${local.disk || 'Unavailable'}</div>
+            </div>
+            <div class="health-item">
+                <div class="health-item-hdr"><span>Docker Containers</span><span class="status-dot green"></span></div>
+                <div class="health-item-value">${local.docker || 'Unavailable'}</div>
+            </div>
+            <div class="health-item">
+                <div class="health-item-hdr"><span>Hermes Process</span><span class="status-dot ${local.hermes === 'Running' ? 'green' : 'red'}"></span></div>
+                <div class="health-item-value">${local.hermes || 'Not running'}</div>
+            </div>
+        `;
+    }
+    
+    const rServer = h.r_server || {};
+    const rContainer = document.getElementById('r-server-health-list');
+    if (rContainer) {
+        rContainer.innerHTML = `
+            <div class="health-item">
+                <div class="health-item-hdr"><span>Uptime</span><span class="status-dot ${rServer.uptime?.ok ? 'green' : 'red'}"></span></div>
+                <div class="health-item-value">${rServer.uptime?.output || 'Connection Error'}</div>
+            </div>
+            <div class="health-item">
+                <div class="health-item-hdr"><span>Docker Containers</span><span class="status-dot ${rServer.docker?.ok ? 'green' : 'red'}"></span></div>
+                <div class="health-item-value">${rServer.docker?.output || 'Connection Error'}</div>
+            </div>
+            <div class="health-item">
+                <div class="health-item-hdr"><span>Memory</span><span class="status-dot ${rServer.memory?.ok ? 'green' : 'red'}"></span></div>
+                <div class="health-item-value">${rServer.memory?.output || 'Connection Error'}</div>
+            </div>
+            <div class="health-item">
+                <div class="health-item-hdr"><span>Disk</span><span class="status-dot ${rServer.disk?.ok ? 'green' : 'red'}"></span></div>
+                <div class="health-item-value">${rServer.disk?.output || 'Connection Error'}</div>
+            </div>
+        `;
+    }
+}
+
+function renderMissions(data) {
+    // data is the repos.json array of {name, description, html_url, updated_at, private}
+    if (!data) return;
+
+    const reposGrid = document.getElementById('repos-grid');
+    const emptyMsg = document.getElementById('empty-missions-msg');
+    const lastUpdated = document.getElementById('repos-last-updated');
+
+    if (!data || data.length === 0) {
+        if (reposGrid) reposGrid.style.display = 'none';
+        if (emptyMsg) emptyMsg.style.display = 'flex';
+        if (lastUpdated) lastUpdated.textContent = '';
+        return;
+    }
+
+    if (reposGrid) {
+        reposGrid.style.display = 'grid';
+        reposGrid.innerHTML = data.map(repo => {
+            const visClass = repo.private ? 'private' : 'public';
+            const visLabel = repo.private ? 'private' : 'public';
+            const desc = repo.description
+                ? `<span class="repo-description">${escapeHtml(repo.description)}</span>`
+                : `<span class="repo-description empty">No description</span>`;
+            const updated = repo.updated_at
+                ? new Date(repo.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : '—';
+            return `
+                <a href="${escapeHtml(repo.html_url)}" target="_blank" class="repo-card">
+                    <div class="repo-card-top">
+                        <span class="repo-name">${escapeHtml(repo.name)}</span>
+                        <span class="repo-visibility ${visClass}">${visLabel}</span>
+                    </div>
+                    ${desc}
+                    <div class="repo-meta">
+                        <span class="repo-meta-item">↗ open</span>
+                        <span class="repo-meta-item" style="margin-left:auto;">${updated}</span>
+                    </div>
+                </a>
+            `;
+        }).join('');
+    }
+
+    if (emptyMsg) emptyMsg.style.display = 'none';
+
+    // Show last-updated timestamp if provided in data
+    if (lastUpdated && data._fetched_at) {
+        lastUpdated.textContent = `Last synced: ${new Date(data._fetched_at).toLocaleString()}`;
+    } else if (lastUpdated) {
+        lastUpdated.textContent = '';
+    }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function renderRServerPanel(rData) {
+    if (!rData) return;
+    
+    const system = rData.system || {};
+    const upVal = document.getElementById('r-up-val');
+    const memVal = document.getElementById('r-mem-val');
+    const diskVal = document.getElementById('r-disk-val');
+    
+    if (upVal) upVal.innerHTML = system.uptime?.ok ? system.uptime.output : '<span style="color:var(--terracotta)">Error</span>';
+    if (memVal) {
+        if (system.free_h?.ok) {
+            const lines = system.free_h.output.split('\n');
+            const memLine = lines.find(l => l.startsWith('Mem:'));
+            memVal.textContent = memLine ? memLine : system.free_h.output;
+        } else {
+            memVal.innerHTML = '<span style="color:var(--terracotta)">Error</span>';
+        }
+    }
+    if (diskVal) {
+        if (system.df_h?.ok) {
+            const lines = system.df_h.output.split('\n');
+            const rootLine = lines.find(l => l.includes('/'));
+            diskVal.textContent = rootLine ? rootLine : system.df_h.output;
+        } else {
+            diskVal.innerHTML = '<span style="color:var(--terracotta)">Error</span>';
+        }
+    }
+    
+    const dockerStatusTbody = document.getElementById('r-docker-status-tbody');
+    if (dockerStatusTbody) {
+        if (rData.docker_ps?.ok && rData.docker_ps.output) {
+            const lines = rData.docker_ps.output.split('\n');
+            dockerStatusTbody.innerHTML = lines.map(line => {
+                const parts = line.split('\t');
+                if (parts.length < 2) return '';
+                const name = parts[0];
+                const status = parts[1];
+                const ports = parts[2] || '—';
+                const isRunning = status.toLowerCase().includes('up');
+                const dotClass = isRunning ? 'green' : 'red';
+                return `
+                    <tr>
+                        <td><strong>${name}</strong></td>
+                        <td>
+                            <div class="docker-status-col">
+                                <span class="status-dot ${dotClass}"></span>
+                                <span>${status}</span>
+                            </div>
+                        </td>
+                        <td style="font-family: 'Share Tech Mono', monospace; font-size: 0.78rem;">${ports}</td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            dockerStatusTbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--terracotta); font-style:italic;">Connection error or no containers</td></tr>`;
+        }
+    }
+    
+    const dockerImagesTbody = document.getElementById('r-docker-images-tbody');
+    if (dockerImagesTbody) {
+        if (rData.docker_images?.ok && rData.docker_images.output) {
+            const lines = rData.docker_images.output.split('\n');
+            dockerImagesTbody.innerHTML = lines.map(line => {
+                const parts = line.split('\t');
+                if (parts.length < 3) return '';
+                const repo = parts[0];
+                const tag = parts[1];
+                const size = parts[2];
+                return `
+                    <tr>
+                        <td><strong>${repo}</strong></td>
+                        <td style="font-family: 'Share Tech Mono', monospace; font-size: 0.78rem;">${tag}</td>
+                        <td style="font-family: 'Share Tech Mono', monospace; font-size: 0.78rem;">${size}</td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            dockerImagesTbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--terracotta); font-style:italic;">Connection error or no images</td></tr>`;
+        }
+    }
+}
+
+function copySSHCommand() {
+    const cmd = "sshpass -p 'aarz1947' ssh -o StrictHostKeyChecking=no r-server@100.84.224.18";
+    navigator.clipboard.writeText(cmd).then(() => {
+        alert("SSH Command copied to clipboard!");
+    }).catch(err => {
+        console.error("Failed to copy SSH command:", err);
+    });
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+
 let isFetching = false;
 
 async function loadAll() {
@@ -1053,6 +2138,20 @@ async function loadAll() {
     if (firstNode && !firstNode.innerHTML.trim()) {
         const results = AGENTS.map(a => ({ a, d: getCached(a.id) }));
         renderCards(results);
+        updateStatsCounts();
+    }
+
+    // Fetch agy profile sessions separately for the stats panel
+    let agyData = null;
+    try {
+        agyData = await getHermesData('agy');
+        if (agyData?.sessions) {
+            agyProfileSessionsCount = agyData.sessions.filter(s => Date.now() - s.ts > 0 && Date.now() - s.ts < WORKING_MS).length;
+        } else {
+            agyProfileSessionsCount = 0;
+        }
+    } catch (e) {
+        agyProfileSessionsCount = 0;
     }
 
     // Queue for staggered fetches
@@ -1063,12 +2162,18 @@ async function loadAll() {
             const a = queue.shift();
             try {
                 let d = null;
-                if (a.id === 'agy') d = await getAgyData();
-                else if (a.id === 'copilot') d = await getCopilotData();
-                else d = await getHermesData(a.id);
+                if (a.id === 'agy') {
+                    d = agyData;
+                } else if (a.id === 'copilot') {
+                    d = await getHermesData('copi');
+                    if (!d) d = await getCopilotData();
+                } else {
+                    d = await getHermesData(a.id);
+                }
                 
                 const old = getCached(a.id);
-                if (!old || (d && d.ts !== old.ts)) {
+                const sessionsChanged = d?.sessions && JSON.stringify(d.sessions.map(s=>s.ts).sort()) !== JSON.stringify(old?.sessions?.map(s=>s.ts).sort());
+                if (!old || (d && d.ts !== old.ts) || sessionsChanged) {
                     setCache(a.id, d);
                     updateCard(a, d);
                 } else {
@@ -1082,11 +2187,29 @@ async function loadAll() {
 
     // Staggered execution of workers to ensure low load and high stability
     await Promise.all([fetchWorker(), fetchWorker()]);
+    updateStatsCounts();
+
+    // Fetch dynamic JSON endpoints
+    try {
+        const healthData = await fetchJSON('/agent-dashboard/health.json');
+        if (healthData) renderStatsPanel(healthData);
+    } catch(e) { console.error("Error loading health stats:", e); }
+
+    try {
+        const reposData = await fetchJSON('/agent-dashboard/repos.json');
+        if (reposData) renderMissions(reposData);
+    } catch(e) { console.error("Error loading repos:", e); }
+
+    try {
+        const rServerData = await fetchJSON('/agent-dashboard/r_server_info.json');
+        if (rServerData) renderRServerPanel(rServerData);
+    } catch(e) { console.error("Error loading r-server info:", e); }
 
     document.getElementById('refreshRing').classList.remove('on');
     isFetching = false;
     drawTreeLines();
 }
+
 
 // ── Floating particles (Forest soot sprites / warm fireflies) ────────────────
 
