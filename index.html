@@ -1142,6 +1142,357 @@
             display: block;
         }
 
+        /* ── Loading skeleton ── */
+        .skeleton-loading {
+            position: relative;
+            overflow: hidden;
+            background: rgba(14, 20, 30, 0.5);
+            border-radius: 12px;
+            min-height: 80px;
+        }
+        .skeleton-loading::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(196, 154, 108, 0.06), transparent);
+            animation: skeletonShimmer 1.5s ease-in-out infinite;
+        }
+        @keyframes skeletonShimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .skeleton-text {
+            height: 14px;
+            border-radius: 4px;
+            background: rgba(196, 154, 108, 0.08);
+            margin-bottom: 8px;
+            width: 60%;
+        }
+        .skeleton-text.short { width: 35%; }
+        .skeleton-text.long { width: 80%; }
+        .panel-loading-overlay {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px;
+            gap: 16px;
+        }
+        .loading-spinner {
+            width: 32px;
+            height: 32px;
+            border: 2.5px solid rgba(196, 154, 108, 0.15);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .loading-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+        }
+
+        /* ── Tab error badge ── */
+        .tab-error-badge {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--terracotta);
+            box-shadow: 0 0 6px var(--terracotta);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .tab-error-badge.visible {
+            opacity: 1;
+        }
+
+        /* ── Stale agent warning ── */
+        .stale-warning-badge {
+            position: absolute;
+            bottom: 10px;
+            right: 14px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--terracotta);
+            background: rgba(217, 125, 100, 0.1);
+            border: 1px solid rgba(217, 125, 100, 0.25);
+            border-radius: 4px;
+            padding: 2px 6px;
+            opacity: 0.8;
+            z-index: 5;
+        }
+
+        /* ── Missions header bar ── */
+        .missions-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 12px 18px;
+            background: rgba(14, 20, 30, 0.5);
+            border: 1px solid rgba(196, 154, 108, 0.1);
+            border-radius: 12px;
+        }
+        .missions-count-badge {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .missions-count-number {
+            background: var(--gold);
+            color: #0a0e14;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            min-width: 22px;
+            text-align: center;
+        }
+        .missions-sync-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+        .sync-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--lime);
+            box-shadow: 0 0 4px var(--lime);
+        }
+        .sync-dot.stale {
+            background: var(--terracotta);
+            box-shadow: 0 0 4px var(--terracotta);
+        }
+        .sync-dot.syncing {
+            background: var(--sky);
+            box-shadow: 0 0 4px var(--sky);
+            animation: pulseGlow 1s infinite ease-in-out;
+        }
+
+        /* ── Stale data warning banner ── */
+        .stale-banner {
+            background: rgba(217, 125, 100, 0.08);
+            border: 1px solid rgba(217, 125, 100, 0.25);
+            border-radius: 10px;
+            padding: 10px 16px;
+            margin-bottom: 16px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.82rem;
+            color: var(--terracotta);
+        }
+        .stale-banner.visible {
+            display: flex;
+        }
+        .stale-banner-icon {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        /* ── Dashboard uptime (sidebar footer) ── */
+        .sidebar-footer {
+            margin-top: auto;
+            width: 100%;
+            padding: 12px 18px;
+            border-top: 1px solid rgba(196, 154, 108, 0.08);
+        }
+        .dashboard-uptime {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            opacity: 0.5;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .sidebar:hover .dashboard-uptime {
+            opacity: 0.8;
+        }
+
+        /* ── iframe error overlay ── */
+        .iframe-wrapper {
+            position: relative;
+        }
+        .iframe-error-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 14, 20, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            z-index: 5;
+        }
+        .iframe-error-overlay.visible {
+            display: flex;
+        }
+        .iframe-error-icon {
+            font-size: 2rem;
+            color: var(--terracotta);
+            opacity: 0.6;
+        }
+        .iframe-error-text {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .iframe-error-retry {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem;
+            color: var(--gold);
+            background: rgba(196, 154, 108, 0.1);
+            border: 1px solid rgba(196, 154, 108, 0.25);
+            border-radius: 6px;
+            padding: 6px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .iframe-error-retry:hover {
+            background: rgba(196, 154, 108, 0.2);
+        }
+
+        /* ── Stats: Hero total + per-agent session grid ── */
+        .stats-hero {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            margin-bottom: 28px;
+            padding: 24px 28px;
+            background: var(--card-bg);
+            border: 1.2px solid var(--card-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        .stats-hero-total {
+            text-align: center;
+            min-width: 120px;
+        }
+        .stats-hero-number {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 4.5rem;
+            font-weight: 700;
+            color: var(--gold);
+            line-height: 1;
+            text-shadow: 0 0 20px rgba(196, 154, 108, 0.3);
+        }
+        .stats-hero-label {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-muted);
+            margin-top: 6px;
+            font-weight: 600;
+        }
+        .stats-hero-divider {
+            width: 1px;
+            height: 60px;
+            background: rgba(196, 154, 108, 0.15);
+            flex-shrink: 0;
+        }
+        .stats-agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+            flex: 1;
+        }
+        .stats-agent-card {
+            background: rgba(10, 14, 20, 0.5);
+            border: 1px solid rgba(196, 154, 108, 0.08);
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+        .stats-agent-card:hover {
+            border-color: rgba(196, 154, 108, 0.2);
+            background: rgba(14, 20, 30, 0.7);
+        }
+        .stats-agent-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .stats-agent-dot.active {
+            box-shadow: 0 0 8px var(--agent-dot-color);
+        }
+        .stats-agent-dot.standby {
+            opacity: 0.3;
+        }
+        .stats-agent-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .stats-agent-name {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .stats-agent-meta {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .stats-agent-count {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--gold);
+            flex-shrink: 0;
+        }
+        .stats-agent-count.zero {
+            color: var(--text-muted);
+            opacity: 0.4;
+        }
+
+        /* ── r-server ping indicator ── */
+        .ping-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-left: 12px;
+        }
+        .ping-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--lime);
+            box-shadow: 0 0 4px var(--lime);
+        }
+        .ping-dot.error {
+            background: var(--terracotta);
+            box-shadow: 0 0 4px var(--terracotta);
+        }
+
         /* ── Responsive styling ── */
         @media (max-width: 1024px) {
             .stats-summary-row {
@@ -1156,8 +1507,29 @@
             .repos-grid {
                 grid-template-columns: 1fr;
             }
+            .stats-hero {
+                flex-direction: column;
+                gap: 16px;
+            }
+            .stats-hero-divider {
+                width: 100%;
+                height: 1px;
+            }
         }
         @media (max-width: 768px) {
+            .sidebar {
+                width: 44px;
+                padding: 16px 0;
+            }
+            .sidebar:hover {
+                width: 180px;
+            }
+            .content-panels {
+                left: 44px;
+            }
+            .panel {
+                padding: 20px 16px;
+            }
             .tree-container {
                 gap: 48px;
             }
@@ -1170,6 +1542,16 @@
             }
             .row-3 .tree-node, .tree-node {
                 width: 265px;
+            }
+            .stats-agent-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .missions-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .homepage-iframe {
+                height: 400px;
             }
         }
         @media (max-width: 540px) {
@@ -1186,6 +1568,12 @@
             }
             .stats-summary-row {
                 grid-template-columns: 1fr;
+            }
+            .stats-agent-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats-hero-number {
+                font-size: 3rem;
             }
         }
     </style>
@@ -1206,6 +1594,7 @@
               <rect x="3" y="14" width="7" height="7"></rect>
             </svg>
             <span class="tab-label">Agents</span>
+            <span class="tab-error-badge" id="tab-error-agents"></span>
         </div>
         <div class="tab-item" data-tab="stats" onclick="switchTab('stats')">
             <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1214,6 +1603,7 @@
               <line x1="6" y1="20" x2="6" y2="14"></line>
             </svg>
             <span class="tab-label">Stats</span>
+            <span class="tab-error-badge" id="tab-error-stats"></span>
         </div>
         <div class="tab-item" data-tab="missions" onclick="switchTab('missions')">
             <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1221,6 +1611,7 @@
               <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path>
             </svg>
             <span class="tab-label">Missions</span>
+            <span class="tab-error-badge" id="tab-error-missions"></span>
         </div>
         <div class="tab-item" data-tab="r-server" onclick="switchTab('r-server')">
             <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1230,7 +1621,11 @@
               <line x1="6" y1="18" x2="6.01" y2="18"></line>
             </svg>
             <span class="tab-label">r-server</span>
+            <span class="tab-error-badge" id="tab-error-r-server"></span>
         </div>
+    </div>
+    <div class="sidebar-footer">
+        <div class="dashboard-uptime" id="dashboard-uptime" title="Dashboard uptime">⏱ --</div>
     </div>
 </div>
 
@@ -1268,35 +1663,15 @@
     <div class="panel" id="panel-stats">
         <h2 class="panel-title">System & Session Stats</h2>
         
-        <!-- SECTION A: Session Stats -->
-        <div class="stats-summary-row">
-            <div class="stat-card">
-                <div class="stat-number" id="stat-total-sessions">0</div>
-                <div class="stat-label">Total Active Sessions</div>
-                <div class="stat-icon-wrap">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                </div>
+        <!-- SECTION A: Session Stats — Hero + Per-agent grid -->
+        <div class="stats-hero">
+            <div class="stats-hero-total">
+                <div class="stats-hero-number" id="stat-total-sessions">0</div>
+                <div class="stats-hero-label">Active Sessions</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number" id="stat-aarz-sessions">0</div>
-                <div class="stat-label">Aarz Sessions</div>
-                <div class="stat-icon-wrap">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="stat-agy-sessions">0</div>
-                <div class="stat-label">Agy Sessions</div>
-                <div class="stat-icon-wrap">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></svg>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="stat-copilot-sessions">0</div>
-                <div class="stat-label">Copilot Sessions</div>
-                <div class="stat-icon-wrap">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-icon"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
-                </div>
+            <div class="stats-hero-divider"></div>
+            <div class="stats-agent-grid" id="stats-agent-grid">
+                <!-- Populated dynamically by updateStatsCounts() -->
             </div>
         </div>
 
@@ -1321,8 +1696,26 @@
     <div class="panel" id="panel-missions">
         <h2 class="panel-title">Missions Monitor</h2>
         
+        <div class="missions-header" id="missions-header">
+            <div class="missions-count-badge">
+                Missions <span class="missions-count-number" id="missions-count">0</span>
+            </div>
+            <div class="missions-sync-status" id="missions-sync-status">
+                <span class="sync-dot" id="missions-sync-dot"></span>
+                <span id="missions-sync-text">Syncing...</span>
+            </div>
+        </div>
+        
+        <div class="stale-banner" id="missions-stale-banner">
+            <span class="stale-banner-icon">⚠</span>
+            <span id="missions-stale-text">Repo data may be stale — last synced over 25 hours ago.</span>
+        </div>
+        
         <div class="repos-grid" id="repos-grid">
-            <!-- Dynamic — populated by renderMissions() from repos.json -->
+            <div class="panel-loading-overlay" id="missions-loading">
+                <div class="loading-spinner"></div>
+                <div class="loading-label">Loading missions...</div>
+            </div>
         </div>
         <div class="repos-last-updated" id="repos-last-updated"></div>
 
@@ -1398,10 +1791,17 @@
 
         <div class="homepage-embed-section">
             <div class="homepage-embed-header">
-                <span class="homepage-embed-label">r-server Homepage</span>
+                <span class="homepage-embed-label">r-server Homepage <span class="ping-indicator" id="r-server-ping"><span class="ping-dot"></span><span id="r-server-ping-text">—</span></span></span>
                 <a href="http://100.84.224.18:8383" target="_blank" class="homepage-open-btn">Open in new tab ↗</a>
             </div>
-            <iframe src="http://100.84.224.18:8383" class="homepage-iframe" id="homepage-iframe"></iframe>
+            <div class="iframe-wrapper">
+                <iframe src="http://100.84.224.18:8383" class="homepage-iframe" id="homepage-iframe" onload="onIframeLoad()" onerror="onIframeError()"></iframe>
+                <div class="iframe-error-overlay" id="iframe-error-overlay">
+                    <div class="iframe-error-icon">⚠</div>
+                    <div class="iframe-error-text">r-server homepage is unreachable</div>
+                    <button class="iframe-error-retry" onclick="retryIframe()">Retry connection</button>
+                </div>
+            </div>
         </div>
 <div class="refresh" id="refreshRing">
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1977,23 +2377,28 @@ function renderStatsPanel(h) {
 }
 
 function renderMissions(data) {
-    // data is the repos.json array of {name, description, html_url, updated_at, private}
-    if (!data) return;
+    // Support envelope format {_fetched_at, repos} and legacy plain array
+    const isEnvelope = data && typeof data === 'object' && !Array.isArray(data) && data.repos;
+    const repos = isEnvelope ? data.repos : (Array.isArray(data) ? data : null);
+    const fetchedAt = isEnvelope ? data._fetched_at : null;
 
-    const reposGrid = document.getElementById('repos-grid');
-    const emptyMsg = document.getElementById('empty-missions-msg');
-    const lastUpdated = document.getElementById('repos-last-updated');
-
-    if (!data || data.length === 0) {
+    if (!repos || repos.length === 0) {
+        const reposGrid = document.getElementById('repos-grid');
+        const emptyMsg = document.getElementById('empty-missions-msg');
+        const lastUpdated = document.getElementById('repos-last-updated');
         if (reposGrid) reposGrid.style.display = 'none';
         if (emptyMsg) emptyMsg.style.display = 'flex';
         if (lastUpdated) lastUpdated.textContent = '';
         return;
     }
 
+    const reposGrid = document.getElementById('repos-grid');
+    const emptyMsg = document.getElementById('empty-missions-msg');
+    const lastUpdated = document.getElementById('repos-last-updated');
+
     if (reposGrid) {
         reposGrid.style.display = 'grid';
-        reposGrid.innerHTML = data.map(repo => {
+        reposGrid.innerHTML = repos.map(repo => {
             const visClass = repo.private ? 'private' : 'public';
             const visLabel = repo.private ? 'private' : 'public';
             const desc = repo.description
@@ -2020,9 +2425,20 @@ function renderMissions(data) {
 
     if (emptyMsg) emptyMsg.style.display = 'none';
 
-    // Show last-updated timestamp if provided in data
-    if (lastUpdated && data._fetched_at) {
-        lastUpdated.textContent = `Last synced: ${new Date(data._fetched_at).toLocaleString()}`;
+    // Show last-synced timestamp
+    if (fetchedAt) {
+        const fetchedDate = new Date(fetchedAt);
+        if (lastUpdated) lastUpdated.textContent = `Last synced: ${fetchedDate.toLocaleString()}`;
+        // Stale warning: if older than 25 hours
+        const hoursSince = (Date.now() - fetchedDate.getTime()) / 3600000;
+        const banner = document.getElementById('missions-stale-banner');
+        if (banner) {
+            if (hoursSince > 25) {
+                banner.classList.add('visible');
+            } else {
+                banner.classList.remove('visible');
+            }
+        }
     } else if (lastUpdated) {
         lastUpdated.textContent = '';
     }
@@ -2250,7 +2666,20 @@ function spawnParticle() {
     setTimeout(() => p.remove(), 25000);
 }
 
-// ── Boot ────────────────────────────────────────────────────────────────
+// ── Dashboard uptime ticker ─────────────────────────────────────────────────
+const dashboardStartTime = Date.now();
+function updateUptime() {
+    const elapsed = Date.now() - dashboardStartTime;
+    const h = Math.floor(elapsed / 3600000);
+    const m = Math.floor((elapsed % 3600000) / 60000);
+    const s = Math.floor((elapsed % 60000) / 1000);
+    const el = document.getElementById('dashboard-uptime');
+    if (el) el.textContent = `⏱ ${h}h ${m}m ${s}s`;
+}
+setInterval(updateUptime, 1000);
+updateUptime();
+
+// ── Boot ───────────────────────────────────────────────────────────────────
 
 loadAll();
 setInterval(loadAll, REFRESH_MS);

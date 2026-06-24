@@ -6,6 +6,7 @@ Run manually or via cron. Writes to /home/Aarz/agent-dashboard/repos.json.
 import json
 import subprocess
 import time
+from datetime import datetime, timezone
 
 GH_CLI = "gh"
 
@@ -61,7 +62,10 @@ def main():
         return
 
     # Attach fetch timestamp so UI can show "last synced"
-    payload = repos  # array of repo objects
+    payload = {
+        "_fetched_at": datetime.now(timezone.utc).isoformat(),
+        "repos": repos
+    }
 
     output_path = "/home/Aarz/agent-dashboard/repos.json"
     with open(output_path, "w") as f:
