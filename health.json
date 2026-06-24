@@ -1,0 +1,30 @@
+{
+  "local": {
+    "uptime": "23:00:44 up 31 days, 12:14,  1 user,  load average: 0.36, 0.16, 0.04",
+    "cpu": "0.36 0.16 0.04 1/1041 2780680",
+    "memory": "Mem:            31Gi       4.4Gi       5.7Gi        57Mi        21Gi        26Gi",
+    "disk": "/dev/sda2       233G  165G   57G  75% /",
+    "docker": "n8n-data-n8n-1: Up 2 days",
+    "hermes": "Running",
+    "status": "healthy"
+  },
+  "r_server": {
+    "uptime": {
+      "output": "23:00:45 up 4 days, 59 min,  3 users,  load average: 0.20, 0.24, 0.23",
+      "ok": true
+    },
+    "docker": {
+      "output": "nextcloud: Up 3 days\ncollabora: Up 3 days\nnextcloud-redis: Up 3 days\nhomepage: Up 3 days (healthy)\nimmich: Up 3 days (healthy)\nimmich-machine-learning: Up 3 days (healthy)\nimmich-postgres: Up 3 days\nimmich-redis: Up 3 days (healthy)\nvaultwarden: Up 3 days (healthy)\nglances: Up 3 days\nuptime-kuma: Up 3 days (healthy)",
+      "ok": true
+    },
+    "memory": {
+      "output": "total        used        free      shared  buff/cache   available\nMem:            31Gi       3.9Gi       1.1Gi       253Mi        26Gi        27Gi\nSwap:             0B          0B          0B",
+      "ok": true
+    },
+    "disk": {
+      "output": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda2       458G   33G  403G   8% /",
+      "ok": true
+    },
+    "status": "healthy"
+  }
+}

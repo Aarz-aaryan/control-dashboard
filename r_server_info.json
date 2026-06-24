@@ -1,0 +1,24 @@
+{
+  "docker_ps": {
+    "output": "nextcloud\tUp 3 days\t100.84.224.18:9080->80/tcp\ncollabora\tUp 3 days\t100.84.224.18:9980->9980/tcp\nnextcloud-redis\tUp 3 days\t6379/tcp\nhomepage\tUp 3 days (healthy)\t0.0.0.0:8383->3000/tcp, [::]:8383->3000/tcp\nimmich\tUp 3 days (healthy)\t0.0.0.0:2283->2283/tcp, [::]:2283->2283/tcp\nimmich-machine-learning\tUp 3 days (healthy)\t\nimmich-postgres\tUp 3 days\t5432/tcp\nimmich-redis\tUp 3 days (healthy)\t6379/tcp\nvaultwarden\tUp 3 days (healthy)\t100.84.224.18:8080->80/tcp\nglances\tUp 3 days\t\nuptime-kuma\tUp 3 days (healthy)\t0.0.0.0:3001->3001/tcp, [::]:3001->3001/tcp",
+    "ok": true
+  },
+  "docker_images": {
+    "output": "nextcloud\tlatest\t1.43GB\nghcr.io/gethomepage/homepage\tlatest\t259MB\ncollabora/code\tlatest\t1.45GB\nvalkey/valkey\t9\t125MB\nredis\t7-alpine\t39.1MB\nvaultwarden/server\tlatest\t256MB\nnicolargo/glances\tubuntu-latest-full\t565MB\nghcr.io/immich-app/immich-server\trelease\t2.12GB\nghcr.io/immich-app/immich-machine-learning\trelease\t1.36GB\nlouislam/uptime-kuma\t1\t448MB\ntensorchord/pgvecto-rs\tpg16-v0.2.0\t701MB",
+    "ok": true
+  },
+  "system": {
+    "uptime": {
+      "output": "23:00:46 up 4 days, 59 min,  3 users,  load average: 0.20, 0.24, 0.23",
+      "ok": true
+    },
+    "free_h": {
+      "output": "total        used        free      shared  buff/cache   available\nMem:            31Gi       3.9Gi       1.1Gi       253Mi        26Gi        27Gi\nSwap:             0B          0B          0B",
+      "ok": true
+    },
+    "df_h": {
+      "output": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda2       458G   33G  403G   8% /",
+      "ok": true
+    }
+  }
+}

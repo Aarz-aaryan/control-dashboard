@@ -1,0 +1,75 @@
+{
+  "_fetched_at": "2026-06-24T02:01:57.595864+00:00",
+  "repos": [
+    {
+      "name": "homepi",
+      "description": "Raspberry Pi homepi project \u2014 Adafruit TFT clock display, Pillow framebuffer, Open-Meteo weather, r-server status monitor",
+      "html_url": "https://github.com/Aarz-aaryan/homepi",
+      "updated_at": "2026-06-24T01:43:44Z",
+      "private": false
+    },
+    {
+      "name": "control-dashboard",
+      "description": "Hermes Agent Dashboard \u2014 centralized control hub for multi-agent orchestration, r-server management, and GitHub mission tracking",
+      "html_url": "https://github.com/Aarz-aaryan/control-dashboard",
+      "updated_at": "2026-06-24T00:48:41Z",
+      "private": false
+    },
+    {
+      "name": "r-server",
+      "description": "Resource Server (r-server) setup, configuration, and mission tracking for SkyEye Drone Media homelab",
+      "html_url": "https://github.com/Aarz-aaryan/r-server",
+      "updated_at": "2026-06-21T00:11:23Z",
+      "private": false
+    },
+    {
+      "name": "nina-agent",
+      "description": "Nina \u2014 SkyEye Drone Media research and documentation lead. Hermes agent profile.",
+      "html_url": "https://github.com/Aarz-aaryan/nina-agent",
+      "updated_at": "2026-06-15T17:54:47Z",
+      "private": false
+    },
+    {
+      "name": "agent-dashboard",
+      "description": "",
+      "html_url": "https://github.com/Aarz-aaryan/agent-dashboard",
+      "updated_at": "2026-06-08T20:29:55Z",
+      "private": true
+    },
+    {
+      "name": "portfolio-business",
+      "description": "Portfolio website business serving University City, Philadelphia",
+      "html_url": "https://github.com/Aarz-aaryan/portfolio-business",
+      "updated_at": "2026-06-07T19:26:43Z",
+      "private": false
+    },
+    {
+      "name": "n8n",
+      "description": "n8n automation status, workflow configs, and ops docs \u2014 maintained by Jarvis",
+      "html_url": "https://github.com/Aarz-aaryan/n8n",
+      "updated_at": "2026-06-02T00:19:33Z",
+      "private": false
+    },
+    {
+      "name": "skyeye-drone-media",
+      "description": "Aerial drone videography for real estate in University City, Philadelphia. We capture stunning 360-degree video and drone footage for property listings, commercial real estate, and residential clients.",
+      "html_url": "https://github.com/Aarz-aaryan/skyeye-drone-media",
+      "updated_at": "2026-05-31T18:42:18Z",
+      "private": false
+    },
+    {
+      "name": "skyeye-drone-mission",
+      "description": "Mission records and handover docs for SkyEye Drone Media \u2014 drone videography business in University City, Philadelphia",
+      "html_url": "https://github.com/Aarz-aaryan/skyeye-drone-mission",
+      "updated_at": "2026-05-15T19:22:01Z",
+      "private": false
+    },
+    {
+      "name": "hermes-agent-setup",
+      "description": "Complete backup & restoration guide for Hermes Agent multi-agent setup",
+      "html_url": "https://github.com/Aarz-aaryan/hermes-agent-setup",
+      "updated_at": "2026-05-05T02:57:29Z",
+      "private": false
+    }
+  ]
+}

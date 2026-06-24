@@ -2396,6 +2396,10 @@ function renderMissions(data) {
     const emptyMsg = document.getElementById('empty-missions-msg');
     const lastUpdated = document.getElementById('repos-last-updated');
 
+    // Update count badge
+    const countEl = document.getElementById('missions-count');
+    if (countEl) countEl.textContent = repos.length;
+
     if (reposGrid) {
         reposGrid.style.display = 'grid';
         reposGrid.innerHTML = repos.map(repo => {
@@ -2681,27 +2685,27 @@ updateUptime();
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 
-loadAll();
-setInterval(loadAll, REFRESH_MS);
-setInterval(spawnParticle, 1600);
-
-for (let i = 0; i < 12; i++) {
-    setTimeout(spawnParticle, i * 600);
-}
-
-// Redraw connecting lines on window resize/load to keep alignment perfect
-window.addEventListener('resize', drawTreeLines);
 window.addEventListener('load', () => {
+    loadAll();
+    setInterval(loadAll, REFRESH_MS);
+    setInterval(spawnParticle, 1600);
+
+    for (let i = 0; i < 12; i++) {
+        setTimeout(spawnParticle, i * 600);
+    }
+
+    // Redraw connecting lines on window resize/load to keep alignment perfect
+    window.addEventListener('resize', drawTreeLines);
     drawTreeLines();
     setTimeout(drawTreeLines, 500);
-});
 
-// Update card durations/timers every 30 seconds
-setInterval(() => {
-    if (!isFetching) {
-        AGENTS.forEach(a => updateCard(a, getCached(a.id)));
-    }
-}, 30000);
+    // Update card durations/timers every 30 seconds
+    setInterval(() => {
+        if (!isFetching) {
+            AGENTS.forEach(a => updateCard(a, getCached(a.id)));
+        }
+    }, 30000);
+});
 
 </script>
 </body>
