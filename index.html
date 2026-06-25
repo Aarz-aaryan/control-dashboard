@@ -1688,7 +1688,20 @@
     <div class="panel" id="panel-r-server">
         <h2 class="panel-title">r-server Control Hub</h2>
         
-
+        <div class="homepage-embed-section">
+            <div class="homepage-embed-header">
+                <span class="homepage-embed-label">r-server Homepage <span class="ping-indicator" id="r-server-ping"><span class="ping-dot"></span><span id="r-server-ping-text">—</span></span></span>
+                <a href="http://100.84.224.18:8383" target="_blank" class="homepage-open-btn">Open in new tab ↗</a>
+            </div>
+            <div class="iframe-wrapper">
+                <iframe src="http://100.84.224.18:8383" class="homepage-iframe" id="homepage-iframe" onload="onIframeLoad()" onerror="onIframeError()"></iframe>
+                <div class="iframe-error-overlay" id="iframe-error-overlay">
+                    <div class="iframe-error-icon">⚠</div>
+                    <div class="iframe-error-text">r-server homepage is unreachable</div>
+                    <button class="iframe-error-retry" onclick="retryIframe()">Retry connection</button>
+                </div>
+            </div>
+        </div>
 
         <!-- SYSTEM stats cards row -->
         <div class="stats-summary-row" id="r-server-sys-stats">
@@ -1739,21 +1752,6 @@
                             <!-- Rows -->
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="homepage-embed-section">
-            <div class="homepage-embed-header">
-                <span class="homepage-embed-label">r-server Homepage <span class="ping-indicator" id="r-server-ping"><span class="ping-dot"></span><span id="r-server-ping-text">—</span></span></span>
-                <a href="http://100.84.224.18:8383" target="_blank" class="homepage-open-btn">Open in new tab ↗</a>
-            </div>
-            <div class="iframe-wrapper">
-                <iframe src="http://100.84.224.18:8383" class="homepage-iframe" id="homepage-iframe" onload="onIframeLoad()" onerror="onIframeError()"></iframe>
-                <div class="iframe-error-overlay" id="iframe-error-overlay">
-                    <div class="iframe-error-icon">⚠</div>
-                    <div class="iframe-error-text">r-server homepage is unreachable</div>
-                    <button class="iframe-error-retry" onclick="retryIframe()">Retry connection</button>
                 </div>
             </div>
         </div>
