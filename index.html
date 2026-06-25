@@ -170,8 +170,8 @@
         .panel {
             display: none;
             width: 100%;
-            height: 100%;
-            overflow-y: auto;
+            height: 100vh;
+            overflow: hidden;
             padding: 32px 48px;
         }
         .panel.active {
@@ -180,11 +180,14 @@
         #panel-r-server {
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 90px);
+            height: 100%;
             overflow: hidden;
         }
         #panel-r-server:not(.active) {
             display: none;
+        }
+        #panel-agents, #panel-stats, #panel-missions {
+            overflow-y: auto;
         }
         
         .panel::-webkit-scrollbar {
