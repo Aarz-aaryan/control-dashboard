@@ -1,11 +1,11 @@
 {
   "_version": 1,
-  "_last_modified": "2026-06-27T04:05:40Z",
-  "_modified_by": "user",
+  "_last_modified": "2026-06-27T04:00:53Z",
+  "_modified_by": "system",
   "missions": {
     "skyeye-drone-mission": {
       "status": "active",
-      "updated_at": "2026-06-27T04:05:40Z"
+      "updated_at": "2026-06-27T04:00:53Z"
     }
   },
   "projects": [
