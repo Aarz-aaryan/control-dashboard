@@ -890,9 +890,15 @@
             border: 1px solid rgba(126, 181, 166, 0.3);
         }
         .status-pill.status-inactive {
-            background: rgba(217, 125, 100, 0.12);
+            background: rgba(217, 125, 100, 0.15);
             color: var(--terracotta);
-            border: 1px solid rgba(217, 125, 100, 0.3);
+            border: 1px solid rgba(217, 125, 100, 0.4);
+        }
+        .status-pill.status-unclassified {
+            background: rgba(120, 120, 130, 0.15);
+            color: #888;
+            border: 1px dashed rgba(120, 120, 130, 0.5);
+            font-style: italic;
         }
         .status-pill.status-project {
             background: rgba(196, 154, 108, 0.12);
@@ -2547,6 +2553,7 @@ function renderMissionsSections(repos, state) {
     const activeMissions = [];
     const inactiveMissions = [];
     const projects = [];
+    const unclassified = [];
 
     // First: process repos that are in our state
     for (const [name, entry] of Object.entries(missionsObj)) {
@@ -2555,6 +2562,15 @@ function renderMissionsSections(repos, state) {
         // deleted entries are hidden
     }
     for (const name of projectsList) projects.push(name);
+
+    // Then: any repo in repos.json that is neither a known mission nor project
+    const classifiedSet = new Set([
+        ...Object.keys(missionsObj),
+        ...projectsList,
+    ]);
+    for (const r of repos) {
+        if (!classifiedSet.has(r.name)) unclassified.push(r.name);
+    }
 
     const renderCard = (repoName, kind /* 'mission-active' | 'mission-inactive' | 'project' */) => {
         const repo = repoByName[repoName] || { name: repoName, description: '', updated_at: '', html_url: '#', private: false };
@@ -2578,10 +2594,17 @@ function renderMissionsSections(repos, state) {
             actions = `
                 <button class="action-btn action-toggle" data-mission-action="toggle" data-repo="${escapeHtml(repoName)}" title="Activate">▶ Activate</button>
                 <button class="action-btn action-delete" data-mission-action="delete" data-repo="${escapeHtml(repoName)}" title="Soft-delete">✕ Delete</button>`;
+        } else if (kind === 'unclassified') {
+            badge = '<span class="status-pill status-unclassified">? UNCLASSIFIED</span>';
+            actions = `
+                <button class="action-btn action-classify" data-mission-action="classify-project" data-repo="${escapeHtml(repoName)}" title="Classify as project">◆ Classify as Project</button>
+                <button class="action-btn action-promote" data-mission-action="promote" data-repo="${escapeHtml(repoName)}" title="Promote to active mission">◉ Promote to Mission</button>`;
         } else {
             badge = '<span class="status-pill status-project">◆ PROJECT</span>';
         }
-        const cardClass = kind === 'project' ? 'repo-card project-card' : 'repo-card mission-card ' + kind;
+        const cardClass = kind === 'project' ? 'repo-card project-card'
+            : kind === 'unclassified' ? 'repo-card unclassified-card'
+            : 'repo-card mission-card ' + kind;
         return `
             <div class="${cardClass}">
                 <a href="${escapeHtml(repo.html_url)}" target="_blank" class="repo-card-link">
@@ -2621,6 +2644,7 @@ function renderMissionsSections(repos, state) {
         section('ACTIVE MISSIONS', '◉', 'missions-count-active', activeMissions, 'mission-active'),
         section('INACTIVE MISSIONS', '○', 'missions-count-inactive', inactiveMissions, 'mission-inactive'),
         section('PROJECTS', '◆', 'missions-count-projects', projects, 'project'),
+        section('UNCLASSIFIED', '?', 'missions-count-unclassified', unclassified, 'unclassified'),
     ].filter(Boolean).join('');
 }
 
@@ -2671,6 +2695,23 @@ async function handleMissionAction(action, repo) {
         // Invalidate cache and re-render
         _missionsStateCache = null;
         _missionsStateTs = 0;
+        // Re-fetch state via the dedicated missions server (port 8001) — the writer
+        // just wrote the file there, so this is the freshest source available.
+        // Falls back to the static :8000 path if 8001 is unreachable.
+        let freshState = null;
+        try {
+            const stateRes = await fetch(`http://${window.location.hostname}:8001/api/missions/state`,
+                { cache: 'no-store' });
+            if (stateRes.ok) freshState = await stateRes.json();
+        } catch (e) {
+            console.warn('Could not fetch fresh state from :8001, falling back to :8000:', e);
+        }
+        if (freshState) {
+            // Seed the cache with the post-action authoritative state, then re-render.
+            // This eliminates any race between the post-action fetch and the 30s auto-refresh.
+            _missionsStateCache = freshState;
+            _missionsStateTs = Date.now();
+        }
         // Re-trigger render by calling renderMissions with cached repos data
         const reposRes = await fetch('/agent-dashboard/repos.json', { cache: 'no-store' });
         const reposData = await reposRes.json();
