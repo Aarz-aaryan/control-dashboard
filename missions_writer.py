@@ -325,8 +325,10 @@ def cmd_reorder_missions(repo_order: list) -> dict:
 
 def cmd_demote(repo: str) -> dict:
     """Move a mission to projects. Keeps the entry with status='inactive' so
-    it can be re-promoted later without losing priority/order. Removes from
-    projects list since it's now back in the missions dict (under inactive).
+    it can be re-promoted later without losing priority/order. ADDS the repo
+    back to state.projects (idempotent) so the renderer correctly shows it
+    in the Projects section — the renderer reads the project list from
+    state.projects[], not from missions[].status==='inactive'.
     """
     state = load_state()
     projects = state.setdefault("projects", [])
@@ -343,11 +345,13 @@ def cmd_demote(repo: str) -> dict:
         "status": "inactive",
         "updated_at": now_iso(),
     }
-    # Note: 'projects' list is the source of truth for un-missioned repos.
-    # We do NOT add the repo back to projects here — the project list is
-    # populated from repos.json on disk; demoting simply removes the mission
-    # from the active workflow. The repo will reappear in the Projects section
-    # automatically via the renderer's classification logic.
+    # Add the repo back to state.projects so the renderer classifies it as a project.
+    # Without this, the repo would only show up in the INACTIVE MISSIONS section
+    # (because missions[repo].status === 'inactive'), which doesn't match the
+    # user's mental model of "demoted = back to projects list".
+    if repo not in projects:
+        projects.append(repo)
+        projects.sort()
     save_state(state, modified_by="user")
     log_activity("user", "demote", repo, cur_status, "inactive")
     return emit(True, repo, cur_status, "inactive")
