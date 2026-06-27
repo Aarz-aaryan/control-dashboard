@@ -1,0 +1,22 @@
+{
+  "_version": 1,
+  "_last_modified": "2026-06-27T04:05:40Z",
+  "_modified_by": "user",
+  "missions": {
+    "skyeye-drone-mission": {
+      "status": "active",
+      "updated_at": "2026-06-27T04:05:40Z"
+    }
+  },
+  "projects": [
+    "agent-dashboard",
+    "homepi",
+    "control-dashboard",
+    "r-server",
+    "n8n",
+    "hermes-agent-setup",
+    "skyeye-drone-media",
+    "portfolio-business",
+    "nina-agent"
+  ]
+}
