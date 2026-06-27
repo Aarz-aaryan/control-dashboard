@@ -102,4 +102,4 @@ bash ~/.hermes/profiles/aarz/scripts/missions-watchdog.sh
 
 ## Repo History Note
 
-Prior to 2026-06-27, this project lived under a private `agent-dashboard` repo. On this date it was renamed/migrated to the public `control-dashboard` repo. Local git was re-pointed: `main` now tracks `control-dashboard/main`. The old `origin` remote (private agent-dashboard) is retained for historical reference but is no longer the canonical source. **Do not push to `origin`** — push to `control-dashboard`.
+Prior to 2026-06-27, this project lived under a private `agent-dashboard` repo. On this date it was renamed/migrated to the public `control-dashboard` repo. Local git was re-pointed: `main` tracks `control-dashboard/main`, and the stale `origin` remote was removed. **The folder name on disk remains `agent-dashboard/`** — this is intentional, as the static HTTP server's URL path (`/agent-dashboard/`) and the r-server iframe reference both depend on it. Renaming the folder would break those URLs. The repo name on GitHub is `control-dashboard`; the folder name locally is `agent-dashboard`.
