@@ -3,7 +3,7 @@
 **Live:** http://100.100.35.6:8000/agent-dashboard/
 **Repo:** https://github.com/Aarz-aaryan/control-dashboard (branch: main)
 **Local path:** `/home/Aarz/agent-dashboard/` (folder name retained for compatibility with static server)
-**Last commit:** `714e728` — Daemon hardening + gitignore runtime data (2026-06-27)
+**Last commit:** Phase 5 priority + drag-and-drop — pending push
 
 ## Mission
 
@@ -11,7 +11,34 @@ Hermes Agent Dashboard — centralized control hub for multi-agent orchestration
 
 ## Status
 
-**Active** — Phase 4 (Missions tab) deployed, watchdog running, all 12 commits pushed to canonical repo.
+**Active** — Phase 5 (priority + drag-and-drop) deployed, watchdog running, all commits pushed to canonical repo.
+
+## Phase 5 — Mission Priority & Drag-and-Drop (2026-06-27, commit pending)
+
+**Requested features (all shipped):**
+
+1. **Mission priority** — each active/inactive mission has a numeric priority (1-99). Lower = more important. Top mission = highest priority + lowest order number.
+2. **Drag project → missions** — drop a project card onto the Active Missions section to promote it.
+3. **Drag mission → projects** — drop a mission card onto the Projects section to demote it.
+4. **Drag-to-reorder** — drop a mission card onto another mission card to swap positions (changes display order, not priority).
+5. **Click-to-edit priority** — click any priority badge (`#1`, `#7`, etc.) to open an inline number input.
+6. **Morning Briefing integration** — cron `1e2da068fa94` STEP 2 now reads `missions_state.json` and sorts active missions by priority ASC. Top mission becomes the focus for STEP 3 (slot proposal).
+
+**Schema v2:** each mission now has `{status, priority, order, updated_at}`. Auto-migration from v1 on first state read (idempotent).
+
+**HTTP API additions:** `POST /api/missions/set-priority`, `POST /api/missions/reorder-missions`.
+
+**Writer commands:** `set-priority <repo> <N>`, `reorder-missions <a> <b> <c>...`, `promote [repo] [--priority N]`.
+
+**Bug found + fixed during build:** `cmd_toggle`, `cmd_delete`, `cmd_restore`, `cmd_set_status` were silently wiping `priority` and `order` fields on every status transition. Now they preserve all fields via `{**cur_entry, "status": nxt, "updated_at": now_iso()}`.
+
+## Phase 4 — Mission Management (2026-06-27)
+- [x] Mission state schema v2 (priority + order)
+- [x] Priority system + click-to-edit + drag-to-reorder
+- [x] Drag-and-drop UX (project ↔ mission ↔ reorder)
+- [x] Auto-migration v1 → v2 on first read
+- [x] Morning Briefing cron reads dashboard state
+- [x] HTTP API extended with set-priority + reorder-missions
 
 ## Tabs
 

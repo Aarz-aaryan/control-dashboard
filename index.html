@@ -872,7 +872,80 @@
         .mission-card.mission-active { border-color: rgba(126, 181, 166, 0.4); }
         .mission-card.mission-inactive { border-color: rgba(217, 125, 100, 0.3); opacity: 0.85; }
         .project-card { border-color: var(--card-border); }
-        .mission-card, .project-card { position: relative; }
+        .mission-card, .project-card { position: relative; cursor: grab; }
+        .mission-card.dragging, .project-card.dragging { opacity: 0.4; cursor: grabbing; }
+        .missions-section.drop-target .repos-grid-inner {
+            outline: 2px dashed var(--gold);
+            outline-offset: 4px;
+            background: rgba(196, 154, 108, 0.06);
+            transition: background 0.2s ease;
+        }
+
+        /* Priority badge on active missions */
+        .priority-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 26px;
+            height: 26px;
+            padding: 0 8px;
+            border-radius: 13px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .priority-badge.priority-top {
+            background: var(--gold);
+            color: #0a0e14;
+            box-shadow: 0 0 12px rgba(196, 154, 108, 0.5);
+        }
+        .priority-badge.priority-high {
+            background: rgba(196, 154, 108, 0.25);
+            color: var(--gold);
+            border: 1px solid rgba(196, 154, 108, 0.4);
+        }
+        .priority-badge.priority-normal {
+            background: rgba(126, 181, 166, 0.15);
+            color: var(--sage);
+            border: 1px solid rgba(126, 181, 166, 0.3);
+        }
+        .priority-badge:hover { transform: scale(1.1); }
+
+        /* Inline priority editor (appears when badge is clicked) */
+        .priority-editor {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .priority-editor input {
+            width: 48px;
+            padding: 4px 6px;
+            border: 1px solid var(--gold);
+            border-radius: 6px;
+            background: rgba(14, 20, 30, 0.9);
+            color: var(--gold);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.78rem;
+            text-align: center;
+        }
+        .priority-editor input:focus { outline: 1px solid var(--gold); }
+        .priority-editor button {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.65rem;
+            padding: 4px 8px;
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            background: rgba(22, 28, 38, 0.7);
+            color: var(--text-cream);
+            cursor: pointer;
+        }
+        .priority-editor button:hover { border-color: var(--gold); color: var(--gold); }
+
+        /* Drag handle hint (the whole card is draggable, but show a subtle cue) */
+        .mission-card .repo-name, .project-card .repo-name { padding-right: 4px; }
 
         /* Status pills */
         .status-pill {
@@ -2482,7 +2555,7 @@ function renderMissions(data) {
         if (reposGrid) {
             reposGrid.style.display = 'block';
             reposGrid.innerHTML = renderMissionsSections(repos, state);
-            // Wire click handlers
+            // Wire click handlers for action buttons
             reposGrid.querySelectorAll('[data-mission-action]').forEach(btn => {
                 btn.addEventListener('click', (ev) => {
                     ev.preventDefault();
@@ -2491,6 +2564,64 @@ function renderMissions(data) {
                     const repo = btn.getAttribute('data-repo');
                     handleMissionAction(action, repo);
                 });
+            });
+            // Wire click handlers for priority badges (open inline editor)
+            reposGrid.querySelectorAll('[data-priority-badge-for]').forEach(badge => {
+                badge.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    const repo = badge.getAttribute('data-priority-badge-for');
+                    openPriorityEditor(repo);
+                });
+            });
+            // Wire save/cancel buttons inside the (already-open) priority editor
+            reposGrid.querySelectorAll('[data-priority-save-for]').forEach(btn => {
+                btn.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    const repo = btn.getAttribute('data-priority-save-for');
+                    commitPriorityEditor(repo);
+                });
+            });
+            reposGrid.querySelectorAll('[data-priority-cancel-for]').forEach(btn => {
+                btn.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    const repo = btn.getAttribute('data-priority-cancel-for');
+                    closePriorityEditor(repo);
+                });
+            });
+            // ─── Drag & drop wiring ──────────────────────────────────
+            // Use event delegation on the grid so re-renders don't lose listeners.
+            // The handlers close over _dragSrc module-scope state.
+            reposGrid.addEventListener('dragstart', onDragStart);
+            reposGrid.addEventListener('dragend', onDragEnd);
+            reposGrid.addEventListener('dragover', (e) => {
+                // Try section drop first (promote/demote), then card reorder within missions
+                const section = e.target.closest('.missions-section[data-drop-kind]');
+                const missionCard = e.target.closest('.repo-card.mission-card');
+                if (section && (!_dragSrc || section.getAttribute('data-drop-kind') !== _dragSrc.kind)) {
+                    onDragOver(e);
+                } else if (missionCard && _dragSrc && _dragSrc.kind === 'mission') {
+                    onDragOverMissionCard(e);
+                }
+            });
+            reposGrid.addEventListener('dragleave', (e) => {
+                // Distinguish section-leave from card-leave based on target
+                if (e.target.closest('.missions-section') && !e.target.closest('.repo-card.mission-card')) {
+                    onDragLeave(e);
+                } else if (e.target.closest('.repo-card.mission-card')) {
+                    onDragLeaveMissionCard(e);
+                }
+            });
+            reposGrid.addEventListener('drop', (e) => {
+                const section = e.target.closest('.missions-section[data-drop-kind]');
+                const missionCard = e.target.closest('.repo-card.mission-card');
+                if (section && (!_dragSrc || section.getAttribute('data-drop-kind') !== _dragSrc.kind)) {
+                    onDrop(e);
+                } else if (missionCard && _dragSrc && _dragSrc.kind === 'mission') {
+                    onDropOnMissionCard(e);
+                }
             });
         }
         if (emptyMsg) emptyMsg.style.display = 'none';
@@ -2550,13 +2681,28 @@ function renderMissionsSections(repos, state) {
     const repoByName = {};
     for (const r of repos) repoByName[r.name] = r;
 
+    // Sort missions by (priority ASC, order ASC, name ASC) — top of list = highest priority
+    const sortedMissionNames = Object.keys(missionsObj).sort((a, b) => {
+        const ea = missionsObj[a] || {};
+        const eb = missionsObj[b] || {};
+        const pa = (typeof ea.priority === 'number') ? ea.priority : 99;
+        const pb = (typeof eb.priority === 'number') ? eb.priority : 99;
+        if (pa !== pb) return pa - pb;
+        const oa = (typeof ea.order === 'number') ? ea.order : 999;
+        const ob = (typeof eb.order === 'number') ? eb.order : 999;
+        if (oa !== ob) return oa - ob;
+        return a.localeCompare(b);
+    });
+
     const activeMissions = [];
     const inactiveMissions = [];
     const projects = [];
     const unclassified = [];
 
-    // First: process repos that are in our state
-    for (const [name, entry] of Object.entries(missionsObj)) {
+    // First: process missions in sorted order so high-priority missions render first
+    for (const name of sortedMissionNames) {
+        const entry = missionsObj[name];
+        if (!entry) continue;
         if (entry.status === 'active') activeMissions.push(name);
         else if (entry.status === 'inactive') inactiveMissions.push(name);
         // deleted entries are hidden
@@ -2572,7 +2718,27 @@ function renderMissionsSections(repos, state) {
         if (!classifiedSet.has(r.name)) unclassified.push(r.name);
     }
 
-    const renderCard = (repoName, kind /* 'mission-active' | 'mission-inactive' | 'project' */) => {
+    // Decide visual priority class from numeric priority
+    const priorityClass = (p) => {
+        if (typeof p !== 'number') return 'priority-normal';
+        if (p <= 3) return 'priority-top';
+        if (p <= 10) return 'priority-high';
+        return 'priority-normal';
+    };
+
+    // Build inline priority editor (rendered when badge is clicked)
+    const renderPriorityEditor = (repoName, currentPriority) => {
+        const safeRepo = escapeHtml(repoName);
+        return `
+            <span class="priority-editor" data-priority-editor-for="${safeRepo}">
+                <input type="number" min="1" max="99" value="${currentPriority}" data-priority-input-for="${safeRepo}" />
+                <button data-priority-save-for="${safeRepo}" title="Save">✓</button>
+                <button data-priority-cancel-for="${safeRepo}" title="Cancel">✕</button>
+            </span>
+        `;
+    };
+
+    const renderCard = (repoName, kind /* 'mission-active' | 'mission-inactive' | 'project' | 'unclassified' */) => {
         const repo = repoByName[repoName] || { name: repoName, description: '', updated_at: '', html_url: '#', private: false };
         const visClass = repo.private ? 'private' : 'public';
         const visLabel = repo.private ? 'private' : 'public';
@@ -2584,8 +2750,19 @@ function renderMissionsSections(repos, state) {
             : '—';
         let badge = '';
         let actions = '';
+        // Priority is only meaningful for active missions (the most-urgent list).
+        // For inactive missions we show the stored priority too so it persists across toggles.
+        const entry = missionsObj[repoName] || {};
+        const priorityVal = (typeof entry.priority === 'number') ? entry.priority : null;
+        let priorityBadgeHtml = '';
+        if (priorityVal !== null) {
+            const pClass = priorityClass(priorityVal);
+            const safeRepo = escapeHtml(repoName);
+            const pLabel = priorityVal === 1 ? '#1' : `#${priorityVal}`;
+            priorityBadgeHtml = `<span class="priority-badge ${pClass}" data-priority-badge-for="${safeRepo}" title="Click to edit priority (1=most important, 99=least)">${pLabel}</span>`;
+        }
         if (kind === 'mission-active') {
-            badge = '<span class="status-pill status-active">● ACTIVE</span>';
+            badge = `<span class="status-pill status-active">● ACTIVE</span>`;
             actions = `
                 <button class="action-btn action-toggle" data-mission-action="toggle" data-repo="${escapeHtml(repoName)}" title="Deactivate">⏸ Deactivate</button>
                 <button class="action-btn action-delete" data-mission-action="delete" data-repo="${escapeHtml(repoName)}" title="Soft-delete">✕ Delete</button>`;
@@ -2605,29 +2782,37 @@ function renderMissionsSections(repos, state) {
         const cardClass = kind === 'project' ? 'repo-card project-card'
             : kind === 'unclassified' ? 'repo-card unclassified-card'
             : 'repo-card mission-card ' + kind;
+        // draggable: project cards drag to missions section (promote); mission cards drag to projects (demote)
+        // unclassified cards don't drag — they have explicit promote/classify buttons.
+        const draggable = (kind === 'project' || kind === 'mission-active' || kind === 'mission-inactive');
+        const dragKind = kind === 'project' ? 'project'
+            : (kind === 'mission-active' || kind === 'mission-inactive') ? 'mission'
+            : 'none';
         return `
-            <div class="${cardClass}">
+            <div class="${cardClass}" draggable="${draggable}" data-drag-kind="${dragKind}" data-repo="${escapeHtml(repoName)}">
                 <a href="${escapeHtml(repo.html_url)}" target="_blank" class="repo-card-link">
                     <div class="repo-card-top">
                         <span class="repo-name">${escapeHtml(repo.name)}</span>
+                        ${priorityBadgeHtml}
                         <span class="repo-visibility ${visClass}">${visLabel}</span>
                     </div>
                     ${desc}
-                    <div class="repo-meta">
-                        <span class="repo-meta-item">${badge}</span>
-                        <span class="repo-meta-item" style="margin-left:auto;">${updated}</span>
+                    <div class="repo-card-bottom">
+                        ${badge}
+                        <span class="repo-updated">${updated}</span>
                     </div>
                 </a>
-                ${actions ? `<div class="repo-card-actions">${actions}</div>` : ''}
+                ${actions ? `<div class="repo-actions">${actions}</div>` : ''}
             </div>
         `;
     };
 
-    const section = (title, icon, countId, items, kind) => {
+    const section = (title, icon, countId, items, kind, dropKind) => {
         if (items.length === 0) return '';
         const countElId = countId;
+        const dropAttr = dropKind ? `data-drop-kind="${dropKind}"` : '';
         return `
-            <div class="missions-section ${kind}">
+            <div class="missions-section ${kind}" ${dropAttr}>
                 <div class="missions-section-header">
                     <span class="missions-section-icon">${icon}</span>
                     <span class="missions-section-title">${title}</span>
@@ -2640,11 +2825,14 @@ function renderMissionsSections(repos, state) {
         `;
     };
 
+    // Drop zones: project cards drop into mission sections → promote.
+    //                mission cards drop into project section → demote.
+    //                missions can also be reordered within mission sections (handled separately).
     return [
-        section('ACTIVE MISSIONS', '◉', 'missions-count-active', activeMissions, 'mission-active'),
-        section('INACTIVE MISSIONS', '○', 'missions-count-inactive', inactiveMissions, 'mission-inactive'),
-        section('PROJECTS', '◆', 'missions-count-projects', projects, 'project'),
-        section('UNCLASSIFIED', '?', 'missions-count-unclassified', unclassified, 'unclassified'),
+        section('ACTIVE MISSIONS', '◉', 'missions-count-active', activeMissions, 'mission-active', 'mission'),
+        section('INACTIVE MISSIONS', '○', 'missions-count-inactive', inactiveMissions, 'mission-inactive', 'mission'),
+        section('PROJECTS', '◆', 'missions-count-projects', projects, 'project', 'project'),
+        section('UNCLASSIFIED', '?', 'missions-count-unclassified', unclassified, 'unclassified', null),
     ].filter(Boolean).join('');
 }
 
@@ -2725,6 +2913,230 @@ async function handleMissionAction(action, repo) {
         document.querySelectorAll(`[data-mission-action="${action}"][data-repo="${CSS.escape(repo)}"]`)
             .forEach(btn => { btn.disabled = false; btn.classList.remove('action-busy'); });
     }
+}
+
+// ─── Priority editor (click badge → inline number input → save) ────────────
+function openPriorityEditor(repo) {
+    // Hide the badge, show the editor inline
+    const badge = document.querySelector(`[data-priority-badge-for="${CSS.escape(repo)}"]`);
+    const card = badge ? badge.closest('.repo-card') : null;
+    if (!card) return;
+    const existing = card.querySelector(`[data-priority-editor-for="${CSS.escape(repo)}"]`);
+    if (existing) return; // already open
+    // Read current priority from state cache (or fallback to badge text)
+    let current = 99;
+    try {
+        const state = _missionsStateCache || {};
+        const entry = (state.missions || {})[repo];
+        if (entry && typeof entry.priority === 'number') current = entry.priority;
+    } catch (_) {}
+    if (badge) badge.style.display = 'none';
+    // Insert editor into card-top after the (hidden) badge
+    const editorHtml = `
+        <span class="priority-editor" data-priority-editor-for="${repo}">
+            <input type="number" min="1" max="99" value="${current}" data-priority-input-for="${repo}" />
+            <button data-priority-save-for="${repo}" title="Save">✓</button>
+            <button data-priority-cancel-for="${repo}" title="Cancel">✕</button>
+        </span>
+    `;
+    if (badge) badge.insertAdjacentHTML('afterend', editorHtml);
+    else card.querySelector('.repo-card-top').insertAdjacentHTML('beforeend', editorHtml);
+    const input = card.querySelector(`[data-priority-input-for="${CSS.escape(repo)}"]`);
+    if (input) {
+        input.focus();
+        input.select();
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commitPriorityEditor(repo); }
+            else if (e.key === 'Escape') { e.preventDefault(); closePriorityEditor(repo); }
+        });
+    }
+}
+
+function closePriorityEditor(repo) {
+    const editor = document.querySelector(`[data-priority-editor-for="${CSS.escape(repo)}"]`);
+    if (editor) editor.remove();
+    const badge = document.querySelector(`[data-priority-badge-for="${CSS.escape(repo)}"]`);
+    if (badge) badge.style.display = '';
+}
+
+async function commitPriorityEditor(repo) {
+    const input = document.querySelector(`[data-priority-input-for="${CSS.escape(repo)}"]`);
+    if (!input) return;
+    const newPrio = parseInt(input.value, 10);
+    if (!Number.isFinite(newPrio) || newPrio < 1 || newPrio > 99) {
+        alert(`Priority must be a number 1–99 (got "${input.value}")`);
+        return;
+    }
+    // Optimistic close
+    closePriorityEditor(repo);
+    await postMissionAction('set-priority', repo, { priority: newPrio });
+}
+
+async function postMissionAction(action, repo, extraBody = {}) {
+    // Generic helper used by drag/drop and priority editor.
+    // Some actions (reorder-missions) don't take a repo — pass repo=null for those.
+    const key = `${action}:${repo || '<no-repo>'}:${JSON.stringify(extraBody)}`;
+    if (_missionActionInFlight.has(key)) return;
+    _missionActionInFlight.add(key);
+    try {
+        const url = `http://${window.location.hostname}:8001/api/missions/${action}`;
+        const body = (action === 'reorder-missions')
+            ? { ...extraBody }
+            : { repo, ...extraBody };
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+            alert(`Mission ${action} failed: ${data.error || res.status}`);
+            return false;
+        }
+        // Refresh cache + re-render
+        _missionsStateCache = null;
+        _missionsStateTs = 0;
+        try {
+            const stateRes = await fetch(`http://${window.location.hostname}:8001/api/missions/state`, { cache: 'no-store' });
+            if (stateRes.ok) {
+                _missionsStateCache = await stateRes.json();
+                _missionsStateTs = Date.now();
+            }
+        } catch (_) {}
+        const reposRes = await fetch('/agent-dashboard/repos.json', { cache: 'no-store' });
+        const reposData = await reposRes.json();
+        renderMissions(reposData);
+        return true;
+    } catch (e) {
+        alert(`Network error: ${e.message}`);
+        return false;
+    } finally {
+        _missionActionInFlight.delete(key);
+    }
+}
+
+// ─── Drag & drop handlers ───────────────────────────────────────────────────
+// State for the in-flight drag operation. Module-scoped to avoid parameter-drilling.
+let _dragSrc = null;          // {repo, kind} of the card being dragged
+let _lastDragOverSection = null; // the missions-section the cursor is currently over
+
+function onDragStart(e) {
+    const card = e.target.closest('.repo-card[draggable="true"]');
+    if (!card) return;
+    _dragSrc = {
+        repo: card.getAttribute('data-repo'),
+        kind: card.getAttribute('data-drag-kind'), // 'project' | 'mission'
+    };
+    card.classList.add('dragging');
+    // Required for Firefox to actually start the drag
+    try { e.dataTransfer.setData('text/plain', _dragSrc.repo); } catch (_) {}
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragEnd(e) {
+    const card = e.target.closest('.repo-card');
+    if (card) card.classList.remove('dragging');
+    // Clear any drop-target highlights
+    document.querySelectorAll('.missions-section.drop-target').forEach(s => s.classList.remove('drop-target'));
+    _dragSrc = null;
+    _lastDragOverSection = null;
+}
+
+function onDragOver(e) {
+    if (!_dragSrc) return;
+    const section = e.target.closest('.missions-section[data-drop-kind]');
+    if (!section) return;
+    const targetKind = section.getAttribute('data-drop-kind'); // 'mission' | 'project'
+    // Only allow drag into the OPPOSITE kind (project ↔ mission)
+    if (targetKind === _dragSrc.kind) return;
+    e.preventDefault(); // signals this is a valid drop target
+    e.dataTransfer.dropEffect = 'move';
+    if (section !== _lastDragOverSection) {
+        if (_lastDragOverSection) _lastDragOverSection.classList.remove('drop-target');
+        section.classList.add('drop-target');
+        _lastDragOverSection = section;
+    }
+}
+
+function onDragLeave(e) {
+    // Only clear highlight if the cursor truly left the section (not just crossed a child)
+    const section = e.target.closest('.missions-section');
+    if (!section) return;
+    if (!section.contains(e.relatedTarget)) {
+        section.classList.remove('drop-target');
+        if (_lastDragOverSection === section) _lastDragOverSection = null;
+    }
+}
+
+async function onDrop(e) {
+    if (!_dragSrc) return;
+    const section = e.target.closest('.missions-section[data-drop-kind]');
+    if (!section) return;
+    const targetKind = section.getAttribute('data-drop-kind');
+    if (targetKind === _dragSrc.kind) return;
+    e.preventDefault();
+    section.classList.remove('drop-target');
+
+    const src = _dragSrc;
+    _dragSrc = null;
+
+    if (src.kind === 'project' && targetKind === 'mission') {
+        // Promote: project → active mission
+        await postMissionAction('promote', src.repo, {});
+    } else if (src.kind === 'mission' && targetKind === 'project') {
+        // Demote: mission → project (removes from missions dict, adds to projects)
+        await postMissionAction('demote', src.repo, {});
+    }
+}
+
+// Reorder within active missions by drag-rearrange: drag onto another mission card → move dragged to that position
+function onDragOverMissionCard(e) {
+    if (!_dragSrc || _dragSrc.kind !== 'mission') return;
+    const targetCard = e.target.closest('.repo-card.mission-card');
+    if (!targetCard || targetCard === e.target.closest('.repo-card[draggable="true"][class*="dragging"]')) return;
+    // Highlight the target card as a reorder target
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    targetCard.style.outline = '2px solid var(--gold)';
+}
+
+function onDragLeaveMissionCard(e) {
+    const targetCard = e.target.closest('.repo-card.mission-card');
+    if (targetCard && !targetCard.contains(e.relatedTarget)) {
+        targetCard.style.outline = '';
+    }
+}
+
+async function onDropOnMissionCard(e) {
+    if (!_dragSrc || _dragSrc.kind !== 'mission') return;
+    const targetCard = e.target.closest('.repo-card.mission-card');
+    if (!targetCard) return;
+    const targetRepo = targetCard.getAttribute('data-repo');
+    if (!targetRepo || targetRepo === _dragSrc.repo) return;
+    e.preventDefault();
+    targetCard.style.outline = '';
+    // Build new order: dragSrc moves to targetRepo's position
+    const state = _missionsStateCache || {};
+    const missions = state.missions || {};
+    // Current display order: sort by priority then order (matches render)
+    const ordered = Object.keys(missions)
+        .filter(n => missions[n] && missions[n].status !== 'deleted')
+        .sort((a, b) => {
+            const pa = missions[a].priority || 99, pb = missions[b].priority || 99;
+            if (pa !== pb) return pa - pb;
+            const oa = missions[a].order || 999, ob = missions[b].order || 999;
+            if (oa !== ob) return oa - ob;
+            return a.localeCompare(b);
+        });
+    const srcIdx = ordered.indexOf(_dragSrc.repo);
+    let tgtIdx = ordered.indexOf(targetRepo);
+    if (srcIdx === -1 || tgtIdx === -1) return;
+    // Remove src from list, insert at tgtIdx
+    ordered.splice(srcIdx, 1);
+    if (srcIdx < tgtIdx) tgtIdx--;
+    ordered.splice(tgtIdx, 0, _dragSrc.repo);
+    _dragSrc = null;
+    await postMissionAction('reorder-missions', null, { order: ordered });
 }
 
 const _missionActionInFlight = new Set();
