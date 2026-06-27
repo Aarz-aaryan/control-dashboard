@@ -2616,10 +2616,15 @@ function renderMissions(data) {
             reposGrid.addEventListener('dragstart', onDragStart);
             reposGrid.addEventListener('dragend', onDragEnd);
             reposGrid.addEventListener('dragover', (e) => {
-                // Try section drop first (promote/demote), then card reorder within missions
-                const section = e.target.closest('.missions-section[data-drop-kind]');
+                // Try section drop first (any valid drop-section), then card reorder within missions.
+                // Sections: mission-active | mission-inactive | project. Unclassified is not droppable.
+                const section = e.target.closest('.missions-section[data-drop-section]');
+                const dropSection = section ? section.getAttribute('data-drop-section') : null;
+                const isDroppable = dropSection && dropSection !== 'unclassified';
                 const missionCard = e.target.closest('.repo-card.mission-card');
-                if (section && (!_dragSrc || section.getAttribute('data-drop-kind') !== _dragSrc.kind)) {
+                if (isDroppable) {
+                    // Allow drop on any droppable section regardless of src kind —
+                    // routing (promote / demote / toggle) is decided in onDrop.
                     onDragOver(e);
                 } else if (missionCard && _dragSrc && _dragSrc.kind === 'mission') {
                     onDragOverMissionCard(e);
@@ -2634,9 +2639,11 @@ function renderMissions(data) {
                 }
             });
             reposGrid.addEventListener('drop', (e) => {
-                const section = e.target.closest('.missions-section[data-drop-kind]');
+                const section = e.target.closest('.missions-section[data-drop-section]');
+                const dropSection = section ? section.getAttribute('data-drop-section') : null;
+                const isDroppable = dropSection && dropSection !== 'unclassified';
                 const missionCard = e.target.closest('.repo-card.mission-card');
-                if (section && (!_dragSrc || section.getAttribute('data-drop-kind') !== _dragSrc.kind)) {
+                if (isDroppable) {
                     onDrop(e);
                 } else if (missionCard && _dragSrc && _dragSrc.kind === 'mission') {
                     onDropOnMissionCard(e);
@@ -2830,18 +2837,29 @@ function renderMissionsSections(repos, state) {
         `;
     };
 
-    const section = (title, icon, countId, items, kind, dropKind) => {
+    // Static per-section drop hint — describes what HAPPENS when you drop a CARD here.
+    // We don't know the source kind at render time, so the text is generic per section.
+    // The actual routing (promote / demote / toggle) happens in onDrop based on src+target.
+    const sectionDropHint = (sectionKind) => {
+        if (sectionKind === 'mission-active') return 'Drop here — promotes project, or reactivates an inactive mission';
+        if (sectionKind === 'mission-inactive') return 'Drop here — promotes project, or deactivates an active mission';
+        if (sectionKind === 'project') return 'Drop here — demotes any mission back to a project';
+        return null;
+    };
+
+    const section = (title, icon, countId, items, kind) => {
         // Always render the section, even when empty — so users have a visible drop target
         // when they want to drag a project to become a mission (or vice versa).
+        // data-drop-section is the SPECIFIC section id — used by drop handlers to route
+        // project↔mission (promote/demote) AND mission↔mission (toggle active↔inactive).
         const countElId = countId;
-        const dropAttr = dropKind ? `data-drop-kind="${dropKind}"` : '';
         const inner = items.length === 0
-            ? (dropKind
-                ? `<div class="missions-empty-hint">Drop here to ${dropKind === 'mission' ? 'promote to mission' : 'demote to project'}</div>`
-                : `<div class="missions-empty-hint">No repos in this category</div>`)
+            ? (kind === 'unclassified'
+                ? `<div class="missions-empty-hint">No repos in this category</div>`
+                : `<div class="missions-empty-hint">${sectionDropHint(kind) || 'Drop here'}</div>`)
             : `<div class="repos-grid-inner">${items.map(n => renderCard(n, kind)).join('')}</div>`;
         return `
-            <div class="missions-section ${kind}" ${dropAttr}>
+            <div class="missions-section ${kind}" data-drop-section="${kind}">
                 <div class="missions-section-header">
                     <span class="missions-section-icon">${icon}</span>
                     <span class="missions-section-title">${title}</span>
@@ -2852,14 +2870,20 @@ function renderMissionsSections(repos, state) {
         `;
     };
 
-    // Drop zones: project cards drop into mission sections → promote.
-    //                mission cards drop into project section → demote.
-    //                missions can also be reordered within mission sections (handled separately).
+    // Drop zones — full bidirectional drag-and-drop:
+    //   project          → mission-active/mission-inactive → promote (always lands in active)
+    //   mission-active   → mission-inactive                → toggle (deactivate)
+    //   mission-inactive → mission-active                  → toggle (activate)
+    //   mission-active   → project                         → demote
+    //   mission-inactive → project                         → demote
+    //   project          → project                         → no-op (could reorder later)
+    //   mission-*        → same section                    → no-op
+    //   unclassified has no drop-section (cards there don't drag)
     return [
-        section('ACTIVE MISSIONS', '◉', 'missions-count-active', activeMissions, 'mission-active', 'mission'),
-        section('INACTIVE MISSIONS', '○', 'missions-count-inactive', inactiveMissions, 'mission-inactive', 'mission'),
-        section('PROJECTS', '◆', 'missions-count-projects', projects, 'project', 'project'),
-        section('UNCLASSIFIED', '?', 'missions-count-unclassified', unclassified, 'unclassified', null),
+        section('ACTIVE MISSIONS', '◉', 'missions-count-active', activeMissions, 'mission-active'),
+        section('INACTIVE MISSIONS', '○', 'missions-count-inactive', inactiveMissions, 'mission-inactive'),
+        section('PROJECTS', '◆', 'missions-count-projects', projects, 'project'),
+        section('UNCLASSIFIED', '?', 'missions-count-unclassified', unclassified, 'unclassified'),
     ].filter(Boolean).join('');
 }
 
@@ -3044,7 +3068,9 @@ async function postMissionAction(action, repo, extraBody = {}) {
 
 // ─── Drag & drop handlers ───────────────────────────────────────────────────
 // State for the in-flight drag operation. Module-scoped to avoid parameter-drilling.
-let _dragSrc = null;          // {repo, kind} of the card being dragged
+let _dragSrc = null;          // {repo, kind, section} of the card being dragged
+                                  //   kind    : 'project' | 'mission' (from data-drag-kind on the <a>)
+                                  //   section : 'mission-active' | 'mission-inactive' | 'project' (from data-drop-section on the section containing the card)
 let _lastDragOverSection = null; // the missions-section the cursor is currently over
 
 function onDragStart(e) {
@@ -3053,9 +3079,12 @@ function onDragStart(e) {
     // (or the element itself) and use it as the drag source.
     const card = e.target.closest('[data-drag-kind]:not([data-drag-kind="none"])');
     if (!card) return;
+    // Find which section this card lives in — used by onDrop to route mission-active ↔ inactive.
+    const srcSectionEl = card.closest('.missions-section[data-drop-section]');
     _dragSrc = {
         repo: card.getAttribute('data-repo'),
         kind: card.getAttribute('data-drag-kind'), // 'project' | 'mission'
+        section: srcSectionEl ? srcSectionEl.getAttribute('data-drop-section') : null,
     };
     // Visual cue: highlight the whole .repo-card (the outer div) for clarity
     const outerCard = card.closest('.repo-card') || card;
@@ -3076,11 +3105,13 @@ function onDragEnd(e) {
 
 function onDragOver(e) {
     if (!_dragSrc) return;
-    const section = e.target.closest('.missions-section[data-drop-kind]');
+    const section = e.target.closest('.missions-section[data-drop-section]');
     if (!section) return;
-    const targetKind = section.getAttribute('data-drop-kind'); // 'mission' | 'project'
-    // Only allow drag into the OPPOSITE kind (project ↔ mission)
-    if (targetKind === _dragSrc.kind) return;
+    const targetSection = section.getAttribute('data-drop-section'); // 'mission-active' | 'mission-inactive' | 'project'
+    if (targetSection === 'unclassified') return;
+    // Allow drop on ANY droppable section. The same-section case (mission → same mission section,
+    // project → project) is a no-op in onDrop; we still allow dragover so the highlight shows
+    // user feedback even if the drop ultimately does nothing.
     e.preventDefault(); // signals this is a valid drop target
     e.dataTransfer.dropEffect = 'move';
     if (section !== _lastDragOverSection) {
@@ -3102,23 +3133,42 @@ function onDragLeave(e) {
 
 async function onDrop(e) {
     if (!_dragSrc) return;
-    const section = e.target.closest('.missions-section[data-drop-kind]');
+    const section = e.target.closest('.missions-section[data-drop-section]');
     if (!section) return;
-    const targetKind = section.getAttribute('data-drop-kind');
-    if (targetKind === _dragSrc.kind) return;
+    const targetSection = section.getAttribute('data-drop-section'); // 'mission-active' | 'mission-inactive' | 'project'
+    if (targetSection === 'unclassified') return;
     e.preventDefault();
     section.classList.remove('drop-target');
 
     const src = _dragSrc;
     _dragSrc = null;
 
-    if (src.kind === 'project' && targetKind === 'mission') {
-        // Promote: project → active mission
+    // Full bidirectional routing matrix:
+    //   project          → mission-active      → promote (lands in active)
+    //   project          → mission-inactive    → promote (lands in active — caller prefers active)
+    //   mission-active   → mission-inactive    → toggle (deactivate)
+    //   mission-inactive → mission-active      → toggle (activate)
+    //   mission-active   → project             → demote
+    //   mission-inactive → project             → demote
+    //   project          → project             → no-op (could reorder later)
+    //   mission-*        → same section        → no-op (already there)
+    const srcKind = src.kind;       // 'project' | 'mission'
+    const srcSection = src.section; // 'mission-active' | 'mission-inactive' | 'project' (set in onDragStart)
+
+    if (srcKind === 'project' && (targetSection === 'mission-active' || targetSection === 'mission-inactive')) {
+        // Promote project → mission (always lands active; status set by promote cmd)
         await postMissionAction('promote', src.repo, {});
-    } else if (src.kind === 'mission' && targetKind === 'project') {
-        // Demote: mission → project (removes from missions dict, adds to projects)
+    } else if (srcKind === 'mission' && srcSection === 'mission-active' && targetSection === 'mission-inactive') {
+        // Active → inactive: toggle off
+        await postMissionAction('toggle', src.repo, {});
+    } else if (srcKind === 'mission' && srcSection === 'mission-inactive' && targetSection === 'mission-active') {
+        // Inactive → active: toggle on
+        await postMissionAction('toggle', src.repo, {});
+    } else if (srcKind === 'mission' && targetSection === 'project') {
+        // Any mission → project (demote). Preserves entry as inactive per cmd_demote fix.
         await postMissionAction('demote', src.repo, {});
     }
+    // All other cases (project→project, mission→same section) are no-ops by design.
 }
 
 // Reorder within active missions by drag-rearrange: drag onto another mission card → move dragged to that position
