@@ -70,11 +70,15 @@ def load_state() -> dict:
 def save_state(state: dict) -> None:
     state["_last_modified"] = now_iso()
     state["_modified_by"] = "system"
-    tmp = STATE_FILE.with_suffix(".tmp")
+    # Unique tmp per PID to avoid races when multiple writers/daemons run concurrently.
+    import os
+    tmp = STATE_FILE.with_suffix(f".tmp.{os.getpid()}.{os.getpid() % 1000}")
     with tmp.open("w") as f:
         json.dump(state, f, indent=2, sort_keys=False)
         f.write("\n")
-    tmp.replace(STATE_FILE)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, STATE_FILE)
 
 
 def log_activity(action: str, repo: str, frm: str | None, to: str | None) -> None:

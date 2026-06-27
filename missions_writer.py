@@ -49,11 +49,16 @@ def load_state() -> dict:
 def save_state(state: dict, modified_by: str = "user") -> None:
     state["_last_modified"] = now_iso()
     state["_modified_by"] = modified_by
-    tmp = STATE_FILE.with_suffix(".tmp")
+    # Use a unique tmp path per process to avoid races when multiple writers run concurrently.
+    import os
+    tmp = STATE_FILE.with_suffix(f".tmp.{os.getpid()}.{os.getpid() % 1000}")
     with tmp.open("w") as f:
         json.dump(state, f, indent=2, sort_keys=False)
         f.write("\n")
-    tmp.replace(STATE_FILE)
+        f.flush()
+        os.fsync(f.fileno())
+    # Use os.replace for atomic rename (POSIX-guaranteed atomic).
+    os.replace(tmp, STATE_FILE)
 
 
 def log_activity(actor: str, action: str, repo: str, frm: str | None, to: str | None) -> None:
@@ -80,12 +85,14 @@ def emit(ok: bool, repo: str, frm: str | None = None, to: str | None = None, err
 def cmd_toggle(repo: str) -> dict:
     state = load_state()
     missions = state.setdefault("missions", {})
+    projects = state.setdefault("projects", [])
     cur = missions.get(repo, {}).get("status")
     if cur is None:
-        # Unknown mission — treat as project default. Bootstrap as active.
-        cur = "active"
-        nxt = "inactive"
-    elif cur == "active":
+        # Do NOT auto-create missions via toggle. Repo must already be classified.
+        if repo not in projects:
+            return emit(False, repo, None, None, error=f"'{repo}' is not a known mission or project — use promote first")
+        return emit(False, repo, None, None, error=f"'{repo}' is a project, not a mission — use promote to convert it")
+    if cur == "active":
         nxt = "inactive"
     elif cur == "inactive":
         nxt = "active"

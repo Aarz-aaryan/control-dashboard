@@ -946,6 +946,12 @@
             border-color: var(--terracotta);
             color: var(--terracotta);
         }
+        .action-btn:disabled,
+        .action-btn.action-busy {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
         .repo-card {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
@@ -2638,6 +2644,17 @@ async function loadMissionsState() {
 }
 
 async function handleMissionAction(action, repo) {
+    // Dedupe in-flight requests on the same (action, repo) pair
+    const key = `${action}:${repo}`;
+    if (_missionActionInFlight.has(key)) {
+        console.debug(`Action ${key} already in flight, ignoring duplicate`);
+        return;
+    }
+    _missionActionInFlight.add(key);
+    // Disable all matching buttons visually while in flight
+    document.querySelectorAll(`[data-mission-action="${action}"][data-repo="${CSS.escape(repo)}"]`)
+        .forEach(btn => { btn.disabled = true; btn.classList.add('action-busy'); });
+
     const url = `http://${window.location.hostname}:8001/api/missions/${action}`;
     try {
         const res = await fetch(url, {
@@ -2661,8 +2678,15 @@ async function handleMissionAction(action, repo) {
     } catch (e) {
         console.error('Mission action network error:', e);
         alert(`Network error: ${e.message}`);
+    } finally {
+        _missionActionInFlight.delete(key);
+        // Re-enable buttons (the re-render will have rebuilt them, but if it failed, this still helps)
+        document.querySelectorAll(`[data-mission-action="${action}"][data-repo="${CSS.escape(repo)}"]`)
+            .forEach(btn => { btn.disabled = false; btn.classList.remove('action-busy'); });
     }
 }
+
+const _missionActionInFlight = new Set();
 
 function escapeHtml(str) {
     if (!str) return '';
