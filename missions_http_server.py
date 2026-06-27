@@ -25,6 +25,7 @@ PORT = 8001
 ALLOWED_ACTIONS = {
     "toggle", "delete", "restore", "set-status",
     "classify-project", "unclassify-project", "promote", "demote",
+    "set-priority", "reorder-missions",
 }
 
 # CORS allowlist — open for the dashboard origin and any localhost variant
@@ -80,11 +81,29 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/health":
             return self._send_text(200, "ok")
         if self.path == "/api/missions/state":
-            if not STATE_FILE.exists():
-                return self._send_json(200, {"_version": 1, "missions": {}, "projects": []})
             try:
-                with STATE_FILE.open() as f:
-                    return self._send_json(200, json.load(f))
+                # Force-load via the writer so any v1 → v2 migration happens before serve.
+                # This ensures the UI always sees a v2-shaped state with priority/order fields.
+                import importlib
+                wr = importlib.import_module("missions_writer")
+                importlib.reload(wr)  # in case state was edited mid-run
+                state = wr.load_state()
+                # Persist the migrated state back so disk reflects what's served.
+                # Cheap and idempotent — only writes if version changed or fields missing.
+                on_disk = json.loads(STATE_FILE.read_text()) if STATE_FILE.exists() else None
+                needs_save = (
+                    on_disk is None
+                    or on_disk.get("_version") != state.get("_version")
+                    or any(
+                        (not isinstance(v, dict))
+                        or ("priority" not in v)
+                        or ("order" not in v)
+                        for v in state.get("missions", {}).values()
+                    )
+                )
+                if needs_save:
+                    wr.save_state(state, modified_by="migration")
+                return self._send_json(200, state)
             except Exception as e:
                 return self._send_json(500, {"ok": False, "error": str(e)})
         if self.path.startswith("/api/missions/"):
@@ -109,6 +128,16 @@ class Handler(BaseHTTPRequestHandler):
         except json.JSONDecodeError as e:
             return self._send_json(400, {"ok": False, "error": f"Invalid JSON: {e}"})
 
+        # ─── Dispatch by action ──────────────────────────────────────
+        # Some actions don't take a "repo" field — handle them first.
+        if action == "reorder-missions":
+            order = body.get("order")
+            if not isinstance(order, list) or not order or not all(isinstance(x, str) for x in order):
+                return self._send_json(400, {"ok": False, "error": "reorder-missions requires JSON body {\"order\": [\"repo1\", \"repo2\", ...]}"})
+            cmd = [sys.executable, str(WRITER), action] + order
+            return self._run_writer(cmd)
+
+        # All other actions need a repo
         repo = body.get("repo")
         if not repo or not isinstance(repo, str):
             return self._send_json(400, {"ok": False, "error": "Missing or invalid 'repo' in body"})
@@ -120,7 +149,21 @@ class Handler(BaseHTTPRequestHandler):
             if not status:
                 return self._send_json(400, {"ok": False, "error": "Missing 'status' for set-status"})
             cmd.append(status)
+        elif action == "set-priority":
+            priority = body.get("priority")
+            if priority is None or not isinstance(priority, int):
+                return self._send_json(400, {"ok": False, "error": "Missing or invalid 'priority' (int 1-99) for set-priority"})
+            cmd.append(str(priority))
+        elif action == "promote":
+            priority = body.get("priority")
+            if priority is not None:
+                if not isinstance(priority, int):
+                    return self._send_json(400, {"ok": False, "error": "'priority' must be int (1-99)"})
+                cmd.extend(["--priority", str(priority)])
 
+        return self._run_writer(cmd)
+
+    def _run_writer(self, cmd):
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10, cwd=str(ROOT))
         except subprocess.TimeoutExpired:

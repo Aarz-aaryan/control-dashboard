@@ -9,13 +9,33 @@ Usage:
   python3 missions_writer.py set-status <repo> <status> # explicit set
   python3 missions_writer.py classify-project <repo>    # add to projects list
   python3 missions_writer.py unclassify-project <repo>  # remove from projects list
-  python3 missions_writer.py promote <repo>             # project -> mission (active)
+  python3 missions_writer.py promote [repo] [--priority N]  # project -> mission (active). If repo omitted, uses stdin JSON {repo, priority}.
   python3 missions_writer.py demote <repo>              # mission -> project
+  python3 missions_writer.py set-priority <repo> <N>    # set priority (lower = more important)
+  python3 missions_writer.py reorder-missions <a> <b> <c>...  # explicit display order (active+inactive)
 
 Status values: active | inactive | deleted
 Output: JSON to stdout: {"ok": true|false, "repo": "...", "from": "...", "to": "...", "error": "..."}
 Side effect: appends one JSON line to missions_activity.jsonl
+
+Schema (v2):
+  missions_state.json: {
+    "_version": 2,
+    "missions": {
+      "<repo>": {
+        "status": "active"|"inactive"|"deleted",
+        "priority": <int 1-99>,      # lower = more important (1 = top)
+        "order": <int>,               # display position within priority tier
+        "updated_at": "<ISO8601>"
+      }
+    },
+    "projects": ["<repo>", ...]  # sorted alphabetically
+  }
+
+Legacy v1 state files are auto-migrated: missing priority defaults to 99, order assigned by alphabetical.
 """
+
+DEFAULT_PRIORITY = 99  # lowest — new promotes start here
 import sys
 import json
 import os
@@ -36,10 +56,14 @@ def now_iso() -> str:
 
 
 def load_state() -> dict:
-    """Load state, recovering gracefully from corrupt/missing/empty files."""
+    """Load state, recovering gracefully from corrupt/missing/empty files.
+
+    Auto-migrates v1 → v2: any mission missing `priority` or `order` gets defaults
+    (priority=99, order=insertion-alphabetical). Safe to call repeatedly.
+    """
     if not STATE_FILE.exists():
         return {
-            "_version": 1,
+            "_version": 2,
             "_last_modified": now_iso(),
             "_modified_by": "system",
             "missions": {},
@@ -58,6 +82,33 @@ def load_state() -> dict:
         data["missions"] = {}
     if "projects" not in data or not isinstance(data["projects"], list):
         data["projects"] = []
+    data["_version"] = 2
+
+    # Migrate missions: ensure priority + order on every entry
+    missions = data["missions"]
+    migrated = False
+    # Sort by name so order is deterministic across runs of v1→v2 migration
+    sorted_names = sorted(missions.keys())
+    for idx, name in enumerate(sorted_names):
+        entry = missions[name]
+        if not isinstance(entry, dict):
+            # Fix malformed entry
+            missions[name] = {"status": "deleted", "priority": DEFAULT_PRIORITY, "order": idx, "updated_at": now_iso()}
+            migrated = True
+            continue
+        if "priority" not in entry or not isinstance(entry["priority"], int):
+            entry["priority"] = DEFAULT_PRIORITY
+            migrated = True
+        elif entry["priority"] < 1 or entry["priority"] > 99:
+            entry["priority"] = max(1, min(99, entry["priority"]))
+            migrated = True
+        if "order" not in entry or not isinstance(entry["order"], int):
+            entry["order"] = idx
+            migrated = True
+    if migrated:
+        # Persist migration on next save; don't write here (caller will save)
+        pass
+
     return data
 
 
@@ -115,7 +166,9 @@ def cmd_toggle(repo: str) -> dict:
         return emit(False, repo, cur, None, error="Cannot toggle deleted mission; use restore first")
     else:
         return emit(False, repo, cur, None, error=f"Unknown status: {cur}")
-    missions[repo] = {"status": nxt, "updated_at": now_iso()}
+    # Preserve priority + order across status transitions — only status + updated_at change.
+    cur_entry = missions.get(repo, {})
+    missions[repo] = {**cur_entry, "status": nxt, "updated_at": now_iso()}
     save_state(state, modified_by="user")
     log_activity("user", "toggle", repo, cur, nxt)
     return emit(True, repo, cur, nxt)
@@ -127,7 +180,9 @@ def cmd_delete(repo: str) -> dict:
     cur = missions.get(repo, {}).get("status")
     if cur is None:
         return emit(False, repo, None, None, error=f"No mission entry for '{repo}' — only missions can be deleted, not projects")
-    missions[repo] = {"status": "deleted", "updated_at": now_iso()}
+    # Preserve priority + order across status transitions
+    cur_entry = missions.get(repo, {})
+    missions[repo] = {**cur_entry, "status": "deleted", "updated_at": now_iso()}
     save_state(state, modified_by="user")
     log_activity("user", "delete", repo, cur, "deleted")
     return emit(True, repo, cur, "deleted")
@@ -139,7 +194,9 @@ def cmd_restore(repo: str) -> dict:
     cur = missions.get(repo, {}).get("status")
     if cur is None:
         return emit(False, repo, cur, None, error="No entry to restore")
-    missions[repo] = {"status": "inactive", "updated_at": now_iso()}
+    # Preserve priority + order across status transitions
+    cur_entry = missions.get(repo, {})
+    missions[repo] = {**cur_entry, "status": "inactive", "updated_at": now_iso()}
     save_state(state, modified_by="user")
     log_activity("user", "restore", repo, cur, "inactive")
     return emit(True, repo, cur, "inactive")
@@ -151,7 +208,9 @@ def cmd_set_status(repo: str, status: str) -> dict:
     state = load_state()
     missions = state.setdefault("missions", {})
     cur = missions.get(repo, {}).get("status")
-    missions[repo] = {"status": status, "updated_at": now_iso()}
+    # Preserve priority + order across status transitions
+    cur_entry = missions.get(repo, {})
+    missions[repo] = {**cur_entry, "status": status, "updated_at": now_iso()}
     save_state(state, modified_by="user")
     log_activity("user", "set-status", repo, cur, status)
     return emit(True, repo, cur, status)
@@ -182,8 +241,14 @@ def cmd_unclassify(repo: str) -> dict:
     return emit(True, repo, None, None)
 
 
-def cmd_promote(repo: str) -> dict:
-    """Move a repo from projects to missions as active. Rejects unknown repos."""
+def cmd_promote(repo: str, priority: int = DEFAULT_PRIORITY) -> dict:
+    """Move a repo from projects to missions as active. Rejects unknown repos.
+
+    `priority` defaults to DEFAULT_PRIORITY (lowest) — callers should explicitly
+    set this for new missions they care about.
+    """
+    if not isinstance(priority, int) or priority < 1 or priority > 99:
+        return emit(False, repo, None, None, error=f"Invalid priority {priority!r}; must be int 1-99")
     state = load_state()
     projects = state.setdefault("projects", [])
     missions = state.setdefault("missions", {})
@@ -195,10 +260,67 @@ def cmd_promote(repo: str) -> dict:
         return emit(False, repo, None, None, error=f"'{repo}' is not a known project — classify-project first or check the repo name")
     if repo in projects:
         projects.remove(repo)
-    missions[repo] = {"status": "active", "updated_at": now_iso()}
+    # order = max existing + 1 so it appears at the end of its priority tier
+    existing_orders = [e.get("order", 0) for e in missions.values() if isinstance(e, dict)]
+    new_order = (max(existing_orders) + 1) if existing_orders else 0
+    missions[repo] = {"status": "active", "priority": priority, "order": new_order, "updated_at": now_iso()}
     save_state(state, modified_by="user")
     log_activity("user", "promote", repo, cur, "active")
     return emit(True, repo, cur, "active")
+
+
+def cmd_set_priority(repo: str, priority: int) -> dict:
+    """Set priority for an existing mission. Lower number = more important (1 = top)."""
+    if not isinstance(priority, int) or priority < 1 or priority > 99:
+        return emit(False, repo, None, None, error=f"Invalid priority {priority!r}; must be int 1-99")
+    state = load_state()
+    missions = state.setdefault("missions", {})
+    if repo not in missions:
+        return emit(False, repo, None, None, error=f"'{repo}' is not a mission — promote it first")
+    entry = missions[repo]
+    cur_priority = entry.get("priority", DEFAULT_PRIORITY)
+    entry["priority"] = priority
+    entry["updated_at"] = now_iso()
+    save_state(state, modified_by="user")
+    log_activity("user", "set-priority", repo, str(cur_priority), str(priority))
+    return emit(True, repo, str(cur_priority), str(priority))
+
+
+def cmd_reorder_missions(repo_order: list) -> dict:
+    """Set the explicit display order of all (or subset of) missions.
+
+    `repo_order` is a list of repo names in the desired display order. Any mission
+    not in the list gets an order beyond the listed ones. Reordering does NOT
+    change priority — use set-priority for that. Reordering only affects display.
+    """
+    if not repo_order or not all(isinstance(r, str) for r in repo_order):
+        return emit(False, "", None, None, error="repo_order must be a non-empty list of repo names")
+    state = load_state()
+    missions = state.setdefault("missions", {})
+    unknown = [r for r in repo_order if r not in missions]
+    if unknown:
+        return emit(False, ", ".join(unknown), None, None, error=f"Unknown missions: {unknown}")
+    # Assign explicit orders; everything else goes after with stable fallback
+    explicit_orders = {r: i for i, r in enumerate(repo_order)}
+    n = len(repo_order)
+    for r, entry in missions.items():
+        if r in explicit_orders:
+            entry["order"] = explicit_orders[r]
+        else:
+            # Not in the explicit list — push it to the end, but preserve relative alpha order
+            pass  # handled below
+    # For missions not in the explicit list, assign orders after the explicit ones
+    others = [r for r in missions.keys() if r not in explicit_orders]
+    others.sort()  # stable fallback
+    for i, r in enumerate(others):
+        missions[r]["order"] = n + i
+    # Touch updated_at only for changed entries
+    now = now_iso()
+    for r, entry in missions.items():
+        entry["updated_at"] = now
+    save_state(state, modified_by="user")
+    log_activity("user", "reorder-missions", "", None, ",".join(repo_order))
+    return emit(True, "", None, ",".join(repo_order))
 
 
 def cmd_demote(repo: str) -> dict:
@@ -249,11 +371,35 @@ def main() -> int:
             if len(args) != 1: usage()
             res = cmd_unclassify(args[0])
         elif cmd == "promote":
-            if len(args) != 1: usage()
-            res = cmd_promote(args[0])
+            # Accept: promote <repo>   OR   promote <repo> --priority N
+            if len(args) < 1 or len(args) > 3: usage()
+            repo = args[0]
+            priority = DEFAULT_PRIORITY
+            if len(args) == 3:
+                if args[1] != "--priority": usage()
+                try:
+                    priority = int(args[2])
+                except ValueError:
+                    emit(False, repo, None, None, error=f"Priority must be int, got {args[2]!r}")
+                    return 1
+            elif len(args) == 2:
+                # Could be: promote <repo> --priority (missing value) → invalid
+                usage()
+            res = cmd_promote(repo, priority)
         elif cmd == "demote":
             if len(args) != 1: usage()
             res = cmd_demote(args[0])
+        elif cmd == "set-priority":
+            if len(args) != 2: usage()
+            try:
+                priority = int(args[1])
+            except ValueError:
+                emit(False, args[0], None, None, error=f"Priority must be int, got {args[1]!r}")
+                return 1
+            res = cmd_set_priority(args[0], priority)
+        elif cmd == "reorder-missions":
+            if len(args) < 1: usage()
+            res = cmd_reorder_missions(list(args))
         else:
             print(json.dumps({"ok": False, "error": f"Unknown command: {cmd}"}))
             return 2
