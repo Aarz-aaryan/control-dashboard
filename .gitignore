@@ -1,5 +1,7 @@
 health.json
 missions.json
+missions_state.json
+missions_state.*.bak
 r_server_info.json
 repos.json
 missions_activity.jsonl
