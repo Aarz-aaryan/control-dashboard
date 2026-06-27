@@ -30,10 +30,13 @@ VALID_STATUSES = {"active", "inactive", "deleted"}
 
 
 def now_iso() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    # Microsecond precision so rapid-fire actions get unique timestamps in
+    # the activity log (otherwise same-second toggles look indistinguishable).
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def load_state() -> dict:
+    """Load state, recovering gracefully from corrupt/missing/empty files."""
     if not STATE_FILE.exists():
         return {
             "_version": 1,
@@ -42,8 +45,20 @@ def load_state() -> dict:
             "missions": {},
             "projects": [],
         }
-    with STATE_FILE.open() as f:
-        return json.load(f)
+    try:
+        with STATE_FILE.open() as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        sys.stderr.write(f"ERROR: missions_state.json is corrupt JSON: {e}\n")
+        sys.exit(2)
+    if not isinstance(data, dict):
+        sys.stderr.write(f"ERROR: missions_state.json is not a dict (got {type(data).__name__})\n")
+        sys.exit(2)
+    if "missions" not in data or not isinstance(data["missions"], dict):
+        data["missions"] = {}
+    if "projects" not in data or not isinstance(data["projects"], list):
+        data["projects"] = []
+    return data
 
 
 def save_state(state: dict, modified_by: str = "user") -> None:
@@ -168,16 +183,18 @@ def cmd_unclassify(repo: str) -> dict:
 
 
 def cmd_promote(repo: str) -> dict:
-    """Move a repo from projects to missions as active."""
+    """Move a repo from projects to missions as active. Rejects unknown repos."""
     state = load_state()
     projects = state.setdefault("projects", [])
     missions = state.setdefault("missions", {})
-    if repo in projects:
-        projects.remove(repo)
     cur = missions.get(repo, {}).get("status")
     if cur in {"inactive", "deleted"}:
         # Don't auto-promote from deleted/inactive — require explicit restore first
         return emit(False, repo, cur, None, error=f"Mission is '{cur}' — restore it first, then promote")
+    if cur is None and repo not in projects:
+        return emit(False, repo, None, None, error=f"'{repo}' is not a known project — classify-project first or check the repo name")
+    if repo in projects:
+        projects.remove(repo)
     missions[repo] = {"status": "active", "updated_at": now_iso()}
     save_state(state, modified_by="user")
     log_activity("user", "promote", repo, cur, "active")
@@ -185,10 +202,12 @@ def cmd_promote(repo: str) -> dict:
 
 
 def cmd_demote(repo: str) -> dict:
-    """Move a mission to projects (removes from missions)."""
+    """Move a mission to projects. Rejects unknown repos."""
     state = load_state()
     projects = state.setdefault("projects", [])
     missions = state.setdefault("missions", {})
+    if repo not in missions:
+        return emit(False, repo, None, None, error=f"'{repo}' is not an active mission — cannot demote")
     cur = missions.pop(repo, None)
     if repo not in projects:
         projects.append(repo)
