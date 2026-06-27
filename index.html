@@ -2788,9 +2788,13 @@ function renderMissionsSections(repos, state) {
         const dragKind = kind === 'project' ? 'project'
             : (kind === 'mission-active' || kind === 'mission-inactive') ? 'mission'
             : 'none';
+        // The whole card is wrapped in an <a> link. Browsers don't fire dragstart from inside an
+        // <a> unless the <a> itself is draggable. Setting draggable on the <a> lets drags start
+        // from anywhere on the card (not just the .repo-actions area below the link).
         return `
-            <div class="${cardClass}" draggable="${draggable}" data-drag-kind="${dragKind}" data-repo="${escapeHtml(repoName)}">
-                <a href="${escapeHtml(repo.html_url)}" target="_blank" class="repo-card-link">
+            <div class="${cardClass}" data-repo="${escapeHtml(repoName)}">
+                <a href="${escapeHtml(repo.html_url)}" target="_blank" class="repo-card-link"
+                   draggable="${draggable}" data-drag-kind="${dragKind}" data-repo="${escapeHtml(repoName)}">
                     <div class="repo-card-top">
                         <span class="repo-name">${escapeHtml(repo.name)}</span>
                         ${priorityBadgeHtml}
@@ -2802,7 +2806,7 @@ function renderMissionsSections(repos, state) {
                         <span class="repo-updated">${updated}</span>
                     </div>
                 </a>
-                ${actions ? `<div class="repo-actions">${actions}</div>` : ''}
+                ${actions ? `<div class="repo-actions" draggable="${draggable}" data-drag-kind="${dragKind}" data-repo="${escapeHtml(repoName)}">${actions}</div>` : ''}
             </div>
         `;
     };
@@ -3021,13 +3025,18 @@ let _dragSrc = null;          // {repo, kind} of the card being dragged
 let _lastDragOverSection = null; // the missions-section the cursor is currently over
 
 function onDragStart(e) {
-    const card = e.target.closest('.repo-card[draggable="true"]');
+    // The draggable element is either the <a class="repo-card-link"> or <div class="repo-actions">,
+    // BOTH of which carry data-drag-kind. Walk up to find the nearest ancestor with data-drag-kind
+    // (or the element itself) and use it as the drag source.
+    const card = e.target.closest('[data-drag-kind]:not([data-drag-kind="none"])');
     if (!card) return;
     _dragSrc = {
         repo: card.getAttribute('data-repo'),
         kind: card.getAttribute('data-drag-kind'), // 'project' | 'mission'
     };
-    card.classList.add('dragging');
+    // Visual cue: highlight the whole .repo-card (the outer div) for clarity
+    const outerCard = card.closest('.repo-card') || card;
+    outerCard.classList.add('dragging');
     // Required for Firefox to actually start the drag
     try { e.dataTransfer.setData('text/plain', _dragSrc.repo); } catch (_) {}
     e.dataTransfer.effectAllowed = 'move';
@@ -3093,7 +3102,9 @@ async function onDrop(e) {
 function onDragOverMissionCard(e) {
     if (!_dragSrc || _dragSrc.kind !== 'mission') return;
     const targetCard = e.target.closest('.repo-card.mission-card');
-    if (!targetCard || targetCard === e.target.closest('.repo-card[draggable="true"][class*="dragging"]')) return;
+    if (!targetCard) return;
+    // Don't allow dropping onto yourself (target is the source card being dragged)
+    if (targetCard.classList.contains('dragging')) return;
     // Highlight the target card as a reorder target
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
