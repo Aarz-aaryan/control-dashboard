@@ -52,19 +52,46 @@ def now_ts() -> float:
     return time.time()
 
 
-def parse_iso(ts: str) -> float:
+def parse_iso(ts: str) -> float | None:
+    if not ts or not isinstance(ts, str):
+        return None
     try:
         # Python 3.11+ fromisoformat handles 'Z'
         return datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
     except Exception:
-        return 0.0
+        return None
 
 
 def load_state() -> dict:
+    """Load state, recovering gracefully from corrupt/missing/empty files."""
     if not STATE_FILE.exists():
         return {"_version": 1, "_last_modified": now_iso(), "_modified_by": "system", "missions": {}, "projects": []}
-    with STATE_FILE.open() as f:
-        return json.load(f)
+    try:
+        with STATE_FILE.open() as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        log.error(f"missions_state.json is corrupt JSON ({e}); backing up and starting fresh")
+        try:
+            backup = STATE_FILE.with_suffix(f".corrupt.{int(time.time())}.bak")
+            STATE_FILE.rename(backup)
+            log.warning(f"Backed up corrupt state to {backup}")
+        except Exception as be:
+            log.error(f"Failed to back up corrupt state: {be}")
+        return {"_version": 1, "_last_modified": now_iso(), "_modified_by": "system", "missions": {}, "projects": []}
+    except Exception as e:
+        log.exception(f"Failed to read missions_state.json: {e}")
+        return {"_version": 1, "_last_modified": now_iso(), "_modified_by": "system", "missions": {}, "projects": []}
+    # Validate shape; if missing required keys, normalize
+    if not isinstance(data, dict):
+        log.error(f"missions_state.json is not a dict (got {type(data).__name__}); using fresh state")
+        return {"_version": 1, "_last_modified": now_iso(), "_modified_by": "system", "missions": {}, "projects": []}
+    if "missions" not in data or not isinstance(data["missions"], dict):
+        log.warning("missions_state.json missing 'missions' dict; defaulting to empty")
+        data["missions"] = {}
+    if "projects" not in data or not isinstance(data["projects"], list):
+        log.warning("missions_state.json missing 'projects' list; defaulting to empty")
+        data["projects"] = []
+    return data
 
 
 def save_state(state: dict) -> None:
