@@ -2725,7 +2725,11 @@ function renderMissionsSections(repos, state) {
     const projects = [];
     const unclassified = [];
 
-    // First: process missions in sorted order so high-priority missions render first
+    // First: process missions in sorted order so high-priority missions render first.
+    // Repos in state.missions are NOT also pushed to projects — even if they're also
+    // in state.projects, the mission entry wins for classification (since the user
+    // explicitly tracked them as a mission at some point). This dedupes the DOM so
+    // the same repo card doesn't appear in two sections simultaneously.
     for (const name of sortedMissionNames) {
         const entry = missionsObj[name];
         if (!entry) continue;
@@ -2733,7 +2737,11 @@ function renderMissionsSections(repos, state) {
         else if (entry.status === 'inactive') inactiveMissions.push(name);
         // deleted entries are hidden
     }
-    for (const name of projectsList) projects.push(name);
+    // Projects: skip anything that's already classified as a mission
+    const missionRepoSet = new Set([...activeMissions, ...inactiveMissions]);
+    for (const name of projectsList) {
+        if (!missionRepoSet.has(name)) projects.push(name);
+    }
 
     // Then: any repo in repos.json that is neither a known mission nor project
     const classifiedSet = new Set([
