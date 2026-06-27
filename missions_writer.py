@@ -46,7 +46,7 @@ ROOT = Path(__file__).resolve().parent
 STATE_FILE = ROOT / "missions_state.json"
 ACTIVITY_LOG = ROOT / "missions_activity.jsonl"
 
-VALID_STATUSES = {"active", "inactive", "deleted"}
+VALID_STATUSES = {"active", "inactive", "archived", "deleted"}
 
 
 def now_iso() -> str:
@@ -162,6 +162,9 @@ def cmd_toggle(repo: str) -> dict:
         nxt = "inactive"
     elif cur == "inactive":
         nxt = "active"
+    elif cur == "archived":
+        # Toggle from archived back to active (preserving history). Drag mission card → mission-active section.
+        nxt = "active"
     elif cur == "deleted":
         return emit(False, repo, cur, None, error="Cannot toggle deleted mission; use restore first")
     else:
@@ -252,10 +255,29 @@ def cmd_promote(repo: str, priority: int = DEFAULT_PRIORITY) -> dict:
     state = load_state()
     projects = state.setdefault("projects", [])
     missions = state.setdefault("missions", {})
-    cur = missions.get(repo, {}).get("status")
-    if cur in {"inactive", "deleted"}:
-        # Don't auto-promote from deleted/inactive — require explicit restore first
+    cur_entry = missions.get(repo, {})
+    cur = cur_entry.get("status") if isinstance(cur_entry, dict) else None
+    if cur == "deleted":
+        # Don't auto-promote from deleted — require explicit restore first
         return emit(False, repo, cur, None, error=f"Mission is '{cur}' — restore it first, then promote")
+    if cur == "archived":
+        # Re-promoting a previously-demoted mission: RESTORE its priority/order
+        # (instead of overwriting with the new arg), and remove from projects list
+        # so the renderer moves it from Projects back to Active Missions section.
+        restored_priority = priority if priority != DEFAULT_PRIORITY else cur_entry.get("priority", DEFAULT_PRIORITY)
+        restored_order = cur_entry.get("order", 0)
+        missions[repo] = {
+            **cur_entry,
+            "status": "active",
+            "priority": restored_priority,
+            "order": restored_order,
+            "updated_at": now_iso(),
+        }
+        if repo in projects:
+            projects.remove(repo)
+        save_state(state, modified_by="user")
+        log_activity("user", "promote", repo, cur, "active")
+        return emit(True, repo, cur, "active")
     if cur is None and repo not in projects:
         return emit(False, repo, None, None, error=f"'{repo}' is not a known project — classify-project first or check the repo name")
     if repo in projects:
@@ -324,11 +346,14 @@ def cmd_reorder_missions(repo_order: list) -> dict:
 
 
 def cmd_demote(repo: str) -> dict:
-    """Move a mission to projects. Keeps the entry with status='inactive' so
-    it can be re-promoted later without losing priority/order. ADDS the repo
-    back to state.projects (idempotent) so the renderer correctly shows it
-    in the Projects section — the renderer reads the project list from
-    state.projects[], not from missions[].status==='inactive'.
+    """Demote a mission out of the active workflow. Sets status='archived' so:
+    - The renderer hides the entry from both ACTIVE and INACTIVE MISSIONS sections
+      (it then shows ONLY in Projects via state.projects).
+    - The entry is preserved so re-promotion can restore priority/order/history.
+
+    This is the move that backs "drag inactive mission → Projects section" — the
+    user wants the card to visually leave the missions sections and appear as a
+    project, while still preserving its priority history if they ever drag it back.
     """
     state = load_state()
     projects = state.setdefault("projects", [])
@@ -339,22 +364,22 @@ def cmd_demote(repo: str) -> dict:
     cur_status = cur_entry.get("status") if isinstance(cur_entry, dict) else None
     if cur_status not in ("active", "inactive"):
         return emit(False, repo, cur_status, None, error=f"Mission is '{cur_status}' — cannot demote")
-    # Keep the entry but flip to inactive — preserves priority/order for future promote
+    # Flip to archived — preserves priority/order for future promote.
     missions[repo] = {
         **cur_entry,
-        "status": "inactive",
+        "status": "archived",
         "updated_at": now_iso(),
     }
-    # Add the repo back to state.projects so the renderer classifies it as a project.
-    # Without this, the repo would only show up in the INACTIVE MISSIONS section
-    # (because missions[repo].status === 'inactive'), which doesn't match the
-    # user's mental model of "demoted = back to projects list".
+    # Also add to state.projects so the renderer classifies it as a project.
+    # (The renderer dedupes, so if the repo is in state.missions, it WON'T show
+    # in Projects. With status='archived', the renderer still skips it because
+    # archived isn't active/inactive. So we add to projects to make it appear.)
     if repo not in projects:
         projects.append(repo)
         projects.sort()
     save_state(state, modified_by="user")
-    log_activity("user", "demote", repo, cur_status, "inactive")
-    return emit(True, repo, cur_status, "inactive")
+    log_activity("user", "demote", repo, cur_status, "archived")
+    return emit(True, repo, cur_status, "archived")
 
 
 def usage() -> None:
