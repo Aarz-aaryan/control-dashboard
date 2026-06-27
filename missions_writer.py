@@ -324,19 +324,33 @@ def cmd_reorder_missions(repo_order: list) -> dict:
 
 
 def cmd_demote(repo: str) -> dict:
-    """Move a mission to projects. Rejects unknown repos."""
+    """Move a mission to projects. Keeps the entry with status='inactive' so
+    it can be re-promoted later without losing priority/order. Removes from
+    projects list since it's now back in the missions dict (under inactive).
+    """
     state = load_state()
     projects = state.setdefault("projects", [])
     missions = state.setdefault("missions", {})
     if repo not in missions:
-        return emit(False, repo, None, None, error=f"'{repo}' is not an active mission — cannot demote")
-    cur = missions.pop(repo, None)
-    if repo not in projects:
-        projects.append(repo)
-        projects.sort()
+        return emit(False, repo, None, None, error=f"'{repo}' is not a known mission — cannot demote")
+    cur_entry = missions[repo]
+    cur_status = cur_entry.get("status") if isinstance(cur_entry, dict) else None
+    if cur_status not in ("active", "inactive"):
+        return emit(False, repo, cur_status, None, error=f"Mission is '{cur_status}' — cannot demote")
+    # Keep the entry but flip to inactive — preserves priority/order for future promote
+    missions[repo] = {
+        **cur_entry,
+        "status": "inactive",
+        "updated_at": now_iso(),
+    }
+    # Note: 'projects' list is the source of truth for un-missioned repos.
+    # We do NOT add the repo back to projects here — the project list is
+    # populated from repos.json on disk; demoting simply removes the mission
+    # from the active workflow. The repo will reappear in the Projects section
+    # automatically via the renderer's classification logic.
     save_state(state, modified_by="user")
-    log_activity("user", "demote", repo, cur.get("status") if cur else None, None)
-    return emit(True, repo, cur.get("status") if cur else None, None)
+    log_activity("user", "demote", repo, cur_status, "inactive")
+    return emit(True, repo, cur_status, "inactive")
 
 
 def usage() -> None:

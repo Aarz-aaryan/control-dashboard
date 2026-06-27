@@ -874,12 +874,31 @@
         .project-card { border-color: var(--card-border); }
         .mission-card, .project-card { position: relative; cursor: grab; }
         .mission-card.dragging, .project-card.dragging { opacity: 0.4; cursor: grabbing; }
-        .missions-section.drop-target .repos-grid-inner {
+        .missions-section.drop-target .repos-grid-inner,
+        .missions-section.drop-target .missions-empty-hint {
             outline: 2px dashed var(--gold);
             outline-offset: 4px;
             background: rgba(196, 154, 108, 0.06);
             transition: background 0.2s ease;
         }
+
+        /* Empty drop-zone hint shown when a section has no items but is still a valid drop target. */
+        .missions-empty-hint {
+            padding: 32px 16px;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 13px;
+            font-style: italic;
+            border: 1px dashed rgba(196, 154, 108, 0.25);
+            border-radius: 8px;
+            background: rgba(196, 154, 108, 0.03);
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .missions-empty-hint::before { content: '↓ '; opacity: 0.6; }
+        .missions-empty-hint::after  { content: ' ↓'; opacity: 0.6; }
 
         /* Priority badge on active missions */
         .priority-badge {
@@ -2812,9 +2831,15 @@ function renderMissionsSections(repos, state) {
     };
 
     const section = (title, icon, countId, items, kind, dropKind) => {
-        if (items.length === 0) return '';
+        // Always render the section, even when empty — so users have a visible drop target
+        // when they want to drag a project to become a mission (or vice versa).
         const countElId = countId;
         const dropAttr = dropKind ? `data-drop-kind="${dropKind}"` : '';
+        const inner = items.length === 0
+            ? (dropKind
+                ? `<div class="missions-empty-hint">Drop here to ${dropKind === 'mission' ? 'promote to mission' : 'demote to project'}</div>`
+                : `<div class="missions-empty-hint">No repos in this category</div>`)
+            : `<div class="repos-grid-inner">${items.map(n => renderCard(n, kind)).join('')}</div>`;
         return `
             <div class="missions-section ${kind}" ${dropAttr}>
                 <div class="missions-section-header">
@@ -2822,9 +2847,7 @@ function renderMissionsSections(repos, state) {
                     <span class="missions-section-title">${title}</span>
                     <span class="missions-section-count" id="${countElId}">${items.length}</span>
                 </div>
-                <div class="repos-grid-inner">
-                    ${items.map(n => renderCard(n, kind)).join('')}
-                </div>
+                ${inner}
             </div>
         `;
     };
