@@ -1849,7 +1849,8 @@
             <div class="stats-hero" style="flex: 1 1 500px; margin-bottom: 0;">
                 <div class="stats-hero-total">
                     <div class="stats-hero-number" id="stat-total-sessions">0</div>
-                    <div class="stats-hero-label">Active Sessions (3h)</div>
+                    <div class="stats-hero-label">In Progress (5m)</div>
+                    <div class="stat-cron-subtitle" id="stat-last-updated" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; opacity: 0.75;">updated just now</div>
                 </div>
                 <div class="stats-hero-divider"></div>
                 <div class="stats-agent-grid" id="stats-agent-grid">
@@ -2006,7 +2007,7 @@ const AGENTS = [
 ];
 
 const WORKING_MS = 4 * 60 * 60 * 1000; // 4 hours — agent card ACTIVE/STANDBY threshold
-const STATS_ACTIVE_MS = 3 * 60 * 60 * 1000; // 3 hours — Stats tab "Active Sessions" threshold (tighter than agent cards)
+const STATS_ACTIVE_MS = 5 * 60 * 1000; // 5 minutes — Stats tab "In Progress" threshold (currently-active only, not last-3h history)
 const SESSION_MS = 12 * 60 * 60 * 1000; // 12 hours — session tracking threshold
 const REFRESH_MS = 30 * 1000;
 const CACHE_TTL_MS = 60 * 1000;
@@ -2515,6 +2516,16 @@ function updateStatsCounts() {
     if (elTotal) elTotal.textContent = totalCount;
     if (elAarz) elAarz.textContent = aarzCount;
     if (elAgy) elAgy.textContent = agyCount;
+    
+    // Update "last updated" timestamp so user knows the data is live
+    const elUpdated = document.getElementById('stat-last-updated');
+    if (elUpdated) {
+        const d = new Date();
+        const h = d.getHours().toString().padStart(2,'0');
+        const m = d.getMinutes().toString().padStart(2,'0');
+        const s = d.getSeconds().toString().padStart(2,'0');
+        elUpdated.textContent = `updated ${h}:${m}:${s} · auto-refresh 30s`;
+    }
     if (elCopilot) elCopilot.textContent = copilotCount;
 }
 
