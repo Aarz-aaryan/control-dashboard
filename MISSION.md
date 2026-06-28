@@ -18,7 +18,15 @@ Hermes Agent Dashboard — centralized control hub for multi-agent orchestration
 **Requested features:**
 
 1. **Stats tab: Cron Jobs count** — Side-by-side stat card, sourced from `missions.json` (16 active / 0 paused).
-2. **Stats tab: Active Sessions (3h) + Stored Sessions** — Three side-by-side stat cards. Active = sum of sessions in last 3h across all agents (~20 currently — Aarz running + 17 agy log files <3h). Stored = session files currently on disk across all 7 agents (548 — pruned daily by cron `28525a25b613`).
+2. **Stats tab: Active Sessions (3h) + Stored Sessions** — Three side-by-side stat cards. Active = sum of sessions in last 3h across all agents (~22 currently — Aarz running + ~18 agy log files <3h). Stored = session files currently on disk across all 7 agents (163 currently — pruned daily by cron `28525a25b613` which caps each profile's sessions/JSON at 30 and agy/copilot log dirs at 30 each).
+
+**Session prune cron (2026-06-28 hardening):** `28525a25b613` `session-prune-and-report.sh` now prunes THREE places, not just aarz `state.db`:
+- Section A: bymax/copi/jarvis/neo state.dbs (cap 30, delete >2d)
+- Section B: profiles/*/sessions/*.json (cap 30 newest, exclude sessions.json)
+- Section C: agy `cli-*.log` (cap 30) + copilot `process-*.log` (cap 30)
+- Existing aarz state.db logic preserved unchanged
+
+Pre-fix the JSON files and log dirs accumulated forever → 548. Post-fix (manual prune run + daily cron) → ~163 and dropping as old data ages out.
 3. **Agents tab: non-Aarz agents show ACTIVE/STANDBY based on `isActiveRecent`** — For agy/neo/jarvis/bymax/nina/copi, the card flips to ACTIVE if there's any signal in the last 4h (separate threshold from stats — agent cards use WORKING_MS=4h, stats use STATS_ACTIVE_MS=3h).
 4. **Bug fix: agy data source** — `loadAll()` was calling `getHermesData('agy')` (returns empty because `~/.hermes/profiles/agy/` doesn't exist) instead of `getAgyData()` (reads `~/.gemini/antigravity-cli/log/`).
 5. **Bug fix: copilot profile alias** — `AGENTS` array uses `id: 'copilot'` but profile dir is `copi`. Total Sessions card now correctly maps the alias.
