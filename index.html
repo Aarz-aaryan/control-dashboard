@@ -1849,12 +1849,17 @@
             <div class="stats-hero" style="flex: 1 1 500px; margin-bottom: 0;">
                 <div class="stats-hero-total">
                     <div class="stats-hero-number" id="stat-total-sessions">0</div>
-                    <div class="stats-hero-label">Active Sessions</div>
+                    <div class="stats-hero-label">Active Sessions (4h)</div>
                 </div>
                 <div class="stats-hero-divider"></div>
                 <div class="stats-agent-grid" id="stats-agent-grid">
                     <!-- Populated dynamically by updateStatsCounts() -->
                 </div>
+            </div>
+            <div class="stat-card" id="total-sessions-stat" style="flex: 1 1 240px; min-width: 200px; height: auto; background: var(--card-bg); border: 1.2px solid var(--card-border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 24px 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                <div class="stats-hero-number" id="stat-total-sessions-all" style="font-family: 'Share Tech Mono', monospace; font-size: 4.5rem; font-weight: 700; color: var(--gold); line-height: 1; text-shadow: 0 0 20px rgba(196, 154, 108, 0.3);">0</div>
+                <div class="stats-hero-label" style="font-family: 'DM Sans', sans-serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-top: 6px; font-weight: 600;">Total Sessions</div>
+                <div class="stat-cron-subtitle" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500;">all-time stored</div>
             </div>
             <div class="stat-card" id="cron-jobs-stat" style="flex: 1 1 240px; min-width: 200px; height: auto; background: var(--card-bg); border: 1.2px solid var(--card-border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 24px 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                 <div class="stats-hero-number" id="stat-cron-count" style="font-family: 'Share Tech Mono', monospace; font-size: 4.5rem; font-weight: 700; color: var(--gold); line-height: 1; text-shadow: 0 0 20px rgba(196, 154, 108, 0.3);">0</div>
@@ -2524,6 +2529,46 @@ function updateCronStats() {
     if (elCronCount) elCronCount.textContent = activeCount;
     if (elCronActive) elCronActive.textContent = activeCount;
     if (elCronPaused) elCronPaused.textContent = pausedCount;
+}
+
+let _totalSessionCache = null;
+let _totalSessionCacheTs = 0;
+
+async function updateTotalSessionCounts() {
+    if (Date.now() - _totalSessionCacheTs < 30000 && _totalSessionCache !== null) {
+        const el = document.getElementById('stat-total-sessions-all');
+        if (el) el.textContent = _totalSessionCache;
+        return;
+    }
+    
+    let total = 0;
+    const fetchPromises = AGENTS.map(async (a) => {
+        try {
+            // AGENTS uses id='copilot' but profile dir is 'copi'; same for any future aliases
+            const profileId = a.id === 'copilot' ? 'copi' : a.id;
+            if (a.id === 'agy') {
+                const files = await fetchDirList('/.gemini/antigravity-cli/log/', '[^"]+\\.log');
+                return files.length;
+            } else if (a.id === 'copilot') {
+                const files = await fetchDirList('/.copilot/logs/', '[^"]+\\.log');
+                return files.filter(f => f.startsWith('process-') || f === 'copilot.log').length;
+            } else {
+                const files = await fetchDirList('/.hermes/profiles/' + profileId + '/sessions/', '[^"]+\\.json');
+                return files.filter(f => f !== 'sessions.json').length;
+            }
+        } catch (e) {
+            return 0;
+        }
+    });
+    
+    const counts = await Promise.all(fetchPromises);
+    total = counts.reduce((acc, c) => acc + c, 0);
+    
+    _totalSessionCache = total;
+    _totalSessionCacheTs = Date.now();
+    
+    const el = document.getElementById('stat-total-sessions-all');
+    if (el) el.textContent = total;
 }
 
 // ── Dynamic renderers for panels ───────────────────────────────────────────
@@ -3374,6 +3419,7 @@ async function loadAll() {
         const results = AGENTS.map(a => ({ a, d: getCached(a.id) }));
         renderCards(results);
         updateStatsCounts();
+        updateTotalSessionCounts();
     }
 
     // Fetch agy log data (sources from antigravity CLI log files; hermes profile for agy doesn't exist)
@@ -3430,6 +3476,7 @@ async function loadAll() {
     // Staggered execution of workers to ensure low load and high stability
     await Promise.all([fetchWorker(), fetchWorker()]);
     updateStatsCounts();
+    updateTotalSessionCounts();
 
     // Fetch dynamic JSON endpoints
     try {
