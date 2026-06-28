@@ -1849,7 +1849,7 @@
             <div class="stats-hero" style="flex: 1 1 500px; margin-bottom: 0;">
                 <div class="stats-hero-total">
                     <div class="stats-hero-number" id="stat-total-sessions">0</div>
-                    <div class="stats-hero-label">Active Sessions (4h)</div>
+                    <div class="stats-hero-label">Active Sessions (3h)</div>
                 </div>
                 <div class="stats-hero-divider"></div>
                 <div class="stats-agent-grid" id="stats-agent-grid">
@@ -1858,8 +1858,8 @@
             </div>
             <div class="stat-card" id="total-sessions-stat" style="flex: 1 1 240px; min-width: 200px; height: auto; background: var(--card-bg); border: 1.2px solid var(--card-border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 24px 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                 <div class="stats-hero-number" id="stat-total-sessions-all" style="font-family: 'Share Tech Mono', monospace; font-size: 4.5rem; font-weight: 700; color: var(--gold); line-height: 1; text-shadow: 0 0 20px rgba(196, 154, 108, 0.3);">0</div>
-                <div class="stats-hero-label" style="font-family: 'DM Sans', sans-serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-top: 6px; font-weight: 600;">Total Sessions</div>
-                <div class="stat-cron-subtitle" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500;">all-time stored</div>
+                <div class="stats-hero-label" style="font-family: 'DM Sans', sans-serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-top: 6px; font-weight: 600;">Stored Sessions</div>
+                <div class="stat-cron-subtitle" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500;">currently on disk</div>
             </div>
             <div class="stat-card" id="cron-jobs-stat" style="flex: 1 1 240px; min-width: 200px; height: auto; background: var(--card-bg); border: 1.2px solid var(--card-border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 24px 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                 <div class="stats-hero-number" id="stat-cron-count" style="font-family: 'Share Tech Mono', monospace; font-size: 4.5rem; font-weight: 700; color: var(--gold); line-height: 1; text-shadow: 0 0 20px rgba(196, 154, 108, 0.3);">0</div>
@@ -2005,7 +2005,8 @@ const AGENTS = [
     { id: 'nina',    name: 'Nina',         role: 'Research Agent',     color: '#e2b98a', dim: 'rgba(226, 185, 138, 0.15)',  icon: 'nina.svg' },
 ];
 
-const WORKING_MS = 4 * 60 * 60 * 1000; // 4 hours — active session tracking threshold
+const WORKING_MS = 4 * 60 * 60 * 1000; // 4 hours — agent card ACTIVE/STANDBY threshold
+const STATS_ACTIVE_MS = 3 * 60 * 60 * 1000; // 3 hours — Stats tab "Active Sessions" threshold (tighter than agent cards)
 const SESSION_MS = 12 * 60 * 60 * 1000; // 12 hours — session tracking threshold
 const REFRESH_MS = 30 * 1000;
 const CACHE_TTL_MS = 60 * 1000;
@@ -2488,7 +2489,8 @@ function updateStatsCounts() {
     AGENTS.forEach(a => {
         const cached = getCached(a.id);
         const sessions = cached?.sessions || [];
-        const count = sessions.filter(s => Date.now() - s.ts > 0 && Date.now() - s.ts < WORKING_MS).length;
+        // Stats tab uses 3h window (tighter than agent cards' 4h)
+        const count = sessions.filter(s => Date.now() - s.ts > 0 && Date.now() - s.ts < STATS_ACTIVE_MS).length;
         
         // Sum counts for overall total
         if (a.id === 'aarz') {
@@ -3427,7 +3429,8 @@ async function loadAll() {
     try {
         agyData = await getAgyData();
         if (agyData?.sessions) {
-            agyProfileSessionsCount = agyData.sessions.filter(s => Date.now() - s.ts > 0 && Date.now() - s.ts < WORKING_MS).length;
+            // Stats tab uses 3h window (tighter than agent cards' 4h)
+            agyProfileSessionsCount = agyData.sessions.filter(s => Date.now() - s.ts > 0 && Date.now() - s.ts < STATS_ACTIVE_MS).length;
         } else {
             agyProfileSessionsCount = 0;
         }
