@@ -3,7 +3,7 @@
 **Live:** http://100.100.35.6:8000/agent-dashboard/
 **Repo:** https://github.com/Aarz-aaryan/control-dashboard (branch: main)
 **Local path:** `/home/Aarz/agent-dashboard/` (folder name retained for compatibility with static server)
-**Last commit:** Phase 5 priority + drag-and-drop — pending push
+**Last commit:** Phase 6 — Stats cron count + Agents isActiveRecent fix (pending push)
 
 ## Mission
 
@@ -11,7 +11,24 @@ Hermes Agent Dashboard — centralized control hub for multi-agent orchestration
 
 ## Status
 
-**Active** — Phase 5 (priority + drag-and-drop) deployed, watchdog running, all commits pushed to canonical repo.
+**Active** — Phase 6 deployed, watchdog running, all commits pushed to canonical repo.
+
+## Phase 6 — Stats Tab Cron Count + Agents isActiveRecent Fix (2026-06-28)
+
+**Requested features:**
+
+1. **Stats tab: Cron Jobs count** — Side-by-side stat card next to the Active Sessions hero, sourced from `missions.json` (read-only, updated every 30s by `update_data.py`). Shows total active count + paused count subtitle.
+2. **Agents tab: non-Aarz agents show ACTIVE/STANDBY based on `isActiveRecent`** — For agy/neo/jarvis/bymax/nina/copi, the card flips to ACTIVE if there's any signal in the last 4h (no longer requires actual session dirs that don't exist for most profiles).
+3. **Bug fix: agy data source** — `loadAll()` was calling `getHermesData('agy')` (returns empty because `~/.hermes/profiles/agy/` doesn't exist) instead of `getAgyData()` (reads `~/.gemini/antigravity-cli/log/`). Now correctly uses `getAgyData()` so agy shows real session counts (e.g. 15 active sessions when multiple agy runs are in flight).
+
+**Why this matters:**
+- Aaryan wanted to see total session count + cron count in one glance from the Stats tab.
+- Aaryan wanted ACTIVE/STANDBY indicator for all agents (not just Aarz) — particularly important for agy which can run multiple parallel sessions.
+- The `getHermesData('agy')` bug was masking all agy activity on the dashboard (always showed 0 sessions even when agy was actively running).
+
+**Verification:** All confirmed live at http://100.100.35.6:8000/agent-dashboard/. Stats shows Cron=16 active / 0 paused. Agents shows Aarz=3 sessions, agy=15 sessions (when active), others=STANDBY when idle.
+
+**Backup:** Pre-edit index.html preserved at `index.html.bak.2026-06-28.b4` (134606 bytes).
 
 ## Phase 5 — Mission Priority & Drag-and-Drop (2026-06-27, commit pending)
 

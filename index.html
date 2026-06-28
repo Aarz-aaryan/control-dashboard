@@ -1845,14 +1845,21 @@
         <h2 class="panel-title">System & Session Stats</h2>
         
         <!-- SECTION A: Session Stats — Hero + Per-agent grid -->
-        <div class="stats-hero">
-            <div class="stats-hero-total">
-                <div class="stats-hero-number" id="stat-total-sessions">0</div>
-                <div class="stats-hero-label">Active Sessions</div>
+        <div class="stats-hero-row" style="display: flex; gap: 24px; margin-bottom: 28px; align-items: stretch; flex-wrap: wrap;">
+            <div class="stats-hero" style="flex: 1 1 500px; margin-bottom: 0;">
+                <div class="stats-hero-total">
+                    <div class="stats-hero-number" id="stat-total-sessions">0</div>
+                    <div class="stats-hero-label">Active Sessions</div>
+                </div>
+                <div class="stats-hero-divider"></div>
+                <div class="stats-agent-grid" id="stats-agent-grid">
+                    <!-- Populated dynamically by updateStatsCounts() -->
+                </div>
             </div>
-            <div class="stats-hero-divider"></div>
-            <div class="stats-agent-grid" id="stats-agent-grid">
-                <!-- Populated dynamically by updateStatsCounts() -->
+            <div class="stat-card" id="cron-jobs-stat" style="flex: 1 1 240px; min-width: 200px; height: auto; background: var(--card-bg); border: 1.2px solid var(--card-border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 24px 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                <div class="stats-hero-number" id="stat-cron-count" style="font-family: 'Share Tech Mono', monospace; font-size: 4.5rem; font-weight: 700; color: var(--gold); line-height: 1; text-shadow: 0 0 20px rgba(196, 154, 108, 0.3);">0</div>
+                <div class="stats-hero-label" style="font-family: 'DM Sans', sans-serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-top: 6px; font-weight: 600;">Cron Jobs</div>
+                <div class="stat-cron-subtitle" id="stat-cron-subtitle" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500;"><span style="color: var(--sage);" id="stat-cron-active">0</span> active / <span style="color: var(--text-muted);" id="stat-cron-paused">0</span> paused</div>
             </div>
         </div>
 
@@ -2278,8 +2285,22 @@ function cardHTML(agent, data) {
     const age = ts ? now - ts : 0;
     const sessions = data?.sessions || [];
     const activeSessions = sessions.filter(s => now - s.ts > 0 && now - s.ts < WORKING_MS);
-    const working = activeSessions.length > 0 || (age < WORKING_MS && age > 0);
-    const activeCount = activeSessions.length > 0 ? activeSessions.length : (working ? 1 : 0);
+    let working = activeSessions.length > 0 || (age < WORKING_MS && age > 0);
+    let activeCount = activeSessions.length > 0 ? activeSessions.length : (working ? 1 : 0);
+
+    if (data && ts) {
+        data.isActiveRecent = (now - ts) < WORKING_MS;
+    }
+
+    if (agent.id !== 'aarz' && activeCount === 0) {
+        if (data && data.isActiveRecent) {
+            working = true;
+            activeCount = 1;
+        } else {
+            working = false;
+            activeCount = 0;
+        }
+    }
     const ageStr = formatAge(age);
     const bar = barWidth(age);
 
@@ -2451,6 +2472,7 @@ function switchTab(tabId) {
 }
 
 let agyProfileSessionsCount = 0;
+let latestMissionsJson = null;
 
 function updateStatsCounts() {
     let aarzCount = 0;
@@ -2487,6 +2509,21 @@ function updateStatsCounts() {
     if (elAarz) elAarz.textContent = aarzCount;
     if (elAgy) elAgy.textContent = agyCount;
     if (elCopilot) elCopilot.textContent = copilotCount;
+}
+
+function updateCronStats() {
+    if (!latestMissionsJson) return;
+    const cronJobs = latestMissionsJson.cron || [];
+    const activeCount = cronJobs.filter(j => j.status === 'ACTIVE').length;
+    const pausedCount = cronJobs.filter(j => j.status !== 'ACTIVE').length;
+    
+    const elCronCount = document.getElementById('stat-cron-count');
+    const elCronActive = document.getElementById('stat-cron-active');
+    const elCronPaused = document.getElementById('stat-cron-paused');
+    
+    if (elCronCount) elCronCount.textContent = activeCount;
+    if (elCronActive) elCronActive.textContent = activeCount;
+    if (elCronPaused) elCronPaused.textContent = pausedCount;
 }
 
 // ── Dynamic renderers for panels ───────────────────────────────────────────
@@ -3339,10 +3376,10 @@ async function loadAll() {
         updateStatsCounts();
     }
 
-    // Fetch agy profile sessions separately for the stats panel
+    // Fetch agy log data (sources from antigravity CLI log files; hermes profile for agy doesn't exist)
     let agyData = null;
     try {
-        agyData = await getHermesData('agy');
+        agyData = await getAgyData();
         if (agyData?.sessions) {
             agyProfileSessionsCount = agyData.sessions.filter(s => Date.now() - s.ts > 0 && Date.now() - s.ts < WORKING_MS).length;
         } else {
@@ -3369,12 +3406,19 @@ async function loadAll() {
                     d = await getHermesData(a.id);
                 }
                 
+                if (d) {
+                    d.isActiveRecent = (Date.now() - (d.ts || 0)) < WORKING_MS;
+                }
+                
                 const old = getCached(a.id);
                 const sessionsChanged = d?.sessions && JSON.stringify(d.sessions.map(s=>s.ts).sort()) !== JSON.stringify(old?.sessions?.map(s=>s.ts).sort());
                 if (!old || (d && d.ts !== old.ts) || sessionsChanged) {
                     setCache(a.id, d);
                     updateCard(a, d);
                 } else {
+                    if (old) {
+                        old.isActiveRecent = (Date.now() - (old.ts || 0)) < WORKING_MS;
+                    }
                     setCache(a.id, old); // Refresh cache TTL
                 }
             } catch (err) {
@@ -3402,6 +3446,11 @@ async function loadAll() {
         const rServerData = await fetchJSON('/agent-dashboard/r_server_info.json');
         if (rServerData) renderRServerPanel(rServerData);
     } catch(e) { console.error("Error loading r-server info:", e); }
+
+    try {
+        latestMissionsJson = await fetchJSON('/agent-dashboard/missions.json');
+        updateCronStats();
+    } catch(e) { console.error("Error loading missions:", e); }
 
     document.getElementById('refreshRing').classList.remove('on');
     isFetching = false;
