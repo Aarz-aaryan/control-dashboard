@@ -17,9 +17,11 @@ Hermes Agent Dashboard — centralized control hub for multi-agent orchestration
 
 **Requested features:**
 
-1. **Stats tab: Cron Jobs count** — Side-by-side stat card next to the Active Sessions hero, sourced from `missions.json` (read-only, updated every 30s by `update_data.py`). Shows total active count + paused count subtitle.
-2. **Agents tab: non-Aarz agents show ACTIVE/STANDBY based on `isActiveRecent`** — For agy/neo/jarvis/bymax/nina/copi, the card flips to ACTIVE if there's any signal in the last 4h (no longer requires actual session dirs that don't exist for most profiles).
-3. **Bug fix: agy data source** — `loadAll()` was calling `getHermesData('agy')` (returns empty because `~/.hermes/profiles/agy/` doesn't exist) instead of `getAgyData()` (reads `~/.gemini/antigravity-cli/log/`). Now correctly uses `getAgyData()` so agy shows real session counts (e.g. 15 active sessions when multiple agy runs are in flight).
+1. **Stats tab: Cron Jobs count** — Side-by-side stat card, sourced from `missions.json` (16 active / 0 paused).
+2. **Stats tab: Active Sessions (4h) + Total Sessions** — Three side-by-side stat cards now. Active = sum of <4h sessions across all agents (19 currently — includes 16 agy log files). Total = all-time count of session files across all 7 agents (548 currently).
+3. **Agents tab: non-Aarz agents show ACTIVE/STANDBY based on `isActiveRecent`** — For agy/neo/jarvis/bymax/nina/copi, the card flips to ACTIVE if there's any signal in the last 4h.
+4. **Bug fix: agy data source** — `loadAll()` was calling `getHermesData('agy')` (returns empty because `~/.hermes/profiles/agy/` doesn't exist) instead of `getAgyData()` (reads `~/.gemini/antigravity-cli/log/`).
+5. **Bug fix: copilot profile alias** — `AGENTS` array uses `id: 'copilot'` but profile dir is `copi`. Total Sessions card now correctly maps the alias.
 
 **Why this matters:**
 - Aaryan wanted to see total session count + cron count in one glance from the Stats tab.
