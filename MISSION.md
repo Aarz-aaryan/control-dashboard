@@ -3,7 +3,10 @@
 **Live:** http://100.100.35.6:8000/agent-dashboard/
 **Repo:** https://github.com/Aarz-aaryan/control-dashboard (branch: main)
 **Local path:** `/home/Aarz/agent-dashboard/` (folder name retained for compatibility with static server)
-**Last commit:** Phase 6 — Stats cron count + Agents isActiveRecent fix (pending push)
+**Last commit:** Phase 6 — Stats cron count + Agents isActiveRecent fix
+
+## Housekeeping (2026-07-02)
+- Deleted 5 stale `index.html.bak*.2026-06-28.b4` files from the 06-28 audit session (bak5 was byte-identical to current index.html — zero rollback value retained). Added `index.html.bak*` to `.gitignore` so future pre-edit snapshots don't show as untracked noise.
 
 ## Mission
 
