@@ -3,10 +3,18 @@
 **Live:** http://100.100.35.6:8000/agent-dashboard/
 **Repo:** https://github.com/Aarz-aaryan/control-dashboard (branch: main)
 **Local path:** `/home/Aarz/agent-dashboard/` (folder name retained for compatibility with static server)
-**Last commit:** Phase 6 — Stats cron count + Agents isActiveRecent fix
+**Last commit:** Stats tab — per-agent grid render + 30m In Progress threshold
 
 ## Housekeeping (2026-07-02)
 - Deleted 5 stale `index.html.bak*.2026-06-28.b4` files from the 06-28 audit session (bak5 was byte-identical to current index.html — zero rollback value retained). Added `index.html.bak*` to `.gitignore` so future pre-edit snapshots don't show as untracked noise.
+
+## Stats Tab — Per-Agent Grid + 30m Threshold (2026-07-02)
+**Fixes shipped:**
+1. **Per-agent grid now renders.** The `#stats-agent-grid` container had an HTML comment promising dynamic population, but no code populated it — `updateStatsCounts()` was writing to 3 dead DOM IDs (`#stat-aarz-sessions`, `#stat-agy-sessions`, `#stat-copilot-sessions`) that didn't exist. Rewrote the function to iterate the `AGENTS` array (7 agents) and build `.stats-agent-card` elements with colored dots matching each agent's theme color. Cards show "active" or "standby" state based on whether count > 0.
+2. **In Progress threshold loosened from 5min → 30min.** With 5min the card often read 0/1 and felt dead. 30min shows anything currently being worked on without dragging in old history. Label updated to `IN PROGRESS (30m)`. `WORKING_MS = 4h` for agent cards unchanged (kept separate per intent).
+3. **Dead code cleaned up.** The 3 unused `stat-*-sessions` ID references removed.
+
+**Verified live:** Total now reads 5 (Aarz=3 + agy=2 in last 30m). All 7 cards render with correct agent colors. No regression to System Health panels, Stored Sessions, or Cron Jobs cards.
 
 ## Mission
 
