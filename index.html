@@ -1849,7 +1849,7 @@
             <div class="stats-hero" style="flex: 1 1 500px; margin-bottom: 0;">
                 <div class="stats-hero-total">
                     <div class="stats-hero-number" id="stat-total-sessions">0</div>
-                    <div class="stats-hero-label">In Progress (5m)</div>
+                    <div class="stats-hero-label">In Progress (30m)</div>
                     <div class="stat-cron-subtitle" id="stat-last-updated" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; opacity: 0.75;">updated just now</div>
                 </div>
                 <div class="stats-hero-divider"></div>
@@ -2007,7 +2007,7 @@ const AGENTS = [
 ];
 
 const WORKING_MS = 4 * 60 * 60 * 1000; // 4 hours — agent card ACTIVE/STANDBY threshold
-const STATS_ACTIVE_MS = 5 * 60 * 1000; // 5 minutes — Stats tab "In Progress" threshold (currently-active only, not last-3h history)
+const STATS_ACTIVE_MS = 30 * 60 * 1000; // 30 minutes — Stats tab "In Progress" threshold (currently-active only, not last-3h history)
 const SESSION_MS = 12 * 60 * 60 * 1000; // 12 hours — session tracking threshold
 const REFRESH_MS = 30 * 1000;
 const CACHE_TTL_MS = 60 * 1000;
@@ -2482,40 +2482,51 @@ let agyProfileSessionsCount = 0;
 let latestMissionsJson = null;
 
 function updateStatsCounts() {
-    let aarzCount = 0;
-    let agyCount = agyProfileSessionsCount; // Specifically from profile
-    let copilotCount = 0;
     let totalCount = 0;
+    const gridEl = document.getElementById('stats-agent-grid');
+    if (gridEl) gridEl.innerHTML = '';
     
     AGENTS.forEach(a => {
-        const cached = getCached(a.id);
-        const sessions = cached?.sessions || [];
-        // Stats tab uses 3h window (tighter than agent cards' 4h)
-        const count = sessions.filter(s => Date.now() - s.ts > 0 && Date.now() - s.ts < STATS_ACTIVE_MS).length;
-        
-        // Sum counts for overall total
-        if (a.id === 'aarz') {
-            aarzCount = count;
-            totalCount += count;
-        } else if (a.id === 'copilot') {
-            copilotCount = count;
-            totalCount += count;
-        } else if (a.id === 'agy') {
-            // We use the profile sessions count for total sessions count (which is 0 or low)
-            totalCount += agyCount;
+        let count = 0;
+        if (a.id === 'agy') {
+            count = agyProfileSessionsCount;
         } else {
-            totalCount += count;
+            const cached = getCached(a.id);
+            const sessions = cached?.sessions || [];
+            count = sessions.filter(s => Date.now() - s.ts > 0 && Date.now() - s.ts < STATS_ACTIVE_MS).length;
+        }
+        
+        totalCount += count;
+        
+        if (gridEl) {
+            const card = document.createElement('div');
+            card.className = 'stats-agent-card';
+            
+            const dot = document.createElement('div');
+            dot.className = 'stats-agent-dot' + (count > 0 ? ' active' : ' standby');
+            dot.style.setProperty('--agent-dot-color', a.color);
+            dot.style.backgroundColor = a.color;
+            
+            const info = document.createElement('div');
+            info.className = 'stats-agent-info';
+            const nameEl = document.createElement('div');
+            nameEl.className = 'stats-agent-name';
+            nameEl.textContent = escapeHtml(a.name);
+            info.appendChild(nameEl);
+            
+            const countEl = document.createElement('div');
+            countEl.className = 'stats-agent-count' + (count === 0 ? ' zero' : '');
+            countEl.textContent = count;
+            
+            card.appendChild(dot);
+            card.appendChild(info);
+            card.appendChild(countEl);
+            gridEl.appendChild(card);
         }
     });
     
     const elTotal = document.getElementById('stat-total-sessions');
-    const elAarz = document.getElementById('stat-aarz-sessions');
-    const elAgy = document.getElementById('stat-agy-sessions');
-    const elCopilot = document.getElementById('stat-copilot-sessions');
-    
     if (elTotal) elTotal.textContent = totalCount;
-    if (elAarz) elAarz.textContent = aarzCount;
-    if (elAgy) elAgy.textContent = agyCount;
     
     // Update "last updated" timestamp so user knows the data is live
     const elUpdated = document.getElementById('stat-last-updated');
@@ -2526,7 +2537,6 @@ function updateStatsCounts() {
         const s = d.getSeconds().toString().padStart(2,'0');
         elUpdated.textContent = `updated ${h}:${m}:${s} · auto-refresh 30s`;
     }
-    if (elCopilot) elCopilot.textContent = copilotCount;
 }
 
 function updateCronStats() {
