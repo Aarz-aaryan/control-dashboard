@@ -3,7 +3,7 @@
 **Live:** http://100.100.35.6:8000/agent-dashboard/
 **Repo:** https://github.com/Aarz-aaryan/control-dashboard (branch: main)
 **Local path:** `/home/Aarz/agent-dashboard/` (folder name retained for compatibility with static server)
-**Last commit:** Stats tab — per-agent grid render + 30m In Progress threshold
+**Last commit:** Stored Sessions card — Hermes profiles only
 
 ## Housekeeping (2026-07-02)
 - Deleted 5 stale `index.html.bak*.2026-06-28.b4` files from the 06-28 audit session (bak5 was byte-identical to current index.html — zero rollback value retained). Added `index.html.bak*` to `.gitignore` so future pre-edit snapshots don't show as untracked noise.
@@ -15,6 +15,18 @@
 3. **Dead code cleaned up.** The 3 unused `stat-*-sessions` ID references removed.
 
 **Verified live:** Total now reads 5 (Aarz=3 + agy=2 in last 30m). All 7 cards render with correct agent colors. No regression to System Health panels, Stored Sessions, or Cron Jobs cards.
+
+## Stats Tab — Stored Sessions: Hermes Profiles Only (2026-07-02)
+**Change:** `updateTotalSessionCounts()` now iterates only over the 5 Hermes profiles (`HERMES_PROFILES = ['aarz', 'bymax', 'copi', 'jarvis', 'neo']`), counting their `sessions/*.json` files (excluding `sessions.json` index). agy cli logs and copilot process logs are no longer included.
+
+**Why:** Aaryan wants the card to reflect Hermes session storage only. agy + copilot have their own crons covering them — leaving those alone.
+
+**Cron coverage confirmed (no gap):**
+- Hermes profiles (5): `session-prune-all-profiles-and-logs-and-mnemosyne` (cron `28525a25b613`, daily 03:00)
+- agy cli logs: `session-prune-all-profiles-and-logs-and-mnemosyne` (daily) + `AI Tool Cleaner` (cron `87c1bbc653af`, weekly Sunday)
+- copilot logs: same two crons
+
+**Verified live:** Stored Sessions = 131 (matches disk sum: 30+30+29+24+18). Subtitle updated to "Hermes profiles · currently on disk" for clarity.
 
 ## Mission
 

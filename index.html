@@ -1860,7 +1860,7 @@
             <div class="stat-card" id="total-sessions-stat" style="flex: 1 1 240px; min-width: 200px; height: auto; background: var(--card-bg); border: 1.2px solid var(--card-border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 24px 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                 <div class="stats-hero-number" id="stat-total-sessions-all" style="font-family: 'Share Tech Mono', monospace; font-size: 4.5rem; font-weight: 700; color: var(--gold); line-height: 1; text-shadow: 0 0 20px rgba(196, 154, 108, 0.3);">0</div>
                 <div class="stats-hero-label" style="font-family: 'DM Sans', sans-serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-top: 6px; font-weight: 600;">Stored Sessions</div>
-                <div class="stat-cron-subtitle" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500;">currently on disk</div>
+                <div class="stat-cron-subtitle" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500;">Hermes profiles · currently on disk</div>
             </div>
             <div class="stat-card" id="cron-jobs-stat" style="flex: 1 1 240px; min-width: 200px; height: auto; background: var(--card-bg); border: 1.2px solid var(--card-border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 24px 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                 <div class="stats-hero-number" id="stat-cron-count" style="font-family: 'Share Tech Mono', monospace; font-size: 4.5rem; font-weight: 700; color: var(--gold); line-height: 1; text-shadow: 0 0 20px rgba(196, 154, 108, 0.3);">0</div>
@@ -2565,20 +2565,13 @@ async function updateTotalSessionCounts() {
     }
     
     let total = 0;
-    const fetchPromises = AGENTS.map(async (a) => {
+    const HERMES_PROFILES = ['aarz', 'bymax', 'copi', 'jarvis', 'neo'];
+    const fetchPromises = HERMES_PROFILES.map(async (profile) => {
         try {
             // AGENTS uses id='copilot' but profile dir is 'copi'; same for any future aliases
-            const profileId = a.id === 'copilot' ? 'copi' : a.id;
-            if (a.id === 'agy') {
-                const files = await fetchDirList('/.gemini/antigravity-cli/log/', '[^"]+\\.log');
-                return files.length;
-            } else if (a.id === 'copilot') {
-                const files = await fetchDirList('/.copilot/logs/', '[^"]+\\.log');
-                return files.filter(f => f.startsWith('process-') || f === 'copilot.log').length;
-            } else {
-                const files = await fetchDirList('/.hermes/profiles/' + profileId + '/sessions/', '[^"]+\\.json');
-                return files.filter(f => f !== 'sessions.json').length;
-            }
+            const profileId = profile === 'copilot' ? 'copi' : profile;
+            const files = await fetchDirList('/.hermes/profiles/' + profileId + '/sessions/', '[^"]+\\.json');
+            return files.filter(f => f !== 'sessions.json').length;
         } catch (e) {
             return 0;
         }
