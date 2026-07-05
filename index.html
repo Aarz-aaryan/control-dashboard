@@ -2630,14 +2630,38 @@ function updateCronStats() {
     const cronJobs = latestMissionsJson.cron || [];
     const activeCount = cronJobs.filter(j => j.status === 'ACTIVE').length;
     const pausedCount = cronJobs.filter(j => j.status !== 'ACTIVE').length;
-    
+    const failingCount = cronJobs.filter(j => j.last_status === 'error' || j.last_error).length;
+
     const elCronCount = document.getElementById('stat-cron-count');
     const elCronActive = document.getElementById('stat-cron-active');
     const elCronPaused = document.getElementById('stat-cron-paused');
-    
+    const elBadge = document.getElementById('stat-cron-health-badge');
+
     if (elCronCount) elCronCount.textContent = activeCount;
     if (elCronActive) elCronActive.textContent = activeCount;
     if (elCronPaused) elCronPaused.textContent = pausedCount;
+
+    // Health badge on the tile — visible without expanding
+    if (elBadge) {
+        if (failingCount > 0) {
+            elBadge.textContent = failingCount === 1 ? '1 failing' : failingCount + ' failing';
+            elBadge.style.background = 'rgba(196, 108, 78, 0.15)';
+            elBadge.style.color = 'var(--terracotta)';
+            elBadge.style.border = '1px solid var(--terracotta)';
+            elBadge.style.opacity = '1';
+        } else if (cronJobs.length === 0) {
+            elBadge.style.opacity = '0';
+        } else {
+            elBadge.textContent = 'All ' + cronJobs.length + ' healthy';
+            elBadge.style.background = 'rgba(143, 163, 130, 0.15)';
+            elBadge.style.color = 'var(--sage)';
+            elBadge.style.border = '1px solid var(--sage)';
+            elBadge.style.opacity = '1';
+        }
+    }
+
+    // Populate the expansion panel list (even when collapsed, so opening is instant)
+    renderCronDetails(cronJobs);
 }
 
 let _totalSessionCache = null;
