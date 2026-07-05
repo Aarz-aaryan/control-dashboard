@@ -84,7 +84,12 @@ def parse_job(j):
         "name": name,
         "schedule": schedule,
         "last_run": last_run,
-        "status": status
+        "status": status,
+        "last_status": j.get("last_status", ""),
+        "last_error": j.get("last_error", ""),
+        "prompt": j.get("prompt", ""),
+        "script": j.get("script", ""),
+        "paused_reason": j.get("paused_reason", "")
     }
 
 def get_cron_jobs():

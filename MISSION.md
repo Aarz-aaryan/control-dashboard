@@ -5,6 +5,14 @@
 **Local path:** `/home/Aarz/agent-dashboard/` (folder name retained for compatibility with static server)
 **Last commit:** Stored Sessions card — Hermes profiles only
 
+## Stats Tab — Cron Jobs Expansion Panel & Health Rollup (2026-07-04)
+**Fixes shipped:**
+1. **Interactive Cron Tile:** The Cron Jobs tile now has a hover effect and is clickable (`onclick="toggleCronPanel()"`). It also displays a new health badge ("All X healthy" or "Y failing") reflecting the overall status of all jobs.
+2. **Expansion Panel:** Clicking the tile smoothly reveals a new inline panel directly below the "In Progress" stats row (preserving the 4-tile grid layout). The panel lists all cron jobs, showing name, schedule, a 60-char truncated purpose (from `prompt` or script path), last run (formatted as relative time), and a green/red health dot.
+3. **Rich Data Feed:** Updated `update_data.py`'s `parse_job()` function to extract `last_status`, `last_error`, `prompt`, `script`, and `paused_reason` directly from `~/.hermes/profiles/aarz/cron/jobs.json`. The frontend dynamically maps these fields on the 30s auto-refresh cycle without losing panel open/closed state.
+
+**Verified live:** The cron jobs tile expands to show real-time detail for each job. Hover effects match the existing aesthetics seamlessly.
+
 ## Housekeeping (2026-07-02)
 - Deleted 5 stale `index.html.bak*.2026-06-28.b4` files from the 06-28 audit session (bak5 was byte-identical to current index.html — zero rollback value retained). Added `index.html.bak*` to `.gitignore` so future pre-edit snapshots don't show as untracked noise.
 
