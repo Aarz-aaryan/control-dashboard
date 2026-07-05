@@ -13,6 +13,10 @@
 
 **Verified live:** The cron jobs tile expands to show real-time detail for each job. Hover effects match the existing aesthetics seamlessly.
 
+**Wiring fix (post-agy):** `updateCronStats()` originally only set the count/active/paused numbers — the new badge element and panel list were wired in via this commit. The badge now shows `"All N healthy"` (sage/green pill) or `"X failing"` (terracotta/red pill); the panel list is populated eagerly so expanding is instant.
+
+**Operational fix:** The `update_data.py` daemon had been dead since 2026-07-01 (3 days) — `missions.json` and `health.json` were stale. No systemd unit existed for it. Created `systemd-agent-dashboard-collector.service` (mirror of `~/.config/systemd/user/agent-dashboard-collector.service`), enabled + started. Daemon now runs as PID under systemd supervision (will survive reboots).
+
 ## Housekeeping (2026-07-02)
 - Deleted 5 stale `index.html.bak*.2026-06-28.b4` files from the 06-28 audit session (bak5 was byte-identical to current index.html — zero rollback value retained). Added `index.html.bak*` to `.gitignore` so future pre-edit snapshots don't show as untracked noise.
 

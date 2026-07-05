@@ -1,0 +1,14 @@
+[Unit]
+Description=Agent Dashboard Data Collector (update_data.py)
+After=network.target
+PartOf=agent-dashboard.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/Aarz/agent-dashboard
+ExecStart=/usr/bin/python3 /home/Aarz/agent-dashboard/update_data.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
