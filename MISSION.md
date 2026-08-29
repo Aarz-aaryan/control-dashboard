@@ -3,7 +3,20 @@
 **Live:** http://100.100.35.6:8000/agent-dashboard/
 **Repo:** https://github.com/Aarz-aaryan/control-dashboard (branch: main)
 **Local path:** `/home/Aarz/agent-dashboard/` (folder name retained for static server URL compatibility)
-**Last commit:** `3de13ab` — simplify all agent logos to geometric icons
+**Last commit:** `d84fff9` — Create button + Remove from Dashboard flow + GitHub sync
+
+## Current State (2026-08-29)
+
+**Missions tab features:**
+- **Create Mission / Project** button (top-right) → modal with title, description, kind (mission/project), priority, private toggle
+- **🗑 Remove** button on every card → confirms via modal → `gh repo delete` + state cleanup
+- All existing flow preserved: toggle, drag/drop, priority editor, classify/promote/demote, soft-delete
+
+**Cron for nightly sync (already existed, now covers new flows):**
+- `bada832688a9` GitHub Repos Nightly Sync — 03:00 daily — refreshes `repos.json` from `gh`
+- `c3eb7b11670b` Mission State Sync — every 6h — `missions_daemon.py` cleanup
+- `291945d064fe` GitHub Orphan Repo Auditor — Sun 04:00 — flags repos on GitHub but missing from state
+- `39e605319d90` Missions Watchdog — every 5min — restarts daemon/http-server if dead
 
 ## Current State (2026-08-29)
 
