@@ -1,6 +1,6 @@
 {
   "_version": 2,
-  "_last_modified": "2026-06-28T22:37:23.582272Z",
+  "_last_modified": "2026-08-18T04:20:34.634215Z",
   "_modified_by": "user",
   "missions": {
     "skyeye-drone-mission": {
@@ -38,22 +38,19 @@
       "priority": 99,
       "order": 6,
       "updated_at": "2026-06-28T06:04:24.574705Z"
-    },
-    "agent-dashboard": {
-      "status": "archived",
-      "priority": 98,
-      "order": 7,
-      "updated_at": "2026-06-28T22:37:02.550908Z"
     }
   },
   "projects": [
-    "agent-dashboard",
+    "OpenWA",
     "antigravity-cli-playbook",
     "control-dashboard",
+    "cron-intel-agentic",
+    "deck",
     "hermes-agent-setup",
     "homepi",
+    "homescreen-kiosk",
+    "internship-engine-2027",
     "n8n",
-    "nina-agent",
     "r-server"
   ]
 }

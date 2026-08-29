@@ -2010,11 +2010,11 @@
 const AGENTS = [
     { id: 'aarz',    name: 'Aarz',         role: 'Chief Orchestrator', color: '#c49a6c', dim: 'rgba(196, 154, 108, 0.15)',  icon: 'aarz.svg' },
     { id: 'agy',     name: 'agy',          role: 'Anti-Gravity CLI',   color: '#8bbccc', dim: 'rgba(139, 188, 204, 0.15)',  icon: 'agy.svg' },
-    { id: 'copilot', name: 'Copilot CLI',  role: 'Primary Coder',      color: '#7eb5a6', dim: 'rgba(126, 181, 166, 0.15)',  icon: 'copilot.svg' },
-    { id: 'neo',     name: 'Neo',          role: 'Agent Mesh',         color: '#e88f70', dim: 'rgba(232, 143, 112, 0.15)',  icon: 'neo.svg' },
-    { id: 'jarvis',  name: 'Jarvis',       role: 'n8n Automation',     color: '#d97d64', dim: 'rgba(217, 125, 100, 0.15)',  icon: 'jarvis.svg' },
-    { id: 'bymax',   name: 'Bymax',        role: 'LLM Provider',       color: '#a8cbd7', dim: 'rgba(168, 203, 215, 0.15)',  icon: 'bymax.svg' },
-    { id: 'nina',    name: 'Nina',         role: 'Research Agent',     color: '#e2b98a', dim: 'rgba(226, 185, 138, 0.15)',  icon: 'nina.svg' },
+    { id: 'scout',   name: 'Scout',        role: 'Research Agent',     color: '#3a6ea5', dim: 'rgba(58, 110, 165, 0.15)',   icon: 'scout.svg' },
+    { id: 'coder',   name: 'Coder',        role: 'Coding Specialist',  color: '#7eb5a6', dim: 'rgba(126, 181, 166, 0.15)',  icon: 'coder.svg' },
+    { id: 'builder', name: 'Builder',      role: 'DevOps / Automation',color: '#8a6f5a', dim: 'rgba(138, 111, 90, 0.15)',   icon: 'builder.svg' },
+    { id: 'tester',  name: 'Tester',       role: 'QA / E2E Testing',   color: '#c47060', dim: 'rgba(196, 112, 96, 0.15)',  icon: 'tester.svg' },
+    { id: 'jarvis',  name: 'Jarvis',       role: 'n8n Automation',     color: '#a05a5a', dim: 'rgba(160, 90, 90, 0.15)',   icon: 'jarvis.svg' },
 ];
 
 const WORKING_MS = 4 * 60 * 60 * 1000; // 4 hours — agent card ACTIVE/STANDBY threshold
@@ -2392,11 +2392,11 @@ function drawTreeLines() {
     
     const connections = [
         { from: 'aarz', to: 'agy' },
-        { from: 'aarz', to: 'copilot' },
-        { from: 'agy', to: 'neo' },
-        { from: 'agy', to: 'jarvis' },
-        { from: 'copilot', to: 'bymax' },
-        { from: 'copilot', to: 'nina' }
+        { from: 'aarz', to: 'scout' },
+        { from: 'aarz', to: 'coder' },
+        { from: 'aarz', to: 'builder' },
+        { from: 'aarz', to: 'tester' },
+        { from: 'aarz', to: 'jarvis' }
     ];
     
     connections.forEach(conn => {
@@ -2981,7 +2981,7 @@ function renderMissionsSections(repos, state) {
     };
 
     const renderCard = (repoName, kind /* 'mission-active' | 'mission-inactive' | 'project' | 'unclassified' */) => {
-        const repo = repoByName[repoName] || { name: repoName, description: '', updated_at: '', html_url: '#', private: false };
+        const repo = repoByName[repoName] || { name: repoName, description: '', updated_at: '', html_url: `https://github.com/Aarz-aaryan/${repoName}`, private: false };
         const visClass = repo.private ? 'private' : 'public';
         const visLabel = repo.private ? 'private' : 'public';
         const desc = repo.description
@@ -3572,9 +3572,6 @@ async function loadAll() {
                 let d = null;
                 if (a.id === 'agy') {
                     d = agyData;
-                } else if (a.id === 'copilot') {
-                    d = await getHermesData('copi');
-                    if (!d) d = await getCopilotData();
                 } else {
                     d = await getHermesData(a.id);
                 }
