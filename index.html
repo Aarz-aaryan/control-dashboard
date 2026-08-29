@@ -1152,6 +1152,14 @@
             border-color: var(--terracotta);
             color: var(--terracotta);
         }
+        .action-btn.action-remove-repo {
+            color: var(--terracotta);
+        }
+        .action-btn.action-remove-repo:hover {
+            background: rgba(196, 100, 80, 0.20);
+            border-color: #c46a52;
+            color: #f5f0e6;
+        }
         .action-btn:disabled,
         .action-btn.action-busy {
             opacity: 0.5;
@@ -1571,6 +1579,256 @@
             background: var(--sky);
             box-shadow: 0 0 4px var(--sky);
             animation: pulseGlow 1s infinite ease-in-out;
+        }
+
+        /* ── Missions header right side (button + sync) ── */
+        .missions-header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .btn-create-mission {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: linear-gradient(135deg, rgba(196,154,108,0.18), rgba(196,154,108,0.10));
+            border: 1px solid rgba(196, 154, 108, 0.35);
+            border-radius: 8px;
+            color: var(--gold);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .btn-create-mission:hover {
+            background: linear-gradient(135deg, rgba(196,154,108,0.28), rgba(196,154,108,0.16));
+            border-color: rgba(196, 154, 108, 0.55);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(196, 154, 108, 0.18);
+        }
+        .btn-create-mission:active {
+            transform: translateY(0);
+        }
+        .btn-create-icon {
+            font-size: 1.1rem;
+            line-height: 1;
+            font-weight: 400;
+        }
+        .btn-create-label {
+            white-space: nowrap;
+        }
+
+        /* ── Modals ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: modalFadeIn 0.2s ease;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-card {
+            background: linear-gradient(180deg, rgba(15, 19, 24, 0.98), rgba(10, 14, 20, 0.98));
+            border: 1px solid rgba(196, 154, 108, 0.18);
+            border-radius: 16px;
+            padding: 28px;
+            width: min(520px, 92vw);
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7), 0 0 60px rgba(196, 154, 108, 0.04);
+            animation: modalSlideIn 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .modal-card-sm {
+            width: min(440px, 90vw);
+        }
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(196, 154, 108, 0.12);
+        }
+        .modal-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--cream);
+            margin: 0;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.6rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: color 0.2s ease;
+        }
+        .modal-close:hover {
+            color: var(--cream);
+        }
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .modal-label {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .modal-label-half {
+            flex: 1;
+        }
+        .modal-label-text {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--gold);
+        }
+        .modal-label-hint {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+            color: var(--text-muted);
+            margin-left: 6px;
+        }
+        .modal-input {
+            background: rgba(9, 11, 15, 0.6);
+            border: 1px solid rgba(196, 154, 108, 0.15);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.92rem;
+            color: var(--cream);
+            transition: all 0.2s ease;
+        }
+        .modal-input:focus {
+            outline: none;
+            border-color: var(--gold);
+            background: rgba(9, 11, 15, 0.8);
+            box-shadow: 0 0 0 3px rgba(196, 154, 108, 0.10);
+        }
+        .modal-textarea {
+            resize: vertical;
+            min-height: 70px;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .modal-row {
+            display: flex;
+            gap: 12px;
+        }
+        .modal-checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+        .modal-checkbox-row input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--gold);
+            cursor: pointer;
+        }
+        .modal-body p {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.92rem;
+            color: var(--text-main);
+            line-height: 1.55;
+            margin: 0;
+        }
+        .modal-body p code {
+            font-family: 'Share Tech Mono', monospace;
+            background: rgba(196, 154, 108, 0.1);
+            padding: 1px 6px;
+            border-radius: 4px;
+            color: var(--gold);
+            font-size: 0.85rem;
+        }
+        .modal-body p .warn {
+            color: var(--terracotta);
+        }
+        .modal-error {
+            background: rgba(196, 100, 80, 0.10);
+            border: 1px solid rgba(196, 100, 80, 0.30);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.82rem;
+            color: var(--terracotta);
+            line-height: 1.4;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 6px;
+        }
+        .modal-btn {
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .modal-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .modal-btn-primary {
+            background: linear-gradient(135deg, var(--gold), #a07a4e);
+            color: #0a0e14;
+            border-color: var(--gold);
+        }
+        .modal-btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(196, 154, 108, 0.3);
+        }
+        .modal-btn-secondary {
+            background: rgba(22, 28, 38, 0.5);
+            color: var(--cream);
+            border-color: rgba(196, 154, 108, 0.18);
+        }
+        .modal-btn-secondary:hover:not(:disabled) {
+            background: rgba(22, 28, 38, 0.8);
+            border-color: rgba(196, 154, 108, 0.35);
+        }
+        .modal-btn-danger {
+            background: linear-gradient(135deg, #c46a52, #a85540);
+            color: #f5f0e6;
+            border-color: var(--terracotta);
+        }
+        .modal-btn-danger:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(196, 100, 80, 0.3);
         }
 
         /* ── Stale data warning banner ── */
@@ -2013,9 +2271,15 @@
             <div class="missions-count-badge">
                 Missions <span class="missions-count-number" id="missions-count">0</span>
             </div>
-            <div class="missions-sync-status" id="missions-sync-status">
-                <span class="sync-dot" id="missions-sync-dot"></span>
-                <span id="missions-sync-text">Syncing...</span>
+            <div class="missions-header-right">
+                <button class="btn-create-mission" id="btn-create-mission" title="Create new mission or project">
+                    <span class="btn-create-icon">＋</span>
+                    <span class="btn-create-label">New Mission / Project</span>
+                </button>
+                <div class="missions-sync-status" id="missions-sync-status">
+                    <span class="sync-dot" id="missions-sync-dot"></span>
+                    <span id="missions-sync-text">Syncing...</span>
+                </div>
             </div>
         </div>
         
@@ -2034,6 +2298,72 @@
 
         <div class="empty-missions-state" id="empty-missions-msg" style="display:none;">
             <div class="empty-state-text">No active missions</div>
+        </div>
+
+        <!-- Create Mission / Project Modal -->
+        <div class="modal-overlay" id="modal-create-overlay" style="display:none;">
+            <div class="modal-card" id="modal-create-card">
+                <div class="modal-header">
+                    <h3 class="modal-title">New Mission / Project</h3>
+                    <button class="modal-close" id="modal-create-close" title="Close">×</button>
+                </div>
+                <form class="modal-form" id="form-create">
+                    <label class="modal-label">
+                        <span class="modal-label-text">Title</span>
+                        <input type="text" class="modal-input" id="input-title" name="title" required
+                               placeholder="e.g. New Game Idea" maxlength="100" autocomplete="off">
+                        <span class="modal-label-hint">Lowercase letters, numbers, hyphens. Becomes the GitHub repo name.</span>
+                    </label>
+                    <label class="modal-label">
+                        <span class="modal-label-text">Description</span>
+                        <textarea class="modal-input modal-textarea" id="input-description" name="description"
+                                  placeholder="Optional — what is this for?" maxlength="500" rows="3"></textarea>
+                    </label>
+                    <div class="modal-row">
+                        <label class="modal-label modal-label-half">
+                            <span class="modal-label-text">Kind</span>
+                            <select class="modal-input" id="input-kind" name="kind">
+                                <option value="mission">Mission (active workflow)</option>
+                                <option value="project">Project (background)</option>
+                            </select>
+                        </label>
+                        <label class="modal-label modal-label-half">
+                            <span class="modal-label-text">Priority <span class="modal-label-hint">(1=top, 99=low)</span></span>
+                            <input type="number" class="modal-input" id="input-priority" name="priority"
+                                   min="1" max="99" value="99">
+                        </label>
+                    </div>
+                    <label class="modal-checkbox-row">
+                        <input type="checkbox" id="input-private" name="private">
+                        <span>Private repository</span>
+                    </label>
+                    <div class="modal-error" id="modal-create-error" style="display:none;"></div>
+                    <div class="modal-actions">
+                        <button type="button" class="modal-btn modal-btn-secondary" id="modal-create-cancel">Cancel</button>
+                        <button type="submit" class="modal-btn modal-btn-primary" id="modal-create-submit">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Confirm Remove (GitHub delete) Modal -->
+        <div class="modal-overlay" id="modal-remove-overlay" style="display:none;">
+            <div class="modal-card modal-card-sm" id="modal-remove-card">
+                <div class="modal-header">
+                    <h3 class="modal-title">Remove from Dashboard?</h3>
+                    <button class="modal-close" id="modal-remove-close" title="Close">×</button>
+                </div>
+                <div class="modal-body">
+                    <p>This will permanently delete the GitHub repository
+                       <code id="modal-remove-repo-name">—</code> and remove it from this dashboard.
+                       <strong class="warn">This cannot be undone.</strong></p>
+                </div>
+                <div class="modal-error" id="modal-remove-error" style="display:none;"></div>
+                <div class="modal-actions">
+                    <button type="button" class="modal-btn modal-btn-secondary" id="modal-remove-cancel">Cancel</button>
+                    <button type="button" class="modal-btn modal-btn-danger" id="modal-remove-confirm">Delete repository</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -3115,19 +3445,24 @@ function renderMissionsSections(repos, state) {
             badge = `<span class="status-pill status-active">● ACTIVE</span>`;
             actions = `
                 <button class="action-btn action-toggle" data-mission-action="toggle" data-repo="${escapeHtml(repoName)}" title="Deactivate">⏸ Deactivate</button>
-                <button class="action-btn action-delete" data-mission-action="delete" data-repo="${escapeHtml(repoName)}" title="Soft-delete">✕ Delete</button>`;
+                <button class="action-btn action-delete" data-mission-action="delete" data-repo="${escapeHtml(repoName)}" title="Soft-delete">✕ Delete</button>
+                <button class="action-btn action-remove-repo" data-mission-action="delete-repo" data-repo="${escapeHtml(repoName)}" title="Permanently delete GitHub repo + remove from dashboard">🗑 Remove</button>`;
         } else if (kind === 'mission-inactive') {
             badge = '<span class="status-pill status-inactive">○ INACTIVE</span>';
             actions = `
                 <button class="action-btn action-toggle" data-mission-action="toggle" data-repo="${escapeHtml(repoName)}" title="Activate">▶ Activate</button>
-                <button class="action-btn action-delete" data-mission-action="delete" data-repo="${escapeHtml(repoName)}" title="Soft-delete">✕ Delete</button>`;
+                <button class="action-btn action-delete" data-mission-action="delete" data-repo="${escapeHtml(repoName)}" title="Soft-delete">✕ Delete</button>
+                <button class="action-btn action-remove-repo" data-mission-action="delete-repo" data-repo="${escapeHtml(repoName)}" title="Permanently delete GitHub repo + remove from dashboard">🗑 Remove</button>`;
         } else if (kind === 'unclassified') {
             badge = '<span class="status-pill status-unclassified">? UNCLASSIFIED</span>';
             actions = `
                 <button class="action-btn action-classify" data-mission-action="classify-project" data-repo="${escapeHtml(repoName)}" title="Classify as project">◆ Classify as Project</button>
-                <button class="action-btn action-promote" data-mission-action="promote" data-repo="${escapeHtml(repoName)}" title="Promote to active mission">◉ Promote to Mission</button>`;
+                <button class="action-btn action-promote" data-mission-action="promote" data-repo="${escapeHtml(repoName)}" title="Promote to active mission">◉ Promote to Mission</button>
+                <button class="action-btn action-remove-repo" data-mission-action="delete-repo" data-repo="${escapeHtml(repoName)}" title="Permanently delete GitHub repo + remove from dashboard">🗑 Remove</button>`;
         } else {
             badge = '<span class="status-pill status-project">◆ PROJECT</span>';
+            actions = `
+                <button class="action-btn action-remove-repo" data-mission-action="delete-repo" data-repo="${escapeHtml(repoName)}" title="Permanently delete GitHub repo + remove from dashboard">🗑 Remove</button>`;
         }
         const cardClass = kind === 'project' ? 'repo-card project-card'
             : kind === 'unclassified' ? 'repo-card unclassified-card'
@@ -3231,6 +3566,11 @@ async function loadMissionsState() {
 }
 
 async function handleMissionAction(action, repo) {
+    // delete-repo is destructive + needs confirmation, intercept before fetch
+    if (action === 'delete-repo') {
+        openRemoveRepoModal(repo);
+        return;
+    }
     // Dedupe in-flight requests on the same (action, repo) pair
     const key = `${action}:${repo}`;
     if (_missionActionInFlight.has(key)) {
@@ -3288,6 +3628,179 @@ async function handleMissionAction(action, repo) {
         document.querySelectorAll(`[data-mission-action="${action}"][data-repo="${CSS.escape(repo)}"]`)
             .forEach(btn => { btn.disabled = false; btn.classList.remove('action-busy'); });
     }
+}
+
+// ─── Create Mission / Project modal ───────────────────────────────────────────
+let _createSubmitInFlight = false;
+function openCreateModal() {
+    const overlay = document.getElementById('modal-create-overlay');
+    overlay.style.display = 'flex';
+    // Reset form
+    document.getElementById('input-title').value = '';
+    document.getElementById('input-description').value = '';
+    document.getElementById('input-kind').value = 'mission';
+    document.getElementById('input-priority').value = '99';
+    document.getElementById('input-private').checked = false;
+    const err = document.getElementById('modal-create-error');
+    err.style.display = 'none';
+    err.textContent = '';
+    // Focus first input
+    setTimeout(() => document.getElementById('input-title').focus(), 80);
+}
+function closeCreateModal() {
+    document.getElementById('modal-create-overlay').style.display = 'none';
+}
+async function submitCreateMission(ev) {
+    ev.preventDefault();
+    if (_createSubmitInFlight) return;
+    const title = document.getElementById('input-title').value.trim();
+    const description = document.getElementById('input-description').value.trim();
+    const kind = document.getElementById('input-kind').value;
+    const priority = parseInt(document.getElementById('input-priority').value, 10) || 99;
+    const isPrivate = document.getElementById('input-private').checked;
+    const errEl = document.getElementById('modal-create-error');
+    const submitBtn = document.getElementById('modal-create-submit');
+    errEl.style.display = 'none';
+    errEl.textContent = '';
+    if (!title) {
+        errEl.textContent = 'Title is required.';
+        errEl.style.display = 'block';
+        return;
+    }
+    _createSubmitInFlight = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
+    try {
+        const url = `http://${window.location.hostname}:8001/api/missions/create-repo`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title, description, kind, priority,
+                private: isPrivate,
+            }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+            errEl.textContent = data.error || `Server returned ${res.status}`;
+            errEl.style.display = 'block';
+            return;
+        }
+        // Success — close modal, refresh state + repos
+        closeCreateModal();
+        _missionsStateCache = null;
+        _missionsStateTs = 0;
+        try {
+            const stateRes = await fetch(`http://${window.location.hostname}:8001/api/missions/state`, { cache: 'no-store' });
+            if (stateRes.ok) {
+                _missionsStateCache = await stateRes.json();
+                _missionsStateTs = Date.now();
+            }
+        } catch (e) { /* ignore */ }
+        const reposRes = await fetch('/agent-dashboard/repos.json', { cache: 'no-store' });
+        const reposData = await reposRes.json();
+        renderMissions(reposData);
+    } catch (e) {
+        console.error('Create mission failed:', e);
+        errEl.textContent = `Network error: ${e.message}`;
+        errEl.style.display = 'block';
+    } finally {
+        _createSubmitInFlight = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create';
+    }
+}
+
+// ─── Confirm Remove (GitHub delete) modal ─────────────────────────────────────
+let _removeRepoTarget = null;
+let _removeRepoInFlight = false;
+function openRemoveRepoModal(repo) {
+    _removeRepoTarget = repo;
+    document.getElementById('modal-remove-repo-name').textContent = repo;
+    const err = document.getElementById('modal-remove-error');
+    err.style.display = 'none';
+    err.textContent = '';
+    document.getElementById('modal-remove-confirm').disabled = false;
+    document.getElementById('modal-remove-confirm').textContent = 'Delete repository';
+    document.getElementById('modal-remove-overlay').style.display = 'flex';
+}
+function closeRemoveRepoModal() {
+    _removeRepoTarget = null;
+    document.getElementById('modal-remove-overlay').style.display = 'none';
+}
+async function confirmRemoveRepo() {
+    if (_removeRepoInFlight || !_removeRepoTarget) return;
+    const repo = _removeRepoTarget;
+    const errEl = document.getElementById('modal-remove-error');
+    const btn = document.getElementById('modal-remove-confirm');
+    errEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Deleting...';
+    _removeRepoInFlight = true;
+    try {
+        const url = `http://${window.location.hostname}:8001/api/missions/delete-repo`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ repo }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+            errEl.textContent = data.error || `Server returned ${res.status}`;
+            errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = 'Delete repository';
+            return;
+        }
+        closeRemoveRepoModal();
+        _missionsStateCache = null;
+        _missionsStateTs = 0;
+        try {
+            const stateRes = await fetch(`http://${window.location.hostname}:8001/api/missions/state`, { cache: 'no-store' });
+            if (stateRes.ok) {
+                _missionsStateCache = await stateRes.json();
+                _missionsStateTs = Date.now();
+            }
+        } catch (e) { /* ignore */ }
+        const reposRes = await fetch('/agent-dashboard/repos.json', { cache: 'no-store' });
+        const reposData = await reposRes.json();
+        renderMissions(reposData);
+    } catch (e) {
+        console.error('Remove repo failed:', e);
+        errEl.textContent = `Network error: ${e.message}`;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Delete repository';
+    } finally {
+        _removeRepoInFlight = false;
+    }
+}
+
+// Wire up modal handlers (run once on script load)
+function wireMissionModals() {
+    document.getElementById('btn-create-mission').addEventListener('click', openCreateModal);
+    document.getElementById('modal-create-close').addEventListener('click', closeCreateModal);
+    document.getElementById('modal-create-cancel').addEventListener('click', closeCreateModal);
+    document.getElementById('form-create').addEventListener('submit', submitCreateMission);
+
+    document.getElementById('modal-remove-close').addEventListener('click', closeRemoveRepoModal);
+    document.getElementById('modal-remove-cancel').addEventListener('click', closeRemoveRepoModal);
+    document.getElementById('modal-remove-confirm').addEventListener('click', confirmRemoveRepo);
+
+    // Close on overlay click (but not on card click)
+    document.getElementById('modal-create-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-create-overlay') closeCreateModal();
+    });
+    document.getElementById('modal-remove-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-remove-overlay') closeRemoveRepoModal();
+    });
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (document.getElementById('modal-create-overlay').style.display !== 'none') closeCreateModal();
+            if (document.getElementById('modal-remove-overlay').style.display !== 'none') closeRemoveRepoModal();
+        }
+    });
 }
 
 // ─── Priority editor (click badge → inline number input → save) ────────────
@@ -3799,6 +4312,9 @@ window.addEventListener('load', () => {
     for (let i = 0; i < 12; i++) {
         setTimeout(spawnParticle, i * 600);
     }
+
+    // Wire mission Create / Remove modals (buttons + form + confirm flows)
+    wireMissionModals();
 
     // Redraw connecting lines on window resize/load to keep alignment perfect
     window.addEventListener('resize', drawTreeLines);
