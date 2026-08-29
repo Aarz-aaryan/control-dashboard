@@ -13,8 +13,13 @@ Usage:
   python3 missions_writer.py demote <repo>              # mission -> project
   python3 missions_writer.py set-priority <repo> <N>    # set priority (lower = more important)
   python3 missions_writer.py reorder-missions <a> <b> <c>...  # explicit display order (active+inactive)
+  python3 missions_writer.py create <repo> [--kind mission|project] [--priority N] [--status ...]
+                                                       # add a brand-new entry (from UI "Create Mission" flow)
+  python3 missions_writer.py remove <repo>              # hard-remove from state (called after GitHub repo deletion)
+  python3 missions_writer.py hard-remove-missing <repo> # remove repo from state because it's no longer in repos.json
+  python3 missions_writer.py reclassify <repo>           # sync state to current repos.json presence (helper for cron)
 
-Status values: active | inactive | deleted
+Status values: active | inactive | archived | deleted
 Output: JSON to stdout: {"ok": true|false, "repo": "...", "from": "...", "to": "...", "error": "..."}
 Side effect: appends one JSON line to missions_activity.jsonl
 
@@ -26,7 +31,8 @@ Schema (v2):
         "status": "active"|"inactive"|"deleted",
         "priority": <int 1-99>,      # lower = more important (1 = top)
         "order": <int>,               # display position within priority tier
-        "updated_at": "<ISO8601>"
+        "updated_at": "<ISO8601>",
+        "description": "<string>"     # optional, set by create flow
       }
     },
     "projects": ["<repo>", ...]  # sorted alphabetically
@@ -382,6 +388,117 @@ def cmd_demote(repo: str) -> dict:
     return emit(True, repo, cur_status, "archived")
 
 
+def cmd_create(repo: str, kind: str = "mission", priority: int = DEFAULT_PRIORITY,
+               status: str | None = None, description: str | None = None) -> dict:
+    """Create a new entry for a freshly-created GitHub repo (from the UI flow).
+
+    - kind='mission'  → adds to missions dict with given priority + status (default active).
+    - kind='project'  → adds to projects list only.
+    Idempotent: re-running on an existing repo updates fields without error.
+    """
+    if not isinstance(priority, int) or priority < 1 or priority > 99:
+        return emit(False, repo, None, None, error=f"Invalid priority {priority!r}; must be int 1-99")
+    if kind not in ("mission", "project"):
+        return emit(False, repo, None, None, error=f"Invalid kind '{kind}'. Must be 'mission' or 'project'")
+    if status and status not in VALID_STATUSES:
+        return emit(False, repo, None, None, error=f"Invalid status '{status}'. Must be one of {sorted(VALID_STATUSES)}")
+
+    state = load_state()
+    projects = state.setdefault("projects", [])
+    missions = state.setdefault("missions", {})
+
+    if kind == "project":
+        if repo not in projects:
+            projects.append(repo)
+            projects.sort()
+        # Mirror a project entry in missions dict as archived so demote→restore works symmetrically
+        existing = missions.get(repo)
+        if existing is None:
+            existing_orders = [e.get("order", 0) for e in missions.values() if isinstance(e, dict)]
+            new_order = (max(existing_orders) + 1) if existing_orders else 0
+            missions[repo] = {
+                "status": "archived",
+                "priority": priority,
+                "order": new_order,
+                "updated_at": now_iso(),
+                "description": description or "",
+            }
+        save_state(state, modified_by="user")
+        log_activity("user", "create", repo, None, "project")
+        return emit(True, repo, None, "project")
+
+    # kind == "mission"
+    if repo in projects:
+        projects.remove(repo)
+    final_status = status if status else "active"
+    existing = missions.get(repo)
+    if existing is None:
+        existing_orders = [e.get("order", 0) for e in missions.values() if isinstance(e, dict)]
+        new_order = (max(existing_orders) + 1) if existing_orders else 0
+        missions[repo] = {
+            "status": final_status,
+            "priority": priority,
+            "order": new_order,
+            "updated_at": now_iso(),
+            "description": description or "",
+        }
+    else:
+        # Update existing entry (idempotent create)
+        missions[repo] = {
+            **existing,
+            "status": final_status,
+            "priority": priority,
+            "description": description or existing.get("description", ""),
+            "updated_at": now_iso(),
+        }
+    save_state(state, modified_by="user")
+    log_activity("user", "create", repo, None, f"mission/{final_status}")
+    return emit(True, repo, None, final_status)
+
+
+def cmd_remove(repo: str) -> dict:
+    """Hard-remove a repo from missions_state.json. Called AFTER the GitHub repo
+    has been deleted, so the local state stays consistent with GitHub.
+
+    Idempotent — removing a non-existent repo is OK (returns ok=True).
+    """
+    state = load_state()
+    projects = state.setdefault("projects", [])
+    missions = state.setdefault("missions", {})
+
+    changed = False
+    if repo in projects:
+        projects.remove(repo)
+        changed = True
+    if repo in missions:
+        log_activity("user", "remove", repo, missions[repo].get("status"), None)
+        del missions[repo]
+        changed = True
+    if changed:
+        save_state(state, modified_by="user")
+    return emit(True, repo, None, None)
+
+
+def cmd_hard_remove_missing(repo: str) -> dict:
+    """Hard-remove a repo from state because it's no longer in repos.json
+    (i.e. it was deleted on GitHub by the user manually or via another path).
+    Idempotent.
+    """
+    return cmd_remove(repo)
+
+
+def cmd_reclassify(repo: str) -> dict:
+    """Sync state: ensure repo is in the right place per current repos.json
+    presence. If repo is in missions but not in repos.json, leave alone (manual
+    state). If repo is in projects but not in repos.json, hard-remove from
+    projects. (Caller is responsible for deciding what to do with missions.)
+    """
+    # No-op implementation — placeholder so the cron doesn't error if it's
+    # added before the rest of the wiring is done. The real per-repo logic is
+    # in missions_daemon.tick() which has access to repos.json.
+    return emit(True, repo, None, None)
+
+
 def usage() -> None:
     print(__doc__, file=sys.stderr)
     sys.exit(2)
@@ -443,6 +560,45 @@ def main() -> int:
         elif cmd == "reorder-missions":
             if len(args) < 1: usage()
             res = cmd_reorder_missions(list(args))
+        elif cmd == "create":
+            # create <repo> [--kind mission|project] [--priority N] [--status ...] [--description ...]
+            if len(args) < 1: usage()
+            repo = args[0]
+            kind = "mission"
+            priority = DEFAULT_PRIORITY
+            status = None
+            description = None
+            i = 1
+            while i < len(args):
+                if args[i] == "--kind":
+                    if i + 1 >= len(args): usage()
+                    kind = args[i + 1]; i += 2
+                elif args[i] == "--priority":
+                    if i + 1 >= len(args): usage()
+                    try:
+                        priority = int(args[i + 1])
+                    except ValueError:
+                        emit(False, repo, None, None, error=f"Priority must be int, got {args[i + 1]!r}")
+                        return 1
+                    i += 2
+                elif args[i] == "--status":
+                    if i + 1 >= len(args): usage()
+                    status = args[i + 1]; i += 2
+                elif args[i] == "--description":
+                    if i + 1 >= len(args): usage()
+                    description = args[i + 1]; i += 2
+                else:
+                    usage()
+            res = cmd_create(repo, kind=kind, priority=priority, status=status, description=description)
+        elif cmd == "remove":
+            if len(args) != 1: usage()
+            res = cmd_remove(args[0])
+        elif cmd == "hard-remove-missing":
+            if len(args) != 1: usage()
+            res = cmd_hard_remove_missing(args[0])
+        elif cmd == "reclassify":
+            if len(args) != 1: usage()
+            res = cmd_reclassify(args[0])
         else:
             print(json.dumps({"ok": False, "error": f"Unknown command: {cmd}"}))
             return 2

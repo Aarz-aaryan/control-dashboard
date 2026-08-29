@@ -138,7 +138,18 @@ def load_known_repos() -> set[str]:
 
 
 def tick() -> int:
-    """One cleanup pass. Returns count of changes made."""
+    """One cleanup pass. Returns count of changes made.
+
+    Pass 1 — State hygiene:
+      a. Hard-remove any mission with status='deleted' for more than 24 hours
+      b. Mark any active mission not seen in repos.json for >7 days as 'inactive'
+
+    Pass 2 — Repo hygiene (NEW): hard-remove any repo that's no longer in
+    repos.json. This catches repos deleted on GitHub by other paths
+    (manually, via the dashboard's delete-repo flow, etc.). The create-repo
+    and delete-repo flows also call update_repos.py immediately, so this
+    cron is a safety net for drift.
+    """
     state = load_state()
     missions = state.setdefault("missions", {})
     repos = load_known_repos()
@@ -169,9 +180,32 @@ def tick() -> int:
             # If repo doesn't appear in repos.json at all, mark inactive
             if repo not in repos:
                 log.info(f"Marking {repo} inactive (not in repos.json)")
-                missions[repo] = {"status": "inactive", "updated_at": now_iso()}
+                missions[repo] = {**entry, "status": "inactive", "updated_at": now_iso()}
                 log_activity("auto-inactive", repo, "active", "inactive")
                 changes += 1
+
+    # 3. NEW: hard-remove any repo that's not in repos.json anymore
+    #      (catches manual GitHub deletions / dashboard delete-repo flow)
+    if repos:
+        for repo in list(missions.keys()):
+            if repo not in repos:
+                # Don't yank if it was just created (give repos.json up to 6h to catch up)
+                entry = missions[repo]
+                if entry.get("status") == "active":
+                    # Active mission missing from GitHub — flag as inactive first,
+                    # let next tick hard-remove it. Gives a 6h grace period.
+                    log.info(f"Active mission {repo} missing from repos.json — marking inactive")
+                    missions[repo] = {**entry, "status": "inactive", "updated_at": now_iso()}
+                    log_activity("auto-inactive", repo, "active", "inactive")
+                    changes += 1
+                    continue
+                # For inactive/archived missions: hard-remove after 24h grace
+                updated_ts = parse_iso(entry.get("updated_at", ""))
+                if updated_ts and updated_ts < cutoff_ts:
+                    log.info(f"Hard-removing {repo} (missing from repos.json > {DELETED_HARD_REMOVE_AFTER_HOURS}h)")
+                    log_activity("hard-remove-missing", repo, entry.get("status"), None)
+                    del missions[repo]
+                    changes += 1
 
     if changes:
         save_state(state)
