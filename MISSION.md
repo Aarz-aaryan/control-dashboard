@@ -3,7 +3,15 @@
 **Live:** http://100.100.35.6:8000/agent-dashboard/
 **Repo:** https://github.com/Aarz-aaryan/control-dashboard (branch: main)
 **Local path:** `/home/Aarz/agent-dashboard/` (folder name retained for static server URL compatibility)
-**Last commit:** `a60b5f1` — refresh agents tab to current setup + fix stale missions
+**Last commit:** `3de13ab` — simplify all agent logos to geometric icons
+
+## Current State (2026-08-29)
+
+**Agents tab:** 7 cards — aarz (gold), agy (sky blue), scout (deep blue), coder (sage), builder (warm brown), tester (terracotta), jarvis (muted red). Flat hierarchy: Aarz → all 6. All icons are clean geometric logos on solid color circles.
+
+**Missions tab:** 3 inactive missions (skyeye-drone-mission, portfolio-business, skyeye-drone-media) + 11 projects. All cards link to real GitHub repos. `agent-dashboard` removed from state (migrated to control-dashboard).
+
+**Stats tab:** Cron health expansion panel, per-agent grid, Stored Sessions (Hermes profiles only).
 
 ## Last Session: 2026-08-29 — Agents Tab Refresh + Missions Link Fix
 
