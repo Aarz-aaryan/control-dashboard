@@ -2,8 +2,18 @@
 
 **Live:** http://100.100.35.6:8000/agent-dashboard/
 **Repo:** https://github.com/Aarz-aaryan/control-dashboard (branch: main)
-**Local path:** `/home/Aarz/agent-dashboard/` (folder name retained for compatibility with static server)
-**Last commit:** Stored Sessions card — Hermes profiles only
+**Local path:** `/home/Aarz/agent-dashboard/` (folder name retained for static server URL compatibility)
+**Last commit:** `a60b5f1` — refresh agents tab to current setup + fix stale missions
+
+## Last Session: 2026-08-29 — Agents Tab Refresh + Missions Link Fix
+
+**Changes shipped (commit a60b5f1):**
+
+1. **Agents tab — full refresh:** Replaced stale AGENTS array (copilot/neo/bymax/nina) with current team: aarz, agy, scout, coder, builder, tester, jarvis. Tree rewired to flat Aarz → all agents hierarchy. Removed copilot Hermes profile lookup. Added SVG icons for scout/coder/builder/tester.
+
+2. **Missions tab — dead link fix:** `renderCard()` fallback URL changed from `#` → `https://github.com/Aarz-aaryan/<repo>` for any repo not in `repos.json`. Removed `agent-dashboard` from projects list (migrated to control-dashboard; no longer a separate repo). Removed orphaned `agent-dashboard` mission entry. All 6 missions + 11 projects now reliably link to GitHub.
+
+3. **State cleanup:** `missions_state.json` — removed stale `agent-dashboard` mission entry, removed `agent-dashboard` from projects list.
 
 ## Stats Tab — Cron Jobs Expansion Panel & Health Rollup (2026-07-04)
 **Fixes shipped:**
