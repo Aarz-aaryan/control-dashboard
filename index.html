@@ -11,34 +11,104 @@
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --bg: #0a0e14; /* Deep dark near-black background */
-            --card-bg: rgba(14, 20, 30, 0.7); /* Cozy dark glass */
-            --card-border: rgba(196, 154, 108, 0.12); /* Subtle gold edge */
-            
-            /* Ghibli warm color palette */
-            --gold: #c49a6c;
-            --sage: #7eb5a6;
-            --sky: #8bbccc;
-            --cream: #f5f0e6;
-            --terracotta: #d97d64;
-            --lime: #8fcb9e; /* Cozy leaf green */
-            
-            --text-main: #f5f0e6; /* Warm cream */
-            --text-muted: rgba(245, 240, 230, 0.55); /* Muted warm cream */
+            /* Surface elevation ladder — depth via lighter = closer, not shadows */
+            --bg-base:     #090B0F;  /* deepest — page background */
+            --bg-surface:  #0F1318;  /* cards, panels */
+            --bg-elevated: #161B22;  /* hover, elevated */
+            --bg-overlay:  #1C2330;  /* modals, tooltips */
+
+            --bg: var(--bg-base);
+            --card-bg: rgba(15, 19, 24, 0.65);
+            --card-border: rgba(196, 154, 108, 0.10);
+
+            /* Ghibli warm palette — desaturated for dark mode (no neon) */
+            --gold:        #b8935e;  /* desaturated ~15% from #c49a6c — warm, not neon */
+            --gold-muted:  rgba(196, 154, 108, 0.14);
+            --sage:        #6a9e8f;  /* desaturated */
+            --sky:         #7aa5b8;  /* desaturated */
+            --cream:       #e8d5b7;  /* warm cream for text */
+            --terracotta:  #c46a52;  /* desaturated */
+            --lime:        #7ab88a;  /* desaturated */
+
+            --text-main:   var(--cream);
+            --text-muted:  rgba(232, 213, 183, 0.45);
             --glass-shadow: rgba(0, 0, 0, 0.65);
         }
 
         body {
             font-family: 'DM Sans', sans-serif;
             min-height: 100vh;
-            background-color: var(--bg);
-            background-image: 
-                radial-gradient(circle at 50% 0%, rgba(196, 154, 108, 0.08) 0%, transparent 60%),
-                radial-gradient(circle at 15% 30%, rgba(126, 181, 166, 0.03) 0%, transparent 50%),
-                radial-gradient(circle at 85% 70%, rgba(139, 188, 204, 0.03) 0%, transparent 50%);
+            background-color: var(--bg-base);
+            background-image:
+                radial-gradient(circle at 50% 0%, rgba(196, 154, 108, 0.05) 0%, transparent 55%),
+                radial-gradient(circle at 15% 30%, rgba(126, 181, 166, 0.02) 0%, transparent 45%),
+                radial-gradient(circle at 85% 70%, rgba(139, 188, 204, 0.02) 0%, transparent 45%);
             color: var(--text-main);
             overflow: hidden;
             position: relative;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Ambient glow orbs — behind the glass, makes glassmorphism visible */
+        .glow-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .glow-orb-1 {
+            width: 700px; height: 700px;
+            top: -200px; right: -100px;
+            background: radial-gradient(circle, rgba(140, 90, 160, 0.12) 0%, transparent 70%);
+            animation: orbBreath1 12s ease-in-out infinite;
+        }
+        .glow-orb-2 {
+            width: 500px; height: 500px;
+            bottom: -150px; left: -80px;
+            background: radial-gradient(circle, rgba(196, 154, 108, 0.08) 0%, transparent 70%);
+            animation: orbBreath2 15s ease-in-out infinite;
+        }
+        .glow-orb-3 {
+            width: 400px; height: 400px;
+            top: 40%; left: 45%;
+            background: radial-gradient(circle, rgba(126, 181, 166, 0.05) 0%, transparent 70%);
+            animation: orbBreath3 10s ease-in-out infinite;
+        }
+        @keyframes orbBreath1 {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.08); }
+        }
+        @keyframes orbBreath2 {
+            0%, 100% { opacity: 0.8; transform: scale(1.05); }
+            50% { opacity: 0.6; transform: scale(0.95); }
+        }
+        @keyframes orbBreath3 {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.9; }
+        }
+
+        /* Subtle dot grid pattern on background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.045) 1px, transparent 1px);
+            background-size: 32px 32px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Grain texture overlay — kills AI flat look */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.038;
+            pointer-events: none;
+            z-index: 9998;
         }
 
         /* ── Sidebar dock ── */
@@ -48,8 +118,8 @@
             left: 0;
             bottom: 0;
             width: 56px;
-            background: rgba(14, 20, 30, 0.95);
-            border-right: 1.5px solid rgba(196, 154, 108, 0.15);
+            background: rgba(9, 11, 15, 0.98);
+            border-right: 1px solid rgba(196, 154, 108, 0.12);
             display: flex;
             flex-direction: column;
             align-items: flex-start;
@@ -183,14 +253,14 @@
             height: 8px;
         }
         .panel::-webkit-scrollbar-track {
-            background: rgba(10, 14, 20, 0.5);
+            background: rgba(9, 11, 15, 0.5);
         }
         .panel::-webkit-scrollbar-thumb {
-            background: rgba(196, 154, 108, 0.2);
+            background: rgba(196, 154, 108, 0.18);
             border-radius: 4px;
         }
         .panel::-webkit-scrollbar-thumb:hover {
-            background: rgba(196, 154, 108, 0.4);
+            background: rgba(196, 154, 108, 0.35);
         }
 
         .panel-title {
@@ -255,21 +325,41 @@
         .card {
             position: relative;
             background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1.2px solid var(--card-border);
-            border-radius: 16px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
             padding: 24px;
             overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.55),
-                inset 0 1px 0 rgba(255, 255, 255, 0.03);
-            animation: cardIn 0.8s cubic-bezier(0.19, 1, 0.22, 1) both;
+            transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow:
+                0 4px 24px rgba(0, 0, 0, 0.5),
+                0 1px 4px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            animation: cardIn 0.7s cubic-bezier(0.19, 1, 0.22, 1) both;
             color: var(--text-main);
             z-index: 1;
             width: 100%;
         }
+
+        /* Specular highlight — one bright edge, premium light-catching border */
+        .card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 55%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.6;
+            transition: opacity 0.35s ease;
+        }
+        .card:hover::after { opacity: 1; }
 
         /* Shimmer on card */
         .card-shimmer {
@@ -296,21 +386,21 @@
             100% { left: 150%; }
         }
 
-        /* Soft warm boundary glow border on hover */
+        /* Animated rainbow gradient border on hover — via mask technique */
         .card::before {
             content: '';
             position: absolute;
-            inset: -1.2px;
-            border-radius: 16px;
-            background: linear-gradient(120deg, var(--gold), var(--sage), var(--sky), var(--gold));
+            inset: -1px;
+            border-radius: 21px;
+            background: linear-gradient(120deg, rgba(196,154,108,0.4), rgba(126,181,166,0.3), rgba(139,188,204,0.3), rgba(196,154,108,0.4));
             background-size: 300% 300%;
             z-index: -1;
             opacity: 0;
-            transition: opacity 0.4s ease;
-            animation: holoShift 6s linear infinite;
+            transition: opacity 0.35s ease;
+            animation: holoShift 8s linear infinite;
         }
         .card:hover::before {
-            opacity: 0.4;
+            opacity: 0.7;
         }
         @keyframes holoShift {
             0% { background-position: 0% 50%; }
@@ -319,17 +409,19 @@
         }
 
         @keyframes cardIn {
-            from { opacity: 0; transform: translateY(12px) scale(0.98); }
+            from { opacity: 0; transform: translateY(10px) scale(0.98); }
             to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .card:hover {
-            transform: translateY(-5px);
-            background: rgba(22, 28, 38, 0.85);
-            border-color: rgba(196, 154, 108, 0.25);
+            transform: translateY(-5px) scale(1.012);
+            background: rgba(22, 28, 38, 0.88);
+            border-color: rgba(196, 154, 108, 0.22);
             box-shadow:
-                0 16px 40px rgba(0, 0, 0, 0.65),
-                0 0 25px var(--agent-dim);
+                0 12px 36px rgba(0, 0, 0, 0.6),
+                0 2px 8px rgba(0, 0, 0, 0.3),
+                0 0 50px rgba(196, 154, 108, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
         }
 
         /* Sparkle badge and session tooltip */
@@ -354,11 +446,11 @@
             position: absolute;
             top: 35px;
             right: 14px;
-            background: rgba(10, 14, 20, 0.95);
-            border: 1px solid rgba(196, 154, 108, 0.2);
-            border-radius: 8px;
+            background: rgba(15, 19, 24, 0.95);
+            border: 1px solid rgba(196, 154, 108, 0.18);
+            border-radius: 10px;
             padding: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.7), 0 0 20px rgba(196,154,108,0.04);
             z-index: 10;
             opacity: 0;
             visibility: hidden;
@@ -711,9 +803,9 @@
             margin-bottom: 32px;
         }
         .stat-card {
-            background: var(--card-bg);
-            border: 1.2px solid var(--card-border);
-            border-radius: 12px;
+            background: rgba(15, 19, 24, 0.65);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
             padding: 16px;
             height: 100px;
             display: flex;
@@ -721,7 +813,13 @@
             justify-content: center;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(196,154,108,0.06);
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            background: rgba(22, 28, 38, 0.88);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 40px rgba(196,154,108,0.04), inset 0 1px 0 rgba(196,154,108,0.08);
         }
         .stat-number {
             font-size: 3rem;
@@ -729,7 +827,7 @@
             color: var(--gold);
             line-height: 1;
             font-family: 'Share Tech Mono', monospace;
-            text-shadow: 0 0 10px rgba(196, 154, 108, 0.3);
+            text-shadow: 0 0 40px rgba(196, 154, 108, 0.3), 0 2px 4px rgba(0, 0, 0, 0.8);
         }
         .stat-label {
             font-size: 0.7rem;
@@ -758,11 +856,15 @@
             margin-top: 24px;
         }
         .health-panel {
-            background: var(--card-bg);
-            border: 1.2px solid var(--card-border);
-            border-radius: 16px;
+            background: rgba(15, 19, 24, 0.65);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
             padding: 24px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(196,154,108,0.06);
+            transition: all 0.3s ease;
+        }
+        .health-panel:hover {
+            box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 40px rgba(196,154,108,0.04), inset 0 1px 0 rgba(196,154,108,0.08);
         }
         .health-panel-hdr {
             font-family: 'Cormorant Garamond', serif;
@@ -784,10 +886,16 @@
             gap: 16px;
         }
         .health-item {
-            background: rgba(10, 14, 20, 0.5);
-            border: 1px solid rgba(196, 154, 108, 0.08);
+            background: linear-gradient(135deg, rgba(22,28,38,0.6) 0%, rgba(15,19,24,0.5) 100%);
+            border: 1px solid rgba(196, 154, 108, 0.1);
             border-radius: 12px;
             padding: 16px;
+            transition: all 0.25s ease;
+        }
+        .health-item:hover {
+            background: rgba(22, 28, 38, 0.75);
+            border-color: rgba(196, 154, 108, 0.18);
+            transform: translateY(-2px);
         }
         .health-item-hdr {
             display: flex;
@@ -1012,9 +1120,9 @@
             display: flex;
             gap: 6px;
             padding: 8px 12px;
-            border-top: 1px solid rgba(196, 154, 108, 0.08);
-            background: rgba(14, 20, 30, 0.4);
-            border-radius: 0 0 14px 14px;
+            border-top: 1px solid rgba(196, 154, 108, 0.06);
+            background: linear-gradient(to bottom, rgba(14,20,30,0.3), rgba(10,14,20,0.5));
+            border-radius: 0 0 15px 15px;
         }
         .action-btn {
             flex: 1;
@@ -1051,9 +1159,9 @@
             pointer-events: none;
         }
         .repo-card {
-            background: var(--card-bg);
+            background: rgba(15, 19, 24, 0.65);
             border: 1px solid var(--card-border);
-            border-radius: 14px;
+            border-radius: 16px;
             padding: 20px;
             display: flex;
             flex-direction: column;
@@ -1062,10 +1170,10 @@
             text-decoration: none;
         }
         .repo-card:hover {
-            transform: translateY(-3px);
-            border-color: rgba(196, 154, 108, 0.3);
-            background: rgba(22, 28, 38, 0.85);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+            transform: translateY(-3px) rotate(0.25deg);
+            border-color: rgba(196, 154, 108, 0.28);
+            background: rgba(22, 28, 38, 0.88);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 40px rgba(196,154,108,0.04);
         }
         .repo-card-top {
             display: flex;
@@ -1145,9 +1253,9 @@
             height: 100%;
         }
         .kanban-column {
-            background: rgba(10, 14, 20, 0.4);
-            border: 1.2px solid var(--card-border);
-            border-radius: 12px;
+            background: rgba(15, 19, 24, 0.5);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
             padding: 12px;
             display: flex;
             flex-direction: column;
@@ -1171,9 +1279,9 @@
             overflow-y: auto;
         }
         .kanban-card {
-            background: var(--card-bg);
+            background: rgba(15, 19, 24, 0.65);
             border: 1px solid var(--card-border);
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 12px;
             display: flex;
             flex-direction: column;
@@ -1181,9 +1289,10 @@
             transition: all 0.3s ease;
         }
         .kanban-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(196, 154, 108, 0.25);
+            transform: translateY(-3px) scale(1.01);
+            border-color: rgba(196, 154, 108, 0.2);
             background: rgba(22, 28, 38, 0.85);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(196,154,108,0.12);
         }
         .kanban-card-title {
             font-family: 'DM Sans', sans-serif;
@@ -1760,6 +1869,9 @@
     </style>
 </head>
 <body>
+<div class="glow-orb glow-orb-1"></div>
+<div class="glow-orb glow-orb-2"></div>
+<div class="glow-orb glow-orb-3"></div>
 <!-- Left vertical ribbon dock -->
 <div class="sidebar">
     <div class="sidebar-logo">
