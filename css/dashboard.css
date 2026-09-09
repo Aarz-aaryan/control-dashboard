@@ -2184,9 +2184,6 @@
     overflow-y: auto;
 }
 
-/* Short viewports: let the page scroll instead of clipping fixed panels */
-@media (max-height: 620px) {
-    body { overflow: auto; }
-    .content-panels { position: static; height: auto; min-height: calc(100vh - 0px); }
-    .panel.active { height: auto; }
-}
+/* Short viewports: the .panel already scrolls internally (overflow-y:auto), so
+   no layout override is needed here — an earlier `position: static` hack made
+   the fixed sidebar overlap the panel's left edge. */
