@@ -41,6 +41,14 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
         sys.stderr.write(f"[dashboard] {self.address_string()} - {fmt % args}\n")
 
+    def end_headers(self):
+        # Force revalidation of static assets so CSS/JS edits aren't stuck behind
+        # the browser's heuristic cache. Conditional requests still 304 on no change.
+        buf = getattr(self, "_headers_buffer", [])
+        if not any(b"cache-control:" in h.lower() for h in buf):
+            self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
+
     # ── API routing ────────────────────────────────────────────────────────────
 
     def do_OPTIONS(self):

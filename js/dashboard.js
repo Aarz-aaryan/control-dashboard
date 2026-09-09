@@ -1696,7 +1696,11 @@ function updateUptime() {
     const m = Math.floor((elapsed % 3600000) / 60000);
     const s = Math.floor((elapsed % 60000) / 1000);
     const el = document.getElementById('dashboard-uptime');
-    if (el) el.textContent = `⏱ ${h}h ${m}m ${s}s`;
+    if (el) {
+        // Rail is icon-width — show a glyph, full value on hover.
+        el.textContent = '⏱';
+        el.title = `Dashboard open ${h}h ${m}m ${s}s`;
+    }
 }
 setInterval(updateUptime, 1000);
 updateUptime();

@@ -105,7 +105,8 @@
             z-index: 9998;
         }
 
-        /* ── Sidebar dock ── */
+        /* ── Sidebar dock — fixed icon rail (no hover-expand: it overlapped the
+              page content). Labels show as hover tooltips instead. ── */
         .sidebar {
             position: fixed;
             top: 0;
@@ -120,11 +121,7 @@
             padding: 24px 0;
             gap: 24px;
             z-index: 1000;
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
-        }
-        .sidebar:hover {
-            width: 200px;
+            overflow: visible;
         }
         .sidebar-logo {
             display: flex;
@@ -133,34 +130,16 @@
             width: 56px;
             height: 48px;
             flex-shrink: 0;
-            transition: all 0.3s ease;
             border-bottom: 1.5px solid rgba(196, 154, 108, 0.08);
             margin-bottom: 8px;
             padding-bottom: 12px;
-        }
-        .sidebar:hover .sidebar-logo {
-            width: 200px;
-            justify-content: flex-start;
-            padding-left: 18px;
         }
         .sidebar-logo img {
             width: 28px;
             height: 28px;
             filter: drop-shadow(0 0 6px rgba(196, 154, 108, 0.3));
         }
-        .sidebar-logo-text {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--gold);
-            margin-left: 12px;
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        .sidebar:hover .sidebar-logo-text {
-            opacity: 1;
-        }
+        .sidebar-logo-text { display: none; }
         .sidebar-tabs {
             display: flex;
             flex-direction: column;
@@ -201,24 +180,30 @@
             color: var(--gold);
             filter: drop-shadow(0 0 4px rgba(196, 154, 108, 0.3));
         }
+        /* Label = floating tooltip to the right of the icon, on hover only */
         .tab-label {
+            position: absolute;
+            left: calc(100% + 12px);
+            top: 50%;
+            transform: translateY(-50%) translateX(-4px);
             font-family: 'DM Sans', sans-serif;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: rgba(245, 240, 230, 0.4);
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        .sidebar:hover .tab-label {
-            opacity: 1;
-        }
-        .tab-item.active .tab-label {
-            color: var(--gold);
+            font-size: 0.85rem;
             font-weight: 600;
+            color: var(--cream);
+            white-space: nowrap;
+            background: var(--bg-overlay, #1C2330);
+            border: 1px solid var(--card-border);
+            padding: 5px 11px;
+            border-radius: 7px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.14s ease, transform 0.14s ease;
+            z-index: 1200;
         }
         .tab-item:hover .tab-label {
-            color: var(--cream);
+            opacity: 1;
+            transform: translateY(-50%) translateX(0);
         }
 
         /* ── Content Panels ── */
@@ -1862,17 +1847,15 @@
             border-top: 1px solid rgba(196, 154, 108, 0.08);
         }
         .dashboard-uptime {
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.6rem;
+            font-size: 0.95rem;
             color: var(--text-muted);
             opacity: 0.5;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            text-align: center;
+            width: 100%;
+            cursor: default;
+            transition: opacity 0.15s ease;
         }
-        .sidebar:hover .dashboard-uptime {
-            opacity: 0.8;
-        }
+        .dashboard-uptime:hover { opacity: 0.9; }
 
         /* ── iframe error overlay ── */
         .iframe-wrapper {
@@ -2070,9 +2053,8 @@
                 width: 44px;
                 padding: 16px 0;
             }
-            .sidebar:hover {
-                width: 180px;
-            }
+            .sidebar-logo { width: 44px; }
+            .tab-item { padding: 0 12px; }
             .content-panels {
                 left: 44px;
             }
