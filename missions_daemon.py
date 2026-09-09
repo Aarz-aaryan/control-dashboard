@@ -173,6 +173,8 @@ def tick() -> int:
         for repo, entry in list(missions.items()):
             if entry.get("status") != "active":
                 continue
+            if entry.get("pinned"):
+                continue  # pinned = intentional local state (may have no GitHub repo)
             updated_ts = parse_iso(entry.get("updated_at", ""))
             # If updated_at is recent (< stale window), skip
             if updated_ts and updated_ts > stale_cutoff_ts:
@@ -191,6 +193,8 @@ def tick() -> int:
             if repo not in repos:
                 # Don't yank if it was just created (give repos.json up to 6h to catch up)
                 entry = missions[repo]
+                if entry.get("pinned"):
+                    continue  # pinned entries are never reconciled against repos.json
                 if entry.get("status") == "active":
                     # Active mission missing from GitHub — flag as inactive first,
                     # let next tick hard-remove it. Gives a 6h grace period.

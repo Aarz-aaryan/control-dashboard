@@ -15,6 +15,8 @@ Usage:
   python3 missions_writer.py reorder-missions <a> <b> <c>...  # explicit display order (active+inactive)
   python3 missions_writer.py create <repo> [--kind mission|project] [--priority N] [--status ...]
                                                        # add a brand-new entry (from UI "Create Mission" flow)
+  python3 missions_writer.py pin <repo>                 # set pinned=true (daemon won't auto-remove it)
+  python3 missions_writer.py unpin <repo>               # remove the pinned flag
   python3 missions_writer.py remove <repo>              # hard-remove from state (called after GitHub repo deletion)
   python3 missions_writer.py hard-remove-missing <repo> # remove repo from state because it's no longer in repos.json
   python3 missions_writer.py reclassify <repo>           # sync state to current repos.json presence (helper for cron)
@@ -389,11 +391,15 @@ def cmd_demote(repo: str) -> dict:
 
 
 def cmd_create(repo: str, kind: str = "mission", priority: int = DEFAULT_PRIORITY,
-               status: str | None = None, description: str | None = None) -> dict:
+               status: str | None = None, description: str | None = None,
+               pinned: bool = False) -> dict:
     """Create a new entry for a freshly-created GitHub repo (from the UI flow).
 
     - kind='mission'  → adds to missions dict with given priority + status (default active).
     - kind='project'  → adds to projects list only.
+    - pinned=True     → missions_daemon never auto-inactivates or hard-removes it,
+                        even when there is no matching GitHub repo. Use for
+                        intentional local-only missions.
     Idempotent: re-running on an existing repo updates fields without error.
     """
     if not isinstance(priority, int) or priority < 1 or priority > 99:
@@ -442,6 +448,8 @@ def cmd_create(repo: str, kind: str = "mission", priority: int = DEFAULT_PRIORIT
             "updated_at": now_iso(),
             "description": description or "",
         }
+        if pinned:
+            missions[repo]["pinned"] = True
     else:
         # Update existing entry (idempotent create)
         missions[repo] = {
@@ -451,9 +459,28 @@ def cmd_create(repo: str, kind: str = "mission", priority: int = DEFAULT_PRIORIT
             "description": description or existing.get("description", ""),
             "updated_at": now_iso(),
         }
+        if pinned:
+            missions[repo]["pinned"] = True
     save_state(state, modified_by="user")
     log_activity("user", "create", repo, None, f"mission/{final_status}")
     return emit(True, repo, None, final_status)
+
+
+def cmd_pin(repo: str, pinned: bool) -> dict:
+    """Set/clear the pinned flag on a mission entry. Pinned entries are exempt
+    from missions_daemon reconciliation (auto-inactive / hard-remove)."""
+    state = load_state()
+    missions = state.setdefault("missions", {})
+    if repo not in missions:
+        return emit(False, repo, None, None, error=f"'{repo}' is not a mission")
+    if pinned:
+        missions[repo]["pinned"] = True
+    else:
+        missions[repo].pop("pinned", None)
+    missions[repo]["updated_at"] = now_iso()
+    save_state(state, modified_by="user")
+    log_activity("user", "pin" if pinned else "unpin", repo, None, str(pinned).lower())
+    return emit(True, repo, None, str(pinned).lower())
 
 
 def cmd_remove(repo: str) -> dict:
@@ -568,6 +595,7 @@ def main() -> int:
             priority = DEFAULT_PRIORITY
             status = None
             description = None
+            pinned = False
             i = 1
             while i < len(args):
                 if args[i] == "--kind":
@@ -587,9 +615,18 @@ def main() -> int:
                 elif args[i] == "--description":
                     if i + 1 >= len(args): usage()
                     description = args[i + 1]; i += 2
+                elif args[i] == "--pinned":
+                    pinned = True; i += 1
                 else:
                     usage()
-            res = cmd_create(repo, kind=kind, priority=priority, status=status, description=description)
+            res = cmd_create(repo, kind=kind, priority=priority, status=status,
+                             description=description, pinned=pinned)
+        elif cmd == "pin":
+            if len(args) != 1: usage()
+            res = cmd_pin(args[0], True)
+        elif cmd == "unpin":
+            if len(args) != 1: usage()
+            res = cmd_pin(args[0], False)
         elif cmd == "remove":
             if len(args) != 1: usage()
             res = cmd_remove(args[0])

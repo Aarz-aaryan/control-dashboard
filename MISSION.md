@@ -1,83 +1,69 @@
 # Control Dashboard — Mission
 
-**Live:** http://100.100.35.6:8000/agent-dashboard/
+**Live:** http://100.100.35.6:8000/agent-dashboard/ (Tailscale-bound, not 0.0.0.0)
 **Repo:** https://github.com/Aarz-aaryan/control-dashboard (branch: main)
-**Local path:** `/home/Aarz/agent-dashboard/` (folder name retained for static server URL compatibility)
-**Last commit:** `d84fff9` — Create button + Remove from Dashboard flow + GitHub sync
+**Local path:** `/home/Aarz/agent-dashboard/` (folder name kept for the `/agent-dashboard/` URL)
 
-## Current State (2026-08-29)
+Hermes multi-agent control hub: agent tree monitor, mission/repo tracker,
+r-server health, system stats. Single-page app, no build step.
 
-**Missions tab features:**
-- **Create Mission / Project** button (top-right) → modal with title, description, kind (mission/project), priority, private toggle
-- **🗑 Remove** button on every card → confirms via modal → `gh repo delete` + state cleanup
-- All existing flow preserved: toggle, drag/drop, priority editor, classify/promote/demote, soft-delete
+## Current architecture (2026-09-08 overhaul)
 
-**Cron for nightly sync (already existed, now covers new flows):**
-- `bada832688a9` GitHub Repos Nightly Sync — 03:00 daily — refreshes `repos.json` from `gh`
-- `c3eb7b11670b` Mission State Sync — every 6h — `missions_daemon.py` cleanup
-- `291945d064fe` GitHub Orphan Repo Auditor — Sun 04:00 — flags repos on GitHub but missing from state
-- `39e605319d90` Missions Watchdog — every 5min — restarts daemon/http-server if dead
+```
+Browser ─► dashboard_server.py :8000 (binds 100.100.35.6)
+             static  ─► ~/dashboard-www/agent-dashboard → this repo
+             /api/token          ─► shared write token (bound-IP only)
+             /api/missions/*      ─► proxy ─► missions_http_server.py 127.0.0.1:8001 ─► missions_writer.py
+update_data.py (systemd agent-dashboard-collector.service), every 30s:
+   health.json · agents.json · missions.json · r_server_info.json
+```
 
-## Current State (2026-08-29)
+**Frontend** is split out of the old 174 KB inline blob:
+`index.html` (markup) + `css/dashboard.css` + `js/dashboard.js` (classic script).
 
-**Agents tab:** 7 cards — aarz (gold), agy (sky blue), scout (deep blue), coder (sage), builder (warm brown), tester (terracotta), jarvis (muted red). Flat hierarchy: Aarz → all 6. All icons are clean geometric logos on solid color circles.
+**Agent roster (6):** aarz, agy, scout, coder, builder, tester. Defined in
+`js/dashboard.js` `AGENTS` and `update_data.py` `HERMES_AGENTS` (+ agy) — keep in sync.
+Session activity is computed server-side into `agents.json` (by file mtime); the
+browser no longer scrapes `~/.hermes` / `~/.gemini` directory listings.
 
-**Missions tab:** 3 inactive missions (skyeye-drone-mission, portfolio-business, skyeye-drone-media) + 11 projects. All cards link to real GitHub repos. `agent-dashboard` removed from state (migrated to control-dashboard).
+**Missions:** `missions_state.json` (hand-curated, gitignored, atomic writes).
+Statuses `active | inactive | archived | deleted`. `"pinned": true` entries are
+skipped by `missions_daemon.py` reconciliation — use for local-only missions with
+no GitHub repo (e.g. `motorcycle-dashboard-integration`).
+`missions_writer.py pin|unpin <repo>` and `create ... --pinned`.
 
-**Stats tab:** Cron health expansion panel, per-agent grid, Stored Sessions (Hermes profiles only).
+## Security posture
 
-## Last Session: 2026-08-29 — Agents Tab Refresh + Missions Link Fix
-
-**Changes shipped (commit a60b5f1):**
-
-1. **Agents tab — full refresh:** Replaced stale AGENTS array (copilot/neo/bymax/nina) with current team: aarz, agy, scout, coder, builder, tester, jarvis. Tree rewired to flat Aarz → all agents hierarchy. Removed copilot Hermes profile lookup. Added SVG icons for scout/coder/builder/tester.
-
-2. **Missions tab — dead link fix:** `renderCard()` fallback URL changed from `#` → `https://github.com/Aarz-aaryan/<repo>` for any repo not in `repos.json`. Removed `agent-dashboard` from projects list (migrated to control-dashboard; no longer a separate repo). Removed orphaned `agent-dashboard` mission entry. All 6 missions + 11 projects now reliably link to GitHub.
-
-3. **State cleanup:** `missions_state.json` — removed stale `agent-dashboard` mission entry, removed `agent-dashboard` from projects list.
-
-## Stats Tab — Cron Jobs Expansion Panel & Health Rollup (2026-07-04)
-**Fixes shipped:**
-1. **Interactive Cron Tile:** The Cron Jobs tile now has a hover effect and is clickable (`onclick="toggleCronPanel()"`). It also displays a new health badge ("All X healthy" or "Y failing") reflecting the overall status of all jobs.
-2. **Expansion Panel:** Clicking the tile smoothly reveals a new inline panel directly below the "In Progress" stats row (preserving the 4-tile grid layout). The panel lists all cron jobs, showing name, schedule, a 60-char truncated purpose (from `prompt` or script path), last run (formatted as relative time), and a green/red health dot.
-3. **Rich Data Feed:** Updated `update_data.py`'s `parse_job()` function to extract `last_status`, `last_error`, `prompt`, `script`, and `paused_reason` directly from `~/.hermes/profiles/aarz/cron/jobs.json`. The frontend dynamically maps these fields on the 30s auto-refresh cycle without losing panel open/closed state.
-
-**Verified live:** The cron jobs tile expands to show real-time detail for each job. Hover effects match the existing aesthetics seamlessly.
-
-**Wiring fix (post-agy):** `updateCronStats()` originally only set the count/active/paused numbers — the new badge element and panel list were wired in via this commit. The badge now shows `"All N healthy"` (sage/green pill) or `"X failing"` (terracotta/red pill); the panel list is populated eagerly so expanding is instant.
-
-**Operational fix:** The `update_data.py` daemon had been dead since 2026-07-01 (3 days) — `missions.json` and `health.json` were stale. No systemd unit existed for it. Created `systemd-agent-dashboard-collector.service` (mirror of `~/.config/systemd/user/agent-dashboard-collector.service`), enabled + started. Daemon now runs as PID under systemd supervision (will survive reboots).
-
-## Housekeeping (2026-07-02)
-- Deleted 5 stale `index.html.bak*.2026-06-28.b4` files from the 06-28 audit session (bak5 was byte-identical to current index.html — zero rollback value retained). Added `index.html.bak*` to `.gitignore` so future pre-edit snapshots don't show as untracked noise.
-
-## Stats Tab — Per-Agent Grid + 30m Threshold (2026-07-02)
-**Fixes shipped:**
-1. **Per-agent grid now renders.** The `#stats-agent-grid` container had an HTML comment promising dynamic population, but no code populated it — `updateStatsCounts()` was writing to 3 dead DOM IDs (`#stat-aarz-sessions`, `#stat-agy-sessions`, `#stat-copilot-sessions`) that didn't exist. Rewrote the function to iterate the `AGENTS` array (7 agents) and build `.stats-agent-card` elements with colored dots matching each agent's theme color. Cards show "active" or "standby" state based on whether count > 0.
-2. **In Progress threshold loosened from 5min → 30min.** With 5min the card often read 0/1 and felt dead. 30min shows anything currently being worked on without dragging in old history. Label updated to `IN PROGRESS (30m)`. `WORKING_MS = 4h` for agent cards unchanged (kept separate per intent).
-3. **Dead code cleaned up.** The 3 unused `stat-*-sessions` ID references removed.
-
-**Verified live:** Total now reads 5 (Aarz=3 + agy=2 in last 30m). All 7 cards render with correct agent colors. No regression to System Health panels, Stored Sessions, or Cron Jobs cards.
-
-## Stats Tab — Stored Sessions: Hermes Profiles Only (2026-07-02)
-**Change:** `updateTotalSessionCounts()` now iterates only over the 5 Hermes profiles (`HERMES_PROFILES = ['aarz', 'copi', 'jarvis', 'scout']`), counting their `sessions/*.json` files (excluding `sessions.json` index). agy cli logs and copilot process logs are no longer included.
-
-**Why:** Aaryan wants the card to reflect Hermes session storage only. agy + copilot have their own crons covering them — leaving those alone.
-
-**Cron coverage confirmed (no gap):**
-- Hermes profiles (5): `session-prune-all-profiles-and-logs-and-mnemosyne` (cron `28525a25b613`, daily 03:00)
-- agy cli logs: `session-prune-all-profiles-and-logs-and-mnemosyne` (daily) + `AI Tool Cleaner` (cron `87c1bbc653af`, weekly Sunday)
-- copilot logs: same two crons
-
-**Verified live:** Stored Sessions = 131 (matches disk sum: 30+30+29+24+18). Subtitle updated to "Hermes profiles · currently on disk" for clarity.
-
-## Mission
-
-Hermes Agent Dashboard — centralized control hub for multi-agent orchestration, r-server management, and GitHub mission tracking. Single-page dark-themed dashboard with tree-layout agent monitor, mission/projects tracker, r-server iframe, and stats panel.
+- `:8000` binds the Tailscale IP; `:8001` binds `127.0.0.1` only.
+- Mission writes require the `X-Dashboard-Token` header (served at `/api/token`,
+  file `.dashboard_token`, gitignored). No CORS — same-origin only.
+- Web root (`~/dashboard-www`) contains only the `agent-dashboard` symlink.
+- r-server access is SSH key auth. **No credentials in this repo.**
 
 ## Status
 
-**Active** — Phase 6 deployed, watchdog running, all commits pushed to canonical repo.
+**Active.** Watchdog cron keeps `missions_daemon` + `missions_http_server` alive.
+
+## Session log
+
+### 2026-09-08 — Security + correctness + split overhaul
+
+- **Security:** removed the hard-coded r-server SSH password from `update_data.py`
+  (now key auth) and purged it from git history; `missions_http_server.py` moved
+  to `127.0.0.1`; added `dashboard_server.py` (static + token-gated reverse proxy)
+  replacing `python -m http.server`; dropped the `.hermes`/`.gemini`/`.copilot`
+  web-root symlinks.
+- **Correctness:** removed retired `jarvis`; fixed the "Stored Sessions" stat
+  (was reading non-existent profiles); implemented the missing r-server iframe
+  `onIframeLoad`/`onIframeError`/`retryIframe` + reachability ping; `missions_daemon`
+  now honors `pinned` so manually-added missions aren't auto-deleted.
+- **Data layer:** `update_data.py` writes `agents.json`; `_generated_at` added to
+  all collector outputs; UI shows an amber strip when the collector goes stale.
+- **UX/perf:** `alert()` → toasts; `.tree-row` wraps instead of clipping; short-
+  viewport scroll; particles respect `prefers-reduced-motion` + pause when hidden,
+  capped at 14; debounced tree redraw; parallel `loadAll` fetches; persisted tab.
+- **Hygiene:** split `index.html`; deleted `index_dark_backup.html` + unused
+  `assets/*.svg`; untracked `missions_state.json`; expanded `.gitignore`.
 
 ## Phase 6 — Stats Tab Cron Count + Agents isActiveRecent Fix (2026-06-28)
 

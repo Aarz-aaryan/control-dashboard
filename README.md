@@ -1,73 +1,76 @@
 # Control Dashboard
 
-Hermes multi-agent control hub — a single-page web dashboard for monitoring and managing the Aarz multi-agent system.
+Hermes multi-agent control hub — a single-page dashboard for monitoring the
+Aarz multi-agent system, mission/repo tracking, and r-server health.
 
-**Live at:** `http://100.100.35.6:8000/agent-dashboard/`
+**Live at:** `http://100.100.35.6:8000/agent-dashboard/` (Tailscale only — the
+server binds the Tailscale IP, not `0.0.0.0`).
 
 ---
 
-## Features
+## Tabs
 
-### Agents Tab
-Visual tree layout of all active Hermes agents (Aarz orchestrator, agy CLI, Copilot CLI, Jarvis, Neo, Bymax, Nina). Shows session count, last signal, status (ACTIVE/STANDBY), and live-updating agent cards.
-
-### Stats Tab
-System health at a glance — CPU load, memory usage, disk, Hermes process status, Docker container health, and per-agent session counts pulled directly from Hermes profile data.
-
-### Missions Tab
-GitHub repo grid pulled live from the `Aarz-aaryan` GitHub account. Each repo is a "mission" card with name, public/private badge, description, and last-updated date. Clicking opens the repo on GitHub. Auto-refreshes every 30s; nightly sync via cron.
-
-### r-server Tab
-Full r-server (100.84.224.18) control panel:
-- System stats: uptime, memory, disk
-- Docker container status table (11 containers)
-- Docker images table (11 images)
-- Embedded Homepage dashboard at port 8383
+| Tab | Source | Notes |
+|-----|--------|-------|
+| **Agents** | `agents.json` | Tree of aarz → agy, scout, coder, builder, tester. Per-card ACTIVE/STANDBY + session count. |
+| **Stats** | `health.json`, `agents.json`, `missions.json` | Local + r-server system health, cron job health panel, in-progress + stored session counts. |
+| **Missions** | `repos.json` + `missions_state.json` | GitHub repo grid; toggle / promote / demote / priority / create / remove. |
+| **r-server** | `r_server_info.json` | Embedded r-server Homepage (`:8383`) + docker tables. |
 
 ---
 
 ## Architecture
 
 ```
-agent-dashboard/
-├── index.html          # Single-page app (HTML + CSS + JS)
-├── update_data.py      # Background: health.json, r_server_info.json every 30s
-├── update_repos.py     # GitHub repos fetcher (gh CLI)
-├── repos.json          # GitHub repo data (nightly cron)
-├── health.json         # System/health data (30s cron)
-├── r_server_info.json  # r-server Docker + system data (30s cron)
-├── assets/             # Agent icons (aarz.svg, agy.svg, copilot.svg, etc.)
-└── MISSION.md          # Project mission + status
+Browser ──► dashboard_server.py  (:8000, binds Tailscale IP)
+              │  static files  ─► ~/dashboard-www/agent-dashboard  (symlink → this repo)
+              │  /api/token    ─► shared write token (reachable only on the bound IP)
+              └─ /api/missions/* ─► reverse-proxy ─► missions_http_server.py (127.0.0.1:8001)
+                                                      └─► missions_writer.py (atomic state writes)
+
+update_data.py  (systemd: agent-dashboard-collector.service)
+   every 30s ─► health.json, agents.json, missions.json, r_server_info.json
 ```
 
-### Data Flow
-1. `update_data.py` runs continuously, writing `health.json`, `r_server_info.json` every 30s
-2. `update_repos.py` fetches GitHub repos via `gh repo list` — called nightly by cron (3am)
-3. `index.html` fetches all JSON on load + every 30s via `loadAll()`
-4. All JSON files served by the same Python HTTP server that serves the HTML
+- The browser only ever talks to `:8000`, **same-origin**. Writes carry
+  `X-Dashboard-Token` (from `/api/token`); `missions_http_server.py` is not
+  reachable from the network.
+- `agents.json` is computed server-side from `~/.hermes/profiles/*/sessions` and
+  `~/.gemini/antigravity-cli/log` — the browser no longer scrapes directory
+  listings, so no dotfiles are exposed through the web root.
+- r-server access uses SSH **key auth** (`~/.ssh/id_ed25519`, already authorized
+  on r-server). No passwords in this repo.
 
-### Serving
+### Mission state (`missions_state.json`)
+
+Hand-curated, gitignored, atomic writes (tmp + fsync + rename). See
+`INTEGRATION.md`. Entries flagged `"pinned": true` are exempt from
+`missions_daemon.py` reconciliation (use for local-only missions with no GitHub
+repo).
+
+---
+
+## Crons
+
+| Name | Schedule | Does |
+|------|----------|------|
+| GitHub Repos Nightly Sync | `0 3 * * *` | `update_repos.py` → `repos.json` |
+| Mission State Sync | `0 */6 * * *` | `missions_daemon.py --once` cleanup |
+| Missions Watchdog | `*/5 * * * *` | restart `missions_daemon` / `missions_http_server` if down |
+| GitHub Orphan Repo Auditor | `0 4 * * 0` | flag repos on GitHub missing from state |
+
+---
+
+## Local dev
+
 ```bash
-python3 -m http.server 8000
-# Dashboard: http://100.100.35.6:8000/agent-dashboard/
+python3 missions_http_server.py           # 127.0.0.1:8001
+python3 dashboard_server.py --bind 127.0.0.1 --directory ~/dashboard-www
+# open http://127.0.0.1:8000/agent-dashboard/
 ```
-
----
-
-## Tabs
-
-| Tab | Data Source | Refresh |
-|-----|-------------|---------|
-| Agents | `getHermesData()` per agent profile | 30s |
-| Stats | `health.json` | 30s |
-| Missions | `repos.json` (GitHub API) | 30s + nightly cron |
-| r-server | `r_server_info.json` | 30s |
-
----
 
 ## Dependencies
 
-- **gh CLI** — authenticated (`gh auth status`) for `update_repos.py`
-- **sshpass** — for r-server SSH commands in `update_data.py`
-- **Python 3** — background data collector
-- **Web browser** — Chrome/Firefox/Safari, modern ES6+
+- **gh CLI** — authenticated, for `update_repos.py` and repo create/delete
+- **Python 3.11+** — stdlib only
+- **SSH key** to r-server for `update_data.py`

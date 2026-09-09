@@ -2,7 +2,10 @@
 """
 missions_http_server.py — tiny HTTP endpoint for the dashboard UI to call.
 
-Listens on 0.0.0.0:8001 (CORS open for localhost:8000 and 100.100.35.6:8000).
+Listens on 127.0.0.1:8001 ONLY. The browser never talks to this directly — it
+goes through dashboard_server.py on :8000, which proxies /api/missions/* here
+same-origin and gates writes on a shared token. No CORS handling is needed.
+
 POST /api/missions/{action} with JSON body {"repo": "<name>"} (or {"repo":"...","status":"..."}).
 
 State actions (delegated to missions_writer.py):
@@ -29,6 +32,7 @@ ROOT = Path(__file__).resolve().parent
 WRITER = ROOT / "missions_writer.py"
 STATE_FILE = ROOT / "missions_state.json"
 REPOS_FILE = ROOT / "repos.json"
+HOST = "127.0.0.1"
 PORT = 8001
 
 # State-only actions delegated to missions_writer.py
@@ -42,14 +46,6 @@ STATE_ACTIONS = {
 REPO_ACTIONS = {"create-repo", "delete-repo"}
 
 ALLOWED_ACTIONS = STATE_ACTIONS | REPO_ACTIONS
-
-# CORS allowlist — open for the dashboard origin and any localhost variant
-ALLOWED_ORIGINS = {
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    "http://100.100.35.6:8000",
-    "http://100.84.224.18:8000",
-}
 
 
 # ─── Repo-action helpers (gh CLI) ───────────────────────────────────────────────
@@ -148,22 +144,11 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.write(f"[missions_http] {self.address_string()} - {format % args}\n")
         sys.stderr.flush()
 
-    def _set_cors(self):
-        origin = self.headers.get("Origin", "")
-        if origin in ALLOWED_ORIGINS:
-            self.send_header("Access-Control-Allow-Origin", origin)
-        else:
-            self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Vary", "Origin")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-
     def _send_json(self, code: int, payload: dict):
         body = json.dumps(payload).encode()
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
-        self._set_cors()
         self.end_headers()
         self.wfile.write(body)
 
@@ -172,13 +157,11 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "text/plain")
         self.send_header("Content-Length", str(len(body)))
-        self._set_cors()
         self.end_headers()
         self.wfile.write(body)
 
     def do_OPTIONS(self):
         self.send_response(204)
-        self._set_cors()
         self.send_header("Content-Length", "0")
         self.end_headers()
 
@@ -390,8 +373,8 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> int:
-    server = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
-    print(f"[missions_http] listening on 0.0.0.0:{PORT}", flush=True)
+    server = ThreadingHTTPServer((HOST, PORT), Handler)
+    print(f"[missions_http] listening on {HOST}:{PORT}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
