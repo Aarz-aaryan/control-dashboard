@@ -22,14 +22,26 @@ from datetime import datetime, timezone
 
 OUTPUT_DIR = "/home/Aarz/agent-dashboard"
 
-# Agent roster — only the ones that actually run. Each Hermes agent has its own
-# ~/.hermes/profiles/<p>/state.db (the real session store); agy is a separate CLI
-# whose runs are one log file each. coder/builder/tester profiles exist but have
-# had no activity since Aug 2026 — dropped (like jarvis). Keep in sync with the
-# AGENTS array in js/dashboard.js.
-HERMES_AGENTS = ["aarz", "scout"]
+# Agent roster is auto-discovered from ~/.hermes/profiles/ (any dir with a
+# state.db is a Hermes agent, whether it's been used lately or not — dormant ones
+# still show, just flagged as such). agy is a separate CLI whose runs are one log
+# file each. The visual side (colour/icon/role per agent) lives in the AGENTS
+# array in js/dashboard.js.
 AGY_LOG_DIR = os.path.expanduser("~/.gemini/antigravity-cli/log")
 HERMES_PROFILES_DIR = os.path.expanduser("~/.hermes/profiles")
+
+
+def _discover_hermes_agents() -> list[str]:
+    try:
+        names = [
+            d for d in os.listdir(HERMES_PROFILES_DIR)
+            if os.path.isfile(os.path.join(HERMES_PROFILES_DIR, d, "state.db"))
+        ]
+    except OSError:
+        return ["aarz"]
+    # aarz (the orchestrator) first, then the rest alphabetically.
+    names.sort(key=lambda n: (n != "aarz", n))
+    return names
 
 ACTIVE_H = 6      # activity within this many hours  -> "active"
 IDLE_H = 48       # activity within this many hours  -> "idle" (ran on schedule)
@@ -153,9 +165,7 @@ def _hermes_agent_activity(profile: str) -> dict:
     db = os.path.join(HERMES_PROFILES_DIR, profile, "state.db")
     if not os.path.exists(db):
         return out
-    # db mtime is a cheap floor for "touched recently" — a run can write to other
-    # tables even when its session row is short-lived / gets pruned.
-    floor_ms = int(os.path.getmtime(db) * 1000)
+    mtime_ms = int(os.path.getmtime(db) * 1000)
     try:
         conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=2)
         conn.row_factory = sqlite3.Row
@@ -185,7 +195,13 @@ def _hermes_agent_activity(profile: str) -> dict:
             out["last_source"] = out["recent"][0]["source"]
     except Exception as e:
         print(f"agent activity ({profile}): {e}")
-    last_ms = max([floor_ms] + [x["ts"] for x in out["recent"] if x["ts"]])
+    session_last = max((x["ts"] for x in out["recent"] if x["ts"]), default=0)
+    # Count db mtime as "activity" ONLY when it is genuinely recent — i.e. a run
+    # is in flight and hasn't finalised its session row yet. An old migration
+    # touch (all the dormant profiles were bumped on the same day) must not read
+    # as recent activity.
+    recent_write = (time.time() * 1000 - mtime_ms) < ACTIVE_H * 3_600_000
+    last_ms = max(session_last, mtime_ms) if recent_write else session_last
     out["last_active_ms"] = last_ms
     out["last_active"] = iso(last_ms / 1000) if last_ms else None
     out["status"] = _status_for(last_ms)
@@ -218,7 +234,7 @@ def _agy_activity() -> dict:
 
 
 def get_agent_activity() -> dict:
-    agents = {p: _hermes_agent_activity(p) for p in HERMES_AGENTS}
+    agents = {p: _hermes_agent_activity(p) for p in _discover_hermes_agents()}
     agents["agy"] = _agy_activity()
     return {"_generated_at": now_iso(), "agents": agents}
 

@@ -2,17 +2,50 @@
 // Split out of index.html (was a 174 KB inline blob). Classic script (not a
 // module) so the inline onclick= handlers in index.html keep working.
 
-// Agent roster — only what actually runs. Keep in sync with update_data.py
-// HERMES_AGENTS + agy. (coder/builder/tester profiles are dormant since Aug 2026.)
-const AGENTS = [
-    { id: 'aarz',  name: 'Aarz',  role: 'Chief Orchestrator', color: '#c49a6c', dim: 'rgba(196, 154, 108, 0.15)', icon: 'aarz.svg' },
-    { id: 'agy',   name: 'agy',   role: 'Anti-Gravity CLI',   color: '#8bbccc', dim: 'rgba(139, 188, 204, 0.15)', icon: 'agy.svg' },
-    { id: 'scout', name: 'Scout', role: 'Research Agent',     color: '#3a6ea5', dim: 'rgba(58, 110, 165, 0.15)',  icon: 'scout.svg' },
-];
+// Visual metadata per agent. The roster itself (who exists) is discovered from
+// agents.json, which the collector builds from ~/.hermes/profiles/. Add a new
+// profile there and it shows up here automatically — this map just supplies a
+// colour/icon/role, with a sensible fallback for anything not listed.
+const AGENT_META = {
+    aarz:    { name: 'Aarz',    role: 'Chief Orchestrator', color: '#c49a6c', icon: 'aarz.svg' },
+    agy:     { name: 'agy',     role: 'Anti-Gravity CLI',   color: '#8bbccc', icon: 'agy.svg' },
+    scout:   { name: 'Scout',   role: 'Research Agent',      color: '#3a6ea5', icon: 'scout.svg' },
+    coder:   { name: 'Coder',   role: 'Coding Agent',        color: '#7eb5a6', icon: 'coder.svg' },
+    builder: { name: 'Builder', role: 'Build / DevOps Agent', color: '#8a6f5a', icon: 'builder.svg' },
+    tester:  { name: 'Tester',  role: 'QA / Testing Agent',  color: '#c47060', icon: 'tester.svg' },
+};
+function agentMeta(id) {
+    const m = AGENT_META[id] || {};
+    const color = m.color || '#8a8a8a';
+    return {
+        id,
+        name: m.name || id,
+        role: m.role || 'Agent',
+        color,
+        dim: color + '26', // ~15% alpha
+        icon: m.icon || 'aarz.svg',
+    };
+}
 
-const WORKING_MS = 4 * 60 * 60 * 1000;   // agent card ACTIVE/STANDBY threshold
-const STATS_ACTIVE_MS = 30 * 60 * 1000;  // Stats tab "In Progress" threshold
-const SESSION_MS = 12 * 60 * 60 * 1000;
+// Built from agents.json on each load (aarz first, then discovery order).
+let AGENTS = Object.keys(AGENT_META).map(agentMeta);
+
+function rebuildRoster() {
+    const ids = _agentsJson && _agentsJson.agents ? Object.keys(_agentsJson.agents) : null;
+    if (!ids || !ids.length) return;
+    ids.sort((a, b) => (a === 'aarz' ? -1 : b === 'aarz' ? 1 : a.localeCompare(b)));
+    AGENTS = ids.map(agentMeta);
+    // Make sure a tree node exists for every non-root agent.
+    const row = document.getElementById('agent-row');
+    if (row) {
+        const want = AGENTS.filter(a => a.id !== 'aarz').map(a => a.id);
+        if (want.join(',') !== [...row.children].map(c => c.id.replace('node-', '')).join(',')) {
+            row.innerHTML = want.map(id => `<div class="tree-node" id="node-${id}"></div>`).join('');
+        }
+    }
+}
+
+const WORKING_MS = 4 * 60 * 60 * 1000;
 const REFRESH_MS = 30 * 1000;
 const CACHE_TTL_MS = 60 * 1000;
 const STALE_DATA_MS = 3 * 60 * 1000;     // collector output older than this = stale
@@ -1557,12 +1590,10 @@ async function loadAll() {
             fetchJSON('/agent-dashboard/missions.json'),
         ]);
 
-    // Agent cards from agents.json
-    AGENTS.forEach(a => {
-        const d = getAgentData(a.id);
-        setCache(a.id, d);
-        updateCard(a, d);
-    });
+    // Roster + cards from agents.json
+    rebuildRoster();
+    renderCards(AGENTS.map(a => ({ a, d: getAgentData(a.id) })));
+    AGENTS.forEach(a => setCache(a.id, getAgentData(a.id)));
     updateStatsCounts();
     updateTotalSessionCounts();
     updateStaleBanner();
@@ -1675,6 +1706,14 @@ function scheduleTreeRedraw() {
 // ── Boot ───────────────────────────────────────────────────────────────────
 
 window.addEventListener('load', () => {
+    // Seed the agent row from the static metadata so first paint has nodes;
+    // loadAll() -> rebuildRoster() then reconciles against agents.json.
+    const seedRow = document.getElementById('agent-row');
+    if (seedRow && !seedRow.children.length) {
+        seedRow.innerHTML = AGENTS.filter(a => a.id !== 'aarz')
+            .map(a => `<div class="tree-node" id="node-${a.id}"></div>`).join('');
+    }
+
     // Open tab from #hash, else last-used tab
     const TABS = ['agents', 'stats', 'missions', 'r-server'];
     const fromHash = location.hash.slice(1);

@@ -21,17 +21,19 @@ update_data.py (systemd agent-dashboard-collector.service), every 30s:
 **Frontend** is split out of the old 174 KB inline blob:
 `index.html` (markup) + `css/dashboard.css` + `js/dashboard.js` (classic script).
 
-**Agent roster (3):** aarz, agy, scout — the only ones that actually run.
-(coder/builder/tester profiles exist but have had zero activity since Aug 2026 —
-dropped, like jarvis.) Defined in `js/dashboard.js` `AGENTS` and `update_data.py`
-`HERMES_AGENTS` (+ agy) — keep in sync.
+**Agent roster:** auto-discovered — every `~/.hermes/profiles/<p>/` with a
+`state.db` (currently aarz, scout, coder, builder, tester) plus `agy` (separate
+CLI). Dormant agents still render, flagged `DORMANT` and dimmed — nothing is
+hidden. `js/dashboard.js` `AGENT_META` only supplies colour/icon/role per id
+(with a fallback), so a new profile appears automatically.
 
 `agents.json` is computed server-side from the **real** session store —
 `~/.hermes/profiles/<p>/state.db` table `sessions` (count today / 24h, last
 activity, recent run titles); agy from its per-run CLI logs. Only today/24h are
 exposed: a nightly prune deletes sessions older than ~2 days, so a longer window
-would silently under-report. The old code mistakenly counted `request_dump_*.json`
-diagnostic files as "sessions".
+would silently under-report. `last_active` = last real session (db-file mtime
+only counts when it's <6h old, i.e. a run in flight). The old code mistakenly
+counted `request_dump_*.json` diagnostic files as "sessions".
 
 **Missions:** `missions_state.json` (hand-curated, gitignored, atomic writes).
 Statuses `active | inactive | archived | deleted`. `"pinned": true` entries are
