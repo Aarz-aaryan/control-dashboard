@@ -313,9 +313,10 @@ function switchTab(tabId) {
     if (activePanel) activePanel.classList.add('active');
 
     try { localStorage.setItem('dash_tab', tabId); } catch {}
-    if (location.hash.slice(1) !== tabId) {
-        history.replaceState(null, '', '#' + tabId);
-    }
+    // Keep a "/sub" deep-link (e.g. #missions/<repo>) only while on that same tab.
+    const cur = location.hash.slice(1).split('/');
+    const next = cur[0] === tabId && cur[1] ? `${tabId}/${cur[1]}` : tabId;
+    if (location.hash.slice(1) !== next) history.replaceState(null, '', '#' + next);
 
     if (tabId === 'agents') {
         setTimeout(drawTreeLines, 80);
@@ -323,6 +324,32 @@ function switchTab(tabId) {
 }
 
 let latestMissionsJson = null;
+
+// Mission detail (summary / activity / question) maintained by the aarz cron,
+// plus the user's staged answers. Both are static JSON served by :8000.
+let _missionDetails = {};   // { "<repo>": {summary, activity, question, question_history, github} }
+let _missionAnswers = {};   // { "<repo>": {question_id, text, answered_at} }
+
+async function loadMissionExtras() {
+    const [det, ans] = await Promise.all([
+        fetchJSON('/agent-dashboard/missions_details.json'),
+        fetchJSON('/agent-dashboard/missions_answers.json'),
+    ]);
+    _missionDetails = (det && det.missions) || {};
+    _missionAnswers = (ans && ans.answers) || {};
+}
+
+// Effective question state for a repo: 'open' | 'answered' | null
+function missionQuestion(repo) {
+    const q = _missionDetails[repo] && _missionDetails[repo].question;
+    if (!q || !q.id) return null;
+    const ans = _missionAnswers[repo];
+    const answered = ans && ans.question_id === q.id;
+    return { ...q, status: answered ? 'answered' : (q.status || 'open'), answer: answered ? ans.text : null,
+             answered_at: answered ? ans.answered_at : null };
+}
+
+const GH_MARK = `<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>`;
 
 let isCronPanelOpen = false;
 
@@ -559,7 +586,11 @@ function renderStatsPanel(h) {
     }
 }
 
+let _lastReposEnvelope = null;
+let _pendingMissionModal = null;
+
 function renderMissions(data) {
+    if (data && data.repos) _lastReposEnvelope = data;
     // Support envelope format {_fetched_at, repos} and legacy plain array
     const isEnvelope = data && typeof data === 'object' && !Array.isArray(data) && data.repos;
     const repos = isEnvelope ? data.repos : (Array.isArray(data) ? data : null);
@@ -659,8 +690,31 @@ function renderMissions(data) {
                     onDropOnMissionCard(e);
                 }
             });
+            // Card body → detail modal (ignore clicks on the GitHub mark / buttons)
+            reposGrid.addEventListener('click', (e) => {
+                if (e.target.closest('[data-stop], [data-mission-action], [data-priority-badge-for], .priority-editor')) return;
+                const link = e.target.closest('.repo-card-link');
+                if (link) openMissionDetail(link.getAttribute('data-repo'));
+            });
+            reposGrid.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                const link = e.target.closest('.repo-card-link');
+                if (link) { e.preventDefault(); openMissionDetail(link.getAttribute('data-repo')); }
+            });
         }
         if (emptyMsg) emptyMsg.style.display = 'none';
+        updateQuestionCount();
+
+        // Deep link "#missions/<repo>" — open its modal once the grid exists.
+        const sub = (location.hash.slice(1).split('/')[1] || '');
+        const wantRepo = _pendingMissionModal || (sub ? decodeURIComponent(sub) : '');
+        _pendingMissionModal = null;
+        const overlayOpen = document.getElementById('modal-mission-overlay').style.display !== 'none';
+        if (wantRepo && !overlayOpen && _detailRepo !== wantRepo) {
+            openMissionDetail(wantRepo);
+        } else if (_detailRepo && overlayOpen) {
+            renderMissionDetail();  // keep an open modal fresh on re-render
+        }
 
         // Update counts
         const missionsObj = (state && state.missions) || {};
@@ -838,24 +892,30 @@ function renderMissionsSections(repos, state) {
         const dragKind = kind === 'project' ? 'project'
             : (kind === 'mission-active' || kind === 'mission-inactive') ? 'mission'
             : 'none';
-        // The whole card is wrapped in an <a> link. Browsers don't fire dragstart from inside an
-        // <a> unless the <a> itself is draggable. Setting draggable on the <a> lets drags start
-        // from anywhere on the card (not just the .repo-actions area below the link).
+        // Card body opens the detail modal on click. GitHub opens in a new tab
+        // via the small mark button (stops propagation). "?" badge = Aarz has an
+        // open question on this repo.
+        const q = missionQuestion(repoName);
+        const qBadge = q && q.status === 'open'
+            ? `<span class="mission-q-badge" title="Aarz has a question">?</span>` : '';
         return `
             <div class="${cardClass}" data-repo="${escapeHtml(repoName)}">
-                <a href="${escapeHtml(repo.html_url)}" target="_blank" class="repo-card-link"
-                   draggable="${draggable}" data-drag-kind="${dragKind}" data-repo="${escapeHtml(repoName)}">
+                <div class="repo-card-link" role="button" tabindex="0"
+                     draggable="${draggable}" data-drag-kind="${dragKind}" data-repo="${escapeHtml(repoName)}">
                     <div class="repo-card-top">
-                        <span class="repo-name">${escapeHtml(repo.name)}</span>
+                        <span class="repo-name" title="${escapeHtml(repo.name)}">${escapeHtml(repo.name)}</span>
                         ${priorityBadgeHtml}
+                        ${qBadge}
                         <span class="repo-visibility ${visClass}">${visLabel}</span>
+                        <a class="repo-gh" href="${escapeHtml(repo.html_url)}" target="_blank" rel="noopener"
+                           title="Open on GitHub" data-stop>${GH_MARK}</a>
                     </div>
                     ${desc}
                     <div class="repo-card-bottom">
                         ${badge}
                         <span class="repo-updated">${updated}</span>
                     </div>
-                </a>
+                </div>
                 ${actions ? `<div class="repo-actions" draggable="${draggable}" data-drag-kind="${dragKind}" data-repo="${escapeHtml(repoName)}">${actions}</div>` : ''}
             </div>
         `;
@@ -989,6 +1049,150 @@ async function handleMissionAction(action, repo) {
         // Re-enable buttons (the re-render will have rebuilt them, but if it failed, this still helps)
         document.querySelectorAll(`[data-mission-action="${action}"][data-repo="${CSS.escape(repo)}"]`)
             .forEach(btn => { btn.disabled = false; btn.classList.remove('action-busy'); });
+    }
+}
+
+// ─── Mission detail modal ────────────────────────────────────────────────────
+
+let _detailRepo = null;
+
+function updateQuestionCount() {
+    const n = Object.keys(_missionDetails).filter(r => {
+        const q = missionQuestion(r);
+        return q && q.status === 'open';
+    }).length;
+    const el = document.getElementById('missions-q-count');
+    if (el) {
+        el.textContent = n ? `Aarz has ${n} question${n > 1 ? 's' : ''}` : '';
+        el.style.display = n ? 'inline-flex' : 'none';
+    }
+}
+
+function openMissionDetail(repo) {
+    _detailRepo = repo;
+    const overlay = document.getElementById('modal-mission-overlay');
+    if (!overlay) return;
+    try {
+        renderMissionDetail();
+    } catch (e) {
+        console.error('renderMissionDetail failed', e);
+        document.getElementById('modal-mission-summary').textContent = 'Error loading detail: ' + e.message;
+    }
+    overlay.style.display = 'flex';
+    try { history.replaceState(null, '', '#missions/' + encodeURIComponent(repo)); } catch {}
+}
+
+function closeMissionDetail() {
+    const overlay = document.getElementById('modal-mission-overlay');
+    if (overlay) overlay.style.display = 'none';
+    _detailRepo = null;
+    if (location.hash.startsWith('#missions/')) {
+        try { history.replaceState(null, '', '#missions'); } catch {}
+    }
+}
+
+function _repoInfo(repo) {
+    // best-effort repo metadata from the cached repos.json envelope
+    const list = (_lastReposEnvelope && _lastReposEnvelope.repos) || [];
+    return list.find(r => r.name === repo) ||
+        { name: repo, html_url: `https://github.com/Aarz-aaryan/${repo}`, private: false, description: '' };
+}
+
+function renderMissionDetail() {
+    const repo = _detailRepo;
+    if (!repo) return;
+    const info = _repoInfo(repo);
+    const det = _missionDetails[repo] || {};
+    const q = missionQuestion(repo);
+    const now = Date.now();
+
+    document.getElementById('modal-mission-title').textContent = repo;
+    const meta = document.getElementById('modal-mission-meta');
+    const state = _missionsStateCache && _missionsStateCache.missions && _missionsStateCache.missions[repo];
+    const bits = [];
+    bits.push(info.private ? 'private' : 'public');
+    if (state && typeof state.priority === 'number') bits.push('#' + state.priority);
+    if (state && state.status) bits.push(state.status);
+    else if (_missionsStateCache && (_missionsStateCache.projects || []).includes(repo)) bits.push('project');
+    meta.textContent = bits.join('  ·  ');
+
+    // Summary
+    document.getElementById('modal-mission-summary').textContent =
+        det.summary || 'No summary yet — Aarz will add one on its next run (within 6h).';
+
+    // Activity
+    const actEl = document.getElementById('modal-mission-activity');
+    const acts = (det.activity || []).slice(0, 6);
+    actEl.innerHTML = acts.length
+        ? acts.map(a => {
+            const t = a.at ? formatAge(now - new Date(a.at).getTime()) : '';
+            return `<li><span class="mact-dot ${a.source === 'aarz' ? 'aarz' : ''}"></span>
+                    <span class="mact-text">${escapeHtml(a.text || '')}</span>
+                    <span class="mact-time">${t || ''}</span></li>`;
+        }).join('')
+        : '<li class="mact-empty">No recorded activity yet.</li>';
+
+    // Question thread
+    const qEl = document.getElementById('modal-mission-question');
+    if (q && q.status === 'open') {
+        qEl.innerHTML = `
+            <div class="mq-ask"><span class="mq-who">Aarz asks</span>${escapeHtml(q.text)}</div>
+            <textarea id="mq-answer" class="modal-input modal-textarea" rows="3"
+                      placeholder="Tell Aarz what this is / what it should do…" maxlength="4000"></textarea>
+            <div class="mq-actions">
+                <button type="button" class="modal-btn modal-btn-primary" id="mq-send">Send to Aarz</button>
+            </div>`;
+        qEl.querySelector('#mq-send').addEventListener('click', () => submitMissionAnswer(repo, q.id));
+    } else if (q && q.status === 'answered') {
+        qEl.innerHTML = `
+            <div class="mq-ask"><span class="mq-who">Aarz asked</span>${escapeHtml(q.text)}</div>
+            <div class="mq-answered"><span class="mq-who you">You</span>${escapeHtml(q.answer)}</div>
+            <div class="mq-note">Answered ${formatAge(now - new Date(q.answered_at).getTime())} — Aarz will act on this on its next run (within 6h).</div>`;
+    } else {
+        qEl.innerHTML = `<div class="mq-note">No open question. Aarz will post one here if this project needs direction.</div>`;
+    }
+
+    // History
+    const histEl = document.getElementById('modal-mission-history');
+    const hist = det.question_history || [];
+    if (hist.length) {
+        histEl.style.display = '';
+        histEl.innerHTML = `<summary>Previous Q&amp;A (${hist.length})</summary>` +
+            hist.slice().reverse().map(h => `
+                <div class="mq-hist">
+                    <div class="mq-ask"><span class="mq-who">Aarz</span>${escapeHtml(h.text || '')}</div>
+                    ${h.answer ? `<div class="mq-answered"><span class="mq-who you">You</span>${escapeHtml(h.answer)}</div>` : ''}
+                </div>`).join('');
+    } else {
+        histEl.style.display = 'none';
+        histEl.innerHTML = '';
+    }
+
+    document.getElementById('modal-mission-gh').href = info.html_url;
+}
+
+async function submitMissionAnswer(repo, questionId) {
+    const ta = document.getElementById('mq-answer');
+    const btn = document.getElementById('mq-send');
+    const answer = (ta && ta.value || '').trim();
+    if (!answer) { toast_err('Write an answer first.'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    try {
+        const res = await fetch('/api/missions/answer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Dashboard-Token': await getWriteToken() },
+            body: JSON.stringify({ repo, question_id: questionId, answer }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) { toast_err(`Couldn't send: ${data.error || res.status}`); return; }
+        toast_ok('Sent to Aarz.');
+        await loadMissionExtras();
+        renderMissionDetail();
+        if (_lastReposEnvelope) renderMissions(_lastReposEnvelope);
+    } catch (e) {
+        toast_err(`Network error: ${e.message}`);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send to Aarz'; }
     }
 }
 
@@ -1149,6 +1353,8 @@ function wireMissionModals() {
     document.getElementById('modal-remove-cancel').addEventListener('click', closeRemoveRepoModal);
     document.getElementById('modal-remove-confirm').addEventListener('click', confirmRemoveRepo);
 
+    document.getElementById('modal-mission-close').addEventListener('click', closeMissionDetail);
+
     // Close on overlay click (but not on card click)
     document.getElementById('modal-create-overlay').addEventListener('click', (e) => {
         if (e.target.id === 'modal-create-overlay') closeCreateModal();
@@ -1156,11 +1362,15 @@ function wireMissionModals() {
     document.getElementById('modal-remove-overlay').addEventListener('click', (e) => {
         if (e.target.id === 'modal-remove-overlay') closeRemoveRepoModal();
     });
+    document.getElementById('modal-mission-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-mission-overlay') closeMissionDetail();
+    });
     // Close on Escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (document.getElementById('modal-create-overlay').style.display !== 'none') closeCreateModal();
             if (document.getElementById('modal-remove-overlay').style.display !== 'none') closeRemoveRepoModal();
+            if (document.getElementById('modal-mission-overlay').style.display !== 'none') closeMissionDetail();
         }
     });
 }
@@ -1588,6 +1798,7 @@ async function loadAll() {
             fetchJSON('/agent-dashboard/repos.json'),
             fetchJSON('/agent-dashboard/r_server_info.json'),
             fetchJSON('/agent-dashboard/missions.json'),
+            loadMissionExtras(),
         ]);
 
     // Roster + cards from agents.json
@@ -1714,17 +1925,25 @@ window.addEventListener('load', () => {
             .map(a => `<div class="tree-node" id="node-${a.id}"></div>`).join('');
     }
 
-    // Open tab from #hash, else last-used tab
+    // #hash routing: "#stats" opens a tab; "#missions/<repo>" opens a mission modal
+    // once the missions grid has rendered (renderMissions consumes _pendingMissionModal).
     const TABS = ['agents', 'stats', 'missions', 'r-server'];
-    const fromHash = location.hash.slice(1);
+    const applyHash = () => {
+        const [tab, sub] = location.hash.slice(1).split('/');
+        if (TABS.includes(tab)) switchTab(tab);
+        if (tab === 'missions' && sub) {
+            const repo = decodeURIComponent(sub);
+            if (_lastReposEnvelope) openMissionDetail(repo);
+            else _pendingMissionModal = repo;
+        }
+    };
+    const fromHash = location.hash.slice(1).split('/')[0];
     let initial = null;
     if (TABS.includes(fromHash)) initial = fromHash;
     else { try { initial = localStorage.getItem('dash_tab'); } catch {} }
     if (initial && document.getElementById('panel-' + initial)) switchTab(initial);
-    window.addEventListener('hashchange', () => {
-        const h = location.hash.slice(1);
-        if (TABS.includes(h)) switchTab(h);
-    });
+    applyHash();
+    window.addEventListener('hashchange', applyHash);
 
     loadAll();
     setInterval(loadAll, REFRESH_MS);

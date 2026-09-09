@@ -148,6 +148,7 @@
                 Missions <span class="missions-count-number" id="missions-count">0</span>
             </div>
             <div class="missions-header-right">
+                <span class="missions-q-count" id="missions-q-count" style="display:none;"></span>
                 <button class="btn-create-mission" id="btn-create-mission" title="Create new mission or project">
                     <span class="btn-create-icon">＋</span>
                     <span class="btn-create-label">New Mission / Project</span>
@@ -238,6 +239,40 @@
                 <div class="modal-actions">
                     <button type="button" class="modal-btn modal-btn-secondary" id="modal-remove-cancel">Cancel</button>
                     <button type="button" class="modal-btn modal-btn-danger" id="modal-remove-confirm">Delete repository</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mission / Project detail modal -->
+        <div class="modal-overlay" id="modal-mission-overlay" style="display:none;">
+            <div class="modal-card modal-card-lg" id="modal-mission-card">
+                <div class="modal-header">
+                    <div>
+                        <h3 class="modal-title" id="modal-mission-title">—</h3>
+                        <div class="mission-detail-meta" id="modal-mission-meta"></div>
+                    </div>
+                    <button class="modal-close" id="modal-mission-close" title="Close">×</button>
+                </div>
+                <div class="modal-body mission-detail-body">
+                    <section class="mission-detail-sec">
+                        <h4>Summary</h4>
+                        <p id="modal-mission-summary" class="mission-detail-summary"></p>
+                    </section>
+                    <section class="mission-detail-sec">
+                        <h4>Last activity</h4>
+                        <ul id="modal-mission-activity" class="mission-activity"></ul>
+                    </section>
+                    <section class="mission-detail-sec">
+                        <h4>Aarz &amp; you</h4>
+                        <div id="modal-mission-question" class="mission-question"></div>
+                        <details id="modal-mission-history" class="mission-history" style="display:none;"></details>
+                    </section>
+                </div>
+                <div class="modal-actions">
+                    <a id="modal-mission-gh" class="modal-btn modal-btn-secondary gh-btn" href="#" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+                        Open on GitHub
+                    </a>
                 </div>
             </div>
         </div>

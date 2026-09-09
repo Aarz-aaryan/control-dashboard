@@ -18,13 +18,20 @@ Repo actions (this server performs gh CLI calls, then updates state):
   POST /api/missions/delete-repo   {"repo"}
                                   → deletes GitHub repo via `gh repo delete`, then removes from state.
 
+Answer action (handled inline; single-writer for missions_answers.json):
+  POST /api/missions/answer   {"repo", "question_id", "answer"}
+                              → records the user's reply to a mission question.
+                                The aarz cron reads missions_answers.json and acts.
+
 GET  /api/missions/state          -> returns missions_state.json as JSON
 GET  /health                      -> 200 OK "ok"
 """
 import json
+import os
 import re
 import subprocess
 import sys
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -32,6 +39,8 @@ ROOT = Path(__file__).resolve().parent
 WRITER = ROOT / "missions_writer.py"
 STATE_FILE = ROOT / "missions_state.json"
 REPOS_FILE = ROOT / "repos.json"
+DETAILS_FILE = ROOT / "missions_details.json"   # written by the aarz cron, read here
+ANSWERS_FILE = ROOT / "missions_answers.json"   # written ONLY here, read by the cron
 HOST = "127.0.0.1"
 PORT = 8001
 
@@ -45,7 +54,10 @@ STATE_ACTIONS = {
 # Repo-level actions handled by this server (gh CLI + state update)
 REPO_ACTIONS = {"create-repo", "delete-repo"}
 
-ALLOWED_ACTIONS = STATE_ACTIONS | REPO_ACTIONS
+# Handled inline by this server (no writer subprocess)
+LOCAL_ACTIONS = {"answer"}
+
+ALLOWED_ACTIONS = STATE_ACTIONS | REPO_ACTIONS | LOCAL_ACTIONS
 
 
 # ─── Repo-action helpers (gh CLI) ───────────────────────────────────────────────
@@ -136,6 +148,66 @@ def _refresh_repos_json() -> int:
     except Exception as e:
         sys.stderr.write(f"[refresh_repos] failed: {e}\n")
         return 0
+
+
+# ─── Mission answers (dashboard -> cron) ────────────────────────────────────────
+
+def _iso_now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _known_repos() -> set[str]:
+    """Repos the dashboard knows about — missions + projects + anything in repos.json."""
+    names: set[str] = set()
+    try:
+        st = json.loads(STATE_FILE.read_text())
+        names |= set(st.get("missions", {}).keys())
+        names |= set(st.get("projects", []))
+    except Exception:
+        pass
+    try:
+        rp = json.loads(REPOS_FILE.read_text())
+        names |= {r["name"] for r in rp.get("repos", []) if "name" in r}
+    except Exception:
+        pass
+    return names
+
+
+def _atomic_write_json(path: Path, data: dict) -> None:
+    tmp = path.with_suffix(f".tmp.{os.getpid()}")
+    with tmp.open("w") as f:
+        json.dump(data, f, indent=2)
+        f.write("\n")
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
+
+
+def record_answer(repo: str, question_id: str, answer: str) -> dict:
+    """Store the user's answer to a mission question. Single-writer for ANSWERS_FILE."""
+    if not repo or not isinstance(repo, str) or repo not in _known_repos():
+        return {"ok": False, "error": f"'{repo}' is not a known mission or project"}
+    if not question_id or not isinstance(question_id, str):
+        return {"ok": False, "error": "Missing 'question_id'"}
+    answer = (answer or "").strip()
+    if not answer:
+        return {"ok": False, "error": "Answer is empty"}
+    if len(answer) > 4000:
+        return {"ok": False, "error": "Answer too long (max 4000 chars)"}
+
+    try:
+        data = json.loads(ANSWERS_FILE.read_text()) if ANSWERS_FILE.exists() else {}
+    except Exception:
+        data = {}
+    answers = data.setdefault("answers", {})
+    answers[repo] = {
+        "question_id": question_id,
+        "text": answer,
+        "answered_at": _iso_now(),
+    }
+    data["_updated_at"] = _iso_now()
+    _atomic_write_json(ANSWERS_FILE, data)
+    return {"ok": True, "repo": repo, "question_id": question_id}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -230,6 +302,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._handle_create_repo(body)
         if action == "delete-repo":
             return self._handle_delete_repo(body)
+
+        # ─── Answer a mission question (inline; single-writer for answers file) ──
+        if action == "answer":
+            res = record_answer(body.get("repo"), body.get("question_id"), body.get("answer"))
+            return self._send_json(200 if res.get("ok") else 400, res)
 
         # All other actions need a repo
         repo = body.get("repo")

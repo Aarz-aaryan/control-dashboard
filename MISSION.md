@@ -41,6 +41,19 @@ skipped by `missions_daemon.py` reconciliation — use for local-only missions w
 no GitHub repo (e.g. `motorcycle-dashboard-integration`).
 `missions_writer.py pin|unpin <repo>` and `create ... --pinned`.
 
+**Mission detail** — click a card → modal with summary + last-activity + a Q&A
+thread. Two gitignored files, single-writer each:
+- `missions_details.json` — written by the **aarz cron** ("Missions Detail Sync +
+  Scaffold", job `9357471e79e4`, every 6h). Per repo: `summary`, `activity` (cap
+  15), `github` block, one `question` (`open`), `question_history`.
+  `missions_detail_probe.py` does the mechanical GitHub half; the agent does
+  summaries / questions / scaffolding.
+- `missions_answers.json` — written **only** by `missions_http_server.py`
+  (`POST /api/missions/answer` {repo, question_id, answer}); the cron reads it,
+  scaffolds the repo (README + structure + issues via `gh`), then resolves the
+  question. Guardrail: the cron never touches `control-dashboard` / `agent-dashboard`,
+  never deletes/force-pushes.
+
 ## Security posture
 
 - `:8000` binds the Tailscale IP; `:8001` binds `127.0.0.1` only.

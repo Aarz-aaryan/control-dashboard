@@ -1114,14 +1114,54 @@
             border: 1px solid rgba(196, 154, 108, 0.3);
         }
 
-        /* Mission card link wrapper */
+        /* Mission card body — click opens the detail modal */
         .repo-card-link {
             display: block;
             color: inherit;
             text-decoration: none;
             padding: 16px;
+            cursor: pointer;
         }
         .repo-card-link:hover { color: inherit; }
+        .repo-card-link:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+
+        .repo-gh {
+            margin-left: 6px;
+            color: var(--text-muted);
+            display: inline-flex;
+            align-items: center;
+            transition: color 0.15s ease;
+        }
+        .repo-gh:hover { color: var(--cream); }
+
+        .mission-q-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 17px;
+            height: 17px;
+            margin-left: 4px;
+            border-radius: 50%;
+            background: var(--gold);
+            color: #0a0e14;
+            font-size: 0.72rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px rgba(196, 154, 108, 0.6);
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+        .missions-q-count {
+            align-items: center;
+            gap: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--gold);
+            background: rgba(196, 154, 108, 0.1);
+            border: 1px solid rgba(196, 154, 108, 0.3);
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
 
         /* Action buttons */
         .repo-card-actions {
@@ -1193,17 +1233,24 @@
         }
         .repo-card-top {
             display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 12px;
+            align-items: center;
+            gap: 6px;
         }
         .repo-name {
             font-family: 'Share Tech Mono', monospace;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             font-weight: 600;
             color: var(--gold);
-            word-break: break-word;
+            flex: 1 1 auto;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
+        .repo-card-top .priority-badge,
+        .repo-card-top .repo-visibility,
+        .repo-card-top .mission-q-badge,
+        .repo-card-top .repo-gh { flex-shrink: 0; }
         .repo-visibility {
             font-family: 'Share Tech Mono', monospace;
             font-size: 0.65rem;
@@ -1659,6 +1706,9 @@
         }
         .modal-card-sm {
             width: min(440px, 90vw);
+        }
+        .modal-card-lg {
+            width: min(600px, 94vw);
         }
         @keyframes modalSlideIn {
             from { opacity: 0; transform: translateY(10px) scale(0.98); }
@@ -2191,3 +2241,85 @@
 /* Short viewports: the .panel already scrolls internally (overflow-y:auto), so
    no layout override is needed here — an earlier `position: static` hack made
    the fixed sidebar overlap the panel's left edge. */
+
+/* ══ Mission / project detail modal ═══════════════════════════════════════════ */
+
+.mission-detail-meta {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+}
+.mission-detail-body { display: flex; flex-direction: column; gap: 20px; }
+.mission-detail-sec h4 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+    margin: 0 0 8px;
+}
+.mission-detail-summary {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.mission-activity { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.mission-activity li {
+    display: grid;
+    grid-template-columns: 8px 1fr auto;
+    align-items: start;
+    gap: 9px;
+    font-size: 0.82rem;
+    color: var(--text-main);
+    line-height: 1.4;
+}
+.mact-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--sky); margin-top: 5px; flex-shrink: 0;
+}
+.mact-dot.aarz { background: var(--gold); }
+.mact-time { font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; }
+.mact-empty { color: var(--text-muted); font-style: italic; grid-template-columns: 1fr; }
+
+.mission-question { display: flex; flex-direction: column; gap: 10px; }
+.mq-ask, .mq-answered {
+    font-size: 0.87rem;
+    line-height: 1.45;
+    color: var(--text-main);
+    background: rgba(196, 154, 108, 0.06);
+    border: 1px solid rgba(196, 154, 108, 0.12);
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+.mq-answered { background: rgba(126, 181, 166, 0.06); border-color: rgba(126, 181, 166, 0.16); }
+.mq-who {
+    display: block;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 4px;
+}
+.mq-who.you { color: var(--sage); }
+.mq-actions { display: flex; justify-content: flex-end; }
+.mq-note { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; }
+.mission-history {
+    margin-top: 6px;
+    font-size: 0.82rem;
+}
+.mission-history summary {
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.mq-hist { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; opacity: 0.85; }
+
+.gh-btn { display: inline-flex; align-items: center; gap: 7px; text-decoration: none; }

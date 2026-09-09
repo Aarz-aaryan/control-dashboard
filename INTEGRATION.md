@@ -11,6 +11,31 @@ This file explains how other cron jobs and tools should consume the **missions s
 | `missions_writer.py` | CLI for atomic state mutations |
 | `missions_daemon.py` | 6-hour cleanup daemon (hard-removes old deletes, marks stale actives inactive) |
 | `missions_http_server.py` | HTTP endpoint on port 8001 for UI ↔ state sync |
+| `missions_details.json` | Per-mission summary / activity / Q&A — **written only by the "Missions Detail Sync + Scaffold" cron** (job `9357471e79e4`) |
+| `missions_answers.json` | User replies to mission questions — **written only by `missions_http_server.py`**; the cron reads it and acts |
+| `missions_detail_probe.py` | Mechanical half of that cron: refreshes `github` blocks + `activity` from `gh`, flags bare repos + staged answers |
+
+## missions_details.json / missions_answers.json contract
+
+`missions_details.json`:
+```json
+{ "_updated_at": "...", "_updated_by": "...",
+  "missions": { "<repo>": {
+    "summary": "...", "summary_updated_at": "...",
+    "github": { "url","private","empty","has_readme","default_branch","description",
+                "pushed_at","created_at","open_issues","commit_count","last_commit" },
+    "activity": [ {"at","text","source":"github|aarz"} ],          // newest first, cap 15
+    "question": { "id":"q-xxxxxxxx", "text":"...", "asked_at":"...", "status":"open" },
+    "question_history": [ {"id","text","answer","asked_at","resolved_at"} ]
+  } } }
+```
+`missions_answers.json`:
+```json
+{ "_updated_at": "...", "answers": { "<repo>": { "question_id":"q-xxxxxxxx", "text":"...", "answered_at":"..." } } }
+```
+The cron matches `answers[repo].question_id` against the repo's current open
+`question.id`; a non-match is a stale answer and is ignored. Only one open
+question per repo at a time; resolved ones move to `question_history`.
 
 ## Schema — missions_state.json
 

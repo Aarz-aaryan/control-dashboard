@@ -8,6 +8,8 @@ missions_state.json
 missions_state.*.bak
 missions_state.corrupt.*
 missions_activity.jsonl
+missions_details.json
+missions_answers.json
 *.tmp.*
 update_data.log
 
