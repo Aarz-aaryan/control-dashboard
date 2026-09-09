@@ -21,10 +21,15 @@ update_data.py (systemd agent-dashboard-collector.service), every 30s:
 **Frontend** is split out of the old 174 KB inline blob:
 `index.html` (markup) + `css/dashboard.css` + `js/dashboard.js` (classic script).
 
-**Agent roster (6):** aarz, agy, scout, coder, builder, tester. Defined in
-`js/dashboard.js` `AGENTS` and `update_data.py` `HERMES_AGENTS` (+ agy) — keep in sync.
-Session activity is computed server-side into `agents.json` (by file mtime); the
-browser no longer scrapes `~/.hermes` / `~/.gemini` directory listings.
+**Agent roster (3):** aarz, agy, scout — the only ones that actually run.
+(coder/builder/tester profiles exist but have had zero activity since Aug 2026 —
+dropped, like jarvis.) Defined in `js/dashboard.js` `AGENTS` and `update_data.py`
+`HERMES_AGENTS` (+ agy) — keep in sync.
+
+`agents.json` is computed server-side from the **real** session store —
+`~/.hermes/profiles/<p>/state.db` table `sessions` (count today / 7d, last
+activity, recent run titles); agy from its per-run CLI logs. The old code
+mistakenly counted `request_dump_*.json` diagnostic files as "sessions".
 
 **Missions:** `missions_state.json` (hand-curated, gitignored, atomic writes).
 Statuses `active | inactive | archived | deleted`. `"pinned": true` entries are

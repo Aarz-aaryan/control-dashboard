@@ -77,13 +77,10 @@
                 <div class="tree-node" id="node-aarz"></div>
             </div>
 
-            <!-- Row 2: All agents — flat delegation hierarchy (wraps on small screens) -->
+            <!-- Row 2: agents that actually run (wraps on small screens) -->
             <div class="tree-row row-2">
                 <div class="tree-node" id="node-agy"></div>
                 <div class="tree-node" id="node-scout"></div>
-                <div class="tree-node" id="node-coder"></div>
-                <div class="tree-node" id="node-builder"></div>
-                <div class="tree-node" id="node-tester"></div>
             </div>
         </div>
     </div>
@@ -97,7 +94,7 @@
             <div class="stats-hero" style="flex: 1 1 500px; margin-bottom: 0;">
                 <div class="stats-hero-total">
                     <div class="stats-hero-number" id="stat-total-sessions">0</div>
-                    <div class="stats-hero-label">In Progress (30m)</div>
+                    <div class="stats-hero-label">Agent Sessions Today</div>
                     <div class="stat-cron-subtitle" id="stat-last-updated" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; opacity: 0.75;">updated just now</div>
                 </div>
                 <div class="stats-hero-divider"></div>
@@ -107,7 +104,7 @@
             </div>
             <div class="stat-card" id="total-sessions-stat" style="flex: 1 1 240px; min-width: 200px; height: auto; background: var(--card-bg); border: 1.2px solid var(--card-border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 24px 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                 <div class="stats-hero-number" id="stat-total-sessions-all" style="font-family: 'Share Tech Mono', monospace; font-size: 4.5rem; font-weight: 700; color: var(--gold); line-height: 1; text-shadow: 0 0 20px rgba(196, 154, 108, 0.3);">0</div>
-                <div class="stats-hero-label" style="font-family: 'DM Sans', sans-serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-top: 6px; font-weight: 600;">Stored Sessions</div>
+                <div class="stats-hero-label" style="font-family: 'DM Sans', sans-serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-top: 6px; font-weight: 600;">Sessions · 7 days</div>
             </div>
             <div class="stat-card" id="cron-jobs-stat" onclick="toggleCronPanel()" style="cursor: pointer; transition: all 0.2s ease; flex: 1 1 240px; min-width: 200px; height: auto; background: var(--card-bg); border: 1.2px solid var(--card-border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 24px 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--gold)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--card-border)';" >
                 <div class="stats-hero-number" id="stat-cron-count" style="font-family: 'Share Tech Mono', monospace; font-size: 4.5rem; font-weight: 700; color: var(--gold); line-height: 1; text-shadow: 0 0 20px rgba(196, 154, 108, 0.3);">0</div>

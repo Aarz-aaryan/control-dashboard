@@ -693,10 +693,14 @@
             color: var(--text-muted);
             transition: color 0.3s;
         }
-        .status-label.working {
+        .status-label.working,
+        .status-label.status-active {
             color: var(--lime);
             text-shadow: 0 0 6px rgba(143, 203, 158, 0.4);
         }
+        .status-label.status-idle { color: var(--gold); }
+        .status-label.status-dormant { color: var(--text-muted); opacity: 0.7; }
+        .card.status-dormant { opacity: 0.72; }
 
         .time-ago {
             font-size: 0.78rem;
@@ -705,21 +709,35 @@
             font-weight: 600;
         }
 
-        /* ── Progress/Activity Bar ── */
-        .bar-track {
-            height: 6px;
-            border-radius: 4px;
-            background: rgba(196, 154, 108, 0.05);
-            border: 1px solid rgba(196, 154, 108, 0.08);
-            margin-top: 10px;
-            overflow: hidden;
+        /* ── Agent metrics (sessions today / 7 days) ── */
+        .agent-metrics {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
         }
-        .bar-fill {
-            height: 100%;
-            border-radius: 3px;
-            background: linear-gradient(90deg, var(--agent-color), var(--gold));
-            transition: width 1.5s cubic-bezier(0.1, 0.8, 0.2, 1);
-            box-shadow: 0 0 8px var(--agent-color);
+        .agent-metric {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 9px 4px;
+            border-radius: 9px;
+            background: rgba(196, 154, 108, 0.05);
+            border: 1px solid rgba(196, 154, 108, 0.09);
+        }
+        .am-num {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--agent-color, var(--gold));
+        }
+        .am-lbl {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
         }
 
         /* ── Card footer ── */
@@ -744,6 +762,10 @@
             color: var(--text-main);
             font-variant-numeric: tabular-nums;
             font-weight: 600;
+            max-width: 72%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* ── Cozy Refresh Wheel ── */

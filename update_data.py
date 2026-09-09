@@ -6,7 +6,8 @@ Writes four JSON files into /home/Aarz/agent-dashboard every 30s:
   health.json        — local + r-server system health
   missions.json      — cron jobs + kanban tasks
   r_server_info.json — r-server docker/system detail for the r-server tab
-  agents.json        — per-agent session activity (computed here, not in the browser)
+  agents.json        — per-agent activity from the real session store
+                       (~/.hermes/profiles/<p>/state.db; agy from its CLI logs)
 
 r-server access is over SSH **key auth** (no password). The key at
 ~/.ssh/id_ed25519 is already authorized on r-server.
@@ -21,14 +22,18 @@ from datetime import datetime, timezone
 
 OUTPUT_DIR = "/home/Aarz/agent-dashboard"
 
-# Agent roster. Hermes agents read their profile sessions dir; agy reads the
-# antigravity CLI log dir. Keep this in sync with js/config.js AGENTS.
-HERMES_AGENTS = ["aarz", "scout", "coder", "builder", "tester"]
+# Agent roster — only the ones that actually run. Each Hermes agent has its own
+# ~/.hermes/profiles/<p>/state.db (the real session store); agy is a separate CLI
+# whose runs are one log file each. coder/builder/tester profiles exist but have
+# had no activity since Aug 2026 — dropped (like jarvis). Keep in sync with the
+# AGENTS array in js/dashboard.js.
+HERMES_AGENTS = ["aarz", "scout"]
 AGY_LOG_DIR = os.path.expanduser("~/.gemini/antigravity-cli/log")
 HERMES_PROFILES_DIR = os.path.expanduser("~/.hermes/profiles")
 
-RECENT_30M = 30 * 60
-RECENT_4H = 4 * 60 * 60
+ACTIVE_H = 6      # activity within this many hours  -> "active"
+IDLE_H = 48       # activity within this many hours  -> "idle" (ran on schedule)
+                 # older than IDLE_H                -> "dormant"
 
 
 def iso(ts: float | None) -> str | None:
@@ -104,50 +109,112 @@ def get_health_stats():
 
 
 # ── Agent activity ─────────────────────────────────────────────────────────────
+# The real session store is per-profile: ~/.hermes/profiles/<p>/state.db, table
+# `sessions` (id, source, started_at, ended_at, last_activity_at, title,
+# message_count, ...). We read it directly rather than counting the
+# request_dump_*.json diagnostic files that used to be miscounted as "sessions".
 
-def _activity_from_files(paths: list[str]) -> dict:
-    """Summarize a list of files by mtime into the agents.json per-agent shape."""
-    now = time.time()
-    entries = []
-    for p in paths:
-        try:
-            mt = os.path.getmtime(p)
-        except OSError:
-            continue
-        entries.append((os.path.basename(p), mt))
-
-    entries.sort(key=lambda e: e[1], reverse=True)
-    last = entries[0][1] if entries else None
-    recent_30m = sum(1 for _, mt in entries if now - mt < RECENT_30M)
-    recent_4h = sum(1 for _, mt in entries if now - mt < RECENT_4H)
-    active_sessions = [
-        {"key": name, "ts": int(mt * 1000)}
-        for name, mt in entries if now - mt < RECENT_4H
-    ][:10]
-
+def _blank_agent() -> dict:
     return {
-        "last_signal": iso(last),
-        "recent_30m": recent_30m,
-        "recent_4h": recent_4h,
-        "stored": len(entries),
-        "active_sessions": active_sessions,
+        "status": "dormant",
+        "last_active": None,
+        "last_active_ms": 0,
+        "sessions_today": 0,
+        "sessions_7d": 0,
+        "last_title": None,
+        "last_source": None,
+        "recent": [],
     }
 
 
+def _status_for(last_ms: int) -> str:
+    if not last_ms:
+        return "dormant"
+    age_h = (time.time() * 1000 - last_ms) / 3_600_000
+    if age_h < ACTIVE_H:
+        return "active"
+    if age_h < IDLE_H:
+        return "idle"
+    return "dormant"
+
+
+def _day_bounds():
+    now = time.time()
+    midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+    return midnight, now - 7 * 86400
+
+
+def _hermes_agent_activity(profile: str) -> dict:
+    out = _blank_agent()
+    db = os.path.join(HERMES_PROFILES_DIR, profile, "state.db")
+    if not os.path.exists(db):
+        return out
+    # db mtime is a cheap floor for "touched recently" — a run can write to other
+    # tables even when its session row is short-lived / gets pruned.
+    floor_ms = int(os.path.getmtime(db) * 1000)
+    try:
+        conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=2)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA busy_timeout=2000")
+        midnight, week_ago = _day_bounds()
+        out["sessions_today"] = conn.execute(
+            "SELECT count(*) FROM sessions WHERE started_at > ?", (midnight,)).fetchone()[0]
+        out["sessions_7d"] = conn.execute(
+            "SELECT count(*) FROM sessions WHERE started_at > ?", (week_ago,)).fetchone()[0]
+        rows = conn.execute(
+            "SELECT source, title, message_count, "
+            "coalesce(ended_at, last_activity_at, started_at) AS act "
+            "FROM sessions ORDER BY started_at DESC LIMIT 5").fetchall()
+        conn.close()
+        for r in rows:
+            title = (r["title"] or "").strip().splitlines()[0][:80] if r["title"] else None
+            out["recent"].append({
+                "title": title,
+                "source": r["source"],
+                "ts": int((r["act"] or 0) * 1000),
+                "msgs": r["message_count"] or 0,
+            })
+        out["recent"].sort(key=lambda x: x["ts"], reverse=True)  # by last activity
+        if out["recent"]:
+            out["last_title"] = out["recent"][0]["title"]
+            out["last_source"] = out["recent"][0]["source"]
+    except Exception as e:
+        print(f"agent activity ({profile}): {e}")
+    last_ms = max([floor_ms] + [x["ts"] for x in out["recent"] if x["ts"]])
+    out["last_active_ms"] = last_ms
+    out["last_active"] = iso(last_ms / 1000) if last_ms else None
+    out["status"] = _status_for(last_ms)
+    return out
+
+
+def _agy_activity() -> dict:
+    out = _blank_agent()
+    out["last_source"] = "antigravity-cli"
+    files = glob.glob(os.path.join(AGY_LOG_DIR, "cli-*.log"))
+    if not files:
+        return out
+    midnight, week_ago = _day_bounds()
+    entries = sorted(
+        ((os.path.basename(f), os.path.getmtime(f)) for f in files),
+        key=lambda e: e[1], reverse=True,
+    )
+    out["sessions_today"] = sum(1 for _, mt in entries if mt > midnight)
+    out["sessions_7d"] = sum(1 for _, mt in entries if mt > week_ago)
+    out["recent"] = [
+        {"title": name, "source": "cli-log", "ts": int(mt * 1000), "msgs": 0}
+        for name, mt in entries[:5]
+    ]
+    out["last_title"] = entries[0][0]          # newest log filename
+    last_ms = int(entries[0][1] * 1000)
+    out["last_active_ms"] = last_ms
+    out["last_active"] = iso(last_ms / 1000)
+    out["status"] = _status_for(last_ms)
+    return out
+
+
 def get_agent_activity() -> dict:
-    agents = {}
-
-    for name in HERMES_AGENTS:
-        sess_dir = os.path.join(HERMES_PROFILES_DIR, name, "sessions")
-        files = [
-            f for f in glob.glob(os.path.join(sess_dir, "*.json"))
-            if os.path.basename(f) != "sessions.json"
-        ]
-        agents[name] = _activity_from_files(files)
-
-    agy_files = glob.glob(os.path.join(AGY_LOG_DIR, "cli-*.log"))
-    agents["agy"] = _activity_from_files(agy_files)
-
+    agents = {p: _hermes_agent_activity(p) for p in HERMES_AGENTS}
+    agents["agy"] = _agy_activity()
     return {"_generated_at": now_iso(), "agents": agents}
 
 

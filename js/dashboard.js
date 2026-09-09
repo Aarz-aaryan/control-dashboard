@@ -2,14 +2,12 @@
 // Split out of index.html (was a 174 KB inline blob). Classic script (not a
 // module) so the inline onclick= handlers in index.html keep working.
 
-// Agent roster — keep in sync with update_data.py HERMES_AGENTS + agy.
+// Agent roster — only what actually runs. Keep in sync with update_data.py
+// HERMES_AGENTS + agy. (coder/builder/tester profiles are dormant since Aug 2026.)
 const AGENTS = [
-    { id: 'aarz',    name: 'Aarz',    role: 'Chief Orchestrator',  color: '#c49a6c', dim: 'rgba(196, 154, 108, 0.15)', icon: 'aarz.svg' },
-    { id: 'agy',     name: 'agy',     role: 'Anti-Gravity CLI',    color: '#8bbccc', dim: 'rgba(139, 188, 204, 0.15)', icon: 'agy.svg' },
-    { id: 'scout',   name: 'Scout',   role: 'Research Agent',      color: '#3a6ea5', dim: 'rgba(58, 110, 165, 0.15)',  icon: 'scout.svg' },
-    { id: 'coder',   name: 'Coder',   role: 'Coding Specialist',   color: '#7eb5a6', dim: 'rgba(126, 181, 166, 0.15)', icon: 'coder.svg' },
-    { id: 'builder', name: 'Builder', role: 'DevOps / Automation', color: '#8a6f5a', dim: 'rgba(138, 111, 90, 0.15)',  icon: 'builder.svg' },
-    { id: 'tester',  name: 'Tester',  role: 'QA / E2E Testing',    color: '#c47060', dim: 'rgba(196, 112, 96, 0.15)',  icon: 'tester.svg' },
+    { id: 'aarz',  name: 'Aarz',  role: 'Chief Orchestrator', color: '#c49a6c', dim: 'rgba(196, 154, 108, 0.15)', icon: 'aarz.svg' },
+    { id: 'agy',   name: 'agy',   role: 'Anti-Gravity CLI',   color: '#8bbccc', dim: 'rgba(139, 188, 204, 0.15)', icon: 'agy.svg' },
+    { id: 'scout', name: 'Scout', role: 'Research Agent',     color: '#3a6ea5', dim: 'rgba(58, 110, 165, 0.15)',  icon: 'scout.svg' },
 ];
 
 const WORKING_MS = 4 * 60 * 60 * 1000;   // agent card ACTIVE/STANDBY threshold
@@ -54,19 +52,18 @@ async function loadAgentsJson() {
     return _agentsJson;
 }
 
-// Returns the shape the rest of the UI already expects: { ts, sessions:[{key,ts}], isActiveRecent }
+// Per-agent activity from agents.json (server reads the real ~/.hermes state.db).
 function getAgentData(id) {
-    const a = _agentsJson && _agentsJson.agents && _agentsJson.agents[id];
-    if (!a) return { ts: 0, sessions: [] };
-    const ts = a.last_signal ? new Date(a.last_signal).getTime() : 0;
-    const sessions = (a.active_sessions || []).map(s => ({ key: s.key, ts: s.ts }));
+    const a = (_agentsJson && _agentsJson.agents && _agentsJson.agents[id]) || null;
+    if (!a) return { status: 'dormant', ts: 0, sessions_today: 0, sessions_7d: 0, recent: [] };
     return {
-        ts,
-        sessions,
-        stored: a.stored || 0,
-        recent_30m: a.recent_30m || 0,
-        recent_4h: a.recent_4h || 0,
-        isActiveRecent: ts > 0 && (Date.now() - ts) < WORKING_MS,
+        status: a.status || 'dormant',
+        ts: a.last_active_ms || 0,
+        sessions_today: a.sessions_today || 0,
+        sessions_7d: a.sessions_7d || 0,
+        last_title: a.last_title || null,
+        last_source: a.last_source || null,
+        recent: a.recent || [],
     };
 }
 
@@ -116,96 +113,57 @@ function exactTime(ms) {
     return ms ? new Date(ms).toLocaleString() : '—';
 }
 
-function barWidth(ms) {
-    if (!ms) return 0;
-    const h = ms / 1000 / 60 / 60;
-    if (h < 1)  return 100;
-    if (h < 24) return Math.max(8, 100 - h * 1.5);
-    if (h < 168)return Math.max(4, 60 - (h - 24) * 0.5);
-    return 4;
-}
-
 // ── Renderer ───────────────────────────────────────────────────────────────
+
+const STATUS_TEXT = { active: 'ACTIVE', idle: 'IDLE', dormant: 'DORMANT' };
 
 function cardHTML(agent, data) {
     const now = Date.now();
     const ts = data?.ts || 0;
-    const age = ts ? now - ts : 0;
-    const sessions = data?.sessions || [];
-    const activeSessions = sessions.filter(s => now - s.ts > 0 && now - s.ts < WORKING_MS);
-    let working = activeSessions.length > 0 || (age < WORKING_MS && age > 0);
-    let activeCount = activeSessions.length > 0 ? activeSessions.length : (working ? 1 : 0);
+    const status = data?.status || 'dormant';
+    const working = status === 'active';
+    const ageStr = ts ? formatAge(now - ts) : null;
+    const recent = data?.recent || [];
 
-    if (data && ts) {
-        data.isActiveRecent = (now - ts) < WORKING_MS;
-    }
+    const lastLabel = data?.last_title || data?.last_source || '—';
 
-    if (agent.id !== 'aarz' && activeCount === 0) {
-        if (data && data.isActiveRecent) {
-            working = true;
-            activeCount = 1;
-        } else {
-            working = false;
-            activeCount = 0;
-        }
-    }
-    const ageStr = formatAge(age);
-    const bar = barWidth(age);
+    const recentHtml = recent.length ? `
+    <div class="session-tooltip">
+      <div class="session-tooltip-title">Recent runs</div>
+      ${recent.slice(0, 5).map(r => `
+      <div class="session-tooltip-row">
+        <span class="st-name">${escapeHtml(r.title || r.source || '—')}</span>
+        <span class="st-time">${formatAge(now - r.ts) || ''}</span>
+      </div>`).join('')}
+    </div>` : '';
 
-    let sessionListHtml = '';
-    if (activeCount > 0) {
-        let listItems = '';
-        if (activeSessions.length > 0) {
-            listItems = activeSessions.map(s => {
-                const sageStr = formatAge(now - s.ts);
-                return `<div class="session-tooltip-item"><span class="session-dot"></span><span class="session-time">${sageStr}</span><span class="session-exact">${new Date(s.ts).toLocaleTimeString()}</span></div>`;
-            }).join('');
-        } else {
-            const sageStr = formatAge(age);
-            listItems = `<div class="session-tooltip-item"><span class="session-dot"></span><span class="session-time">${sageStr}</span><span class="session-exact">${new Date(ts).toLocaleTimeString()}</span></div>`;
-        }
-        
-        sessionListHtml = `
-            <div class="session-tooltip">
-                <div class="session-tooltip-title">${activeCount} Active Session${activeCount > 1 ? 's' : ''}</div>
-                ${listItems}
-            </div>
-        `;
-    }
-
-    return `<div class="card ${working ? 'active-core' : ''}" id="card-${agent.id}" style="--agent-color: ${agent.color}; --agent-dim: ${agent.dim};">
+    return `<div class="card status-${status} ${working ? 'active-core' : ''}" id="card-${agent.id}" style="--agent-color: ${agent.color}; --agent-dim: ${agent.dim};">
   <div class="card-shimmer"></div>
   <div class="card-top">
     <div class="avatar-container">
         <div class="status-arc"></div>
         <div class="status-arc-inner"></div>
-        <div class="avatar">
-            <img src="assets/${agent.icon}" alt="${agent.name} icon">
-        </div>
+        <div class="avatar"><img src="assets/${agent.icon}" alt="${escapeHtml(agent.name)}"></div>
     </div>
     <div class="card-info">
-      <div class="card-name">${agent.name}</div>
-      <div class="card-role">${agent.role}</div>
+      <div class="card-name">${escapeHtml(agent.name)}</div>
+      <div class="card-role">${escapeHtml(agent.role)}</div>
     </div>
     <div class="dot ${working ? 'working' : ''}"></div>
   </div>
   <div class="status-row">
-    <span class="status-label ${working ? 'working' : ''}">${working ? 'ACTIVE' : 'STANDBY'}</span>
-    <span class="time-ago" title="${exactTime(ts)}">${ageStr || 'NO SIGNALS'}</span>
+    <span class="status-label status-${status}">${STATUS_TEXT[status] || 'DORMANT'}</span>
+    <span class="time-ago" title="${exactTime(ts)}">${ageStr || 'no activity'}</span>
   </div>
-  <div style="font-family: 'Share Tech Mono', monospace; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: space-between;">
-    <span>SESSIONS:</span>
-    <span style="color: var(--gold); font-weight: bold;">${activeCount}</span>
-  </div>
-  <div class="bar-track">
-    <div class="bar-fill" style="width:${bar}%;"></div>
+  <div class="agent-metrics">
+    <div class="agent-metric"><span class="am-num">${data?.sessions_today ?? 0}</span><span class="am-lbl">today</span></div>
+    <div class="agent-metric"><span class="am-num">${data?.sessions_7d ?? 0}</span><span class="am-lbl">7 days</span></div>
   </div>
   <div class="card-foot">
-    <span class="foot-label">Last signal:</span>
-    <span class="foot-value">${ts ? new Date(ts).toLocaleString() : 'No connection'}</span>
+    <span class="foot-label">Last:</span>
+    <span class="foot-value" title="${escapeHtml(lastLabel)}">${escapeHtml(lastLabel)}</span>
   </div>
-  <div class="sparkle-badge" title="Active Sessions">✦${activeCount > 1 ? ' ×' + activeCount : ''}</div>
-  ${sessionListHtml}
+  ${recentHtml}
 </div>`;
 }
 
@@ -414,17 +372,17 @@ function updateStatsCounts() {
     if (gridEl) gridEl.innerHTML = '';
     
     AGENTS.forEach(a => {
-        // recent_30m is computed server-side (agents.json) and matches STATS_ACTIVE_MS.
-        const count = getAgentData(a.id).recent_30m || 0;
+        const d = getAgentData(a.id);
+        const count = d.sessions_today || 0;
 
         totalCount += count;
-        
+
         if (gridEl) {
             const card = document.createElement('div');
             card.className = 'stats-agent-card';
-            
+
             const dot = document.createElement('div');
-            dot.className = 'stats-agent-dot' + (count > 0 ? ' active' : ' standby');
+            dot.className = 'stats-agent-dot' + (d.status === 'active' ? ' active' : ' standby');
             dot.style.setProperty('--agent-dot-color', a.color);
             dot.style.backgroundColor = a.color;
             
@@ -499,13 +457,12 @@ function updateCronStats() {
     renderCronDetails(cronJobs);
 }
 
-// "Stored Sessions" = sum of session files on disk across all agents,
-// computed server-side and read from agents.json.
+// "Sessions · 7d" = real agent sessions in the last 7 days (from state.db).
 function updateTotalSessionCounts() {
     const el = document.getElementById('stat-total-sessions-all');
     if (!el) return;
     const agents = (_agentsJson && _agentsJson.agents) || {};
-    const total = Object.values(agents).reduce((acc, a) => acc + (a.stored || 0), 0);
+    const total = Object.values(agents).reduce((acc, a) => acc + (a.sessions_7d || 0), 0);
     el.textContent = total;
 }
 
