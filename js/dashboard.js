@@ -139,7 +139,9 @@ function formatAge(ms) {
     if (s < 60)    return s + 's ago';
     if (m < 60)    return m + 'm ' + (s % 60) + 's ago';
     if (h < 24)    return h + 'h ' + (m % 60) + 'm ago';
-    return '~' + d + 'd ' + (h % 24) + 'h ago';
+    if (d < 30)    return d + 'd ' + (h % 24) + 'h ago';
+    if (d < 365)   return Math.floor(d / 30) + 'mo ago';
+    return Math.floor(d / 365) + 'y ago';
 }
 
 function exactTime(ms) {
