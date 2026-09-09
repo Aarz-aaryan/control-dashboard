@@ -27,9 +27,11 @@ dropped, like jarvis.) Defined in `js/dashboard.js` `AGENTS` and `update_data.py
 `HERMES_AGENTS` (+ agy) — keep in sync.
 
 `agents.json` is computed server-side from the **real** session store —
-`~/.hermes/profiles/<p>/state.db` table `sessions` (count today / 7d, last
-activity, recent run titles); agy from its per-run CLI logs. The old code
-mistakenly counted `request_dump_*.json` diagnostic files as "sessions".
+`~/.hermes/profiles/<p>/state.db` table `sessions` (count today / 24h, last
+activity, recent run titles); agy from its per-run CLI logs. Only today/24h are
+exposed: a nightly prune deletes sessions older than ~2 days, so a longer window
+would silently under-report. The old code mistakenly counted `request_dump_*.json`
+diagnostic files as "sessions".
 
 **Missions:** `missions_state.json` (hand-curated, gitignored, atomic writes).
 Statuses `active | inactive | archived | deleted`. `"pinned": true` entries are

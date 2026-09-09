@@ -120,7 +120,7 @@ def _blank_agent() -> dict:
         "last_active": None,
         "last_active_ms": 0,
         "sessions_today": 0,
-        "sessions_7d": 0,
+        "sessions_24h": 0,
         "last_title": None,
         "last_source": None,
         "recent": [],
@@ -139,9 +139,13 @@ def _status_for(last_ms: int) -> str:
 
 
 def _day_bounds():
+    # (local midnight, 24h ago). We deliberately do NOT expose a 7-day count:
+    # the nightly session-prune cron deletes rows older than ~2 days, so a
+    # "last 7 days" number would silently under-report. today / 24h are both
+    # inside the retention window and therefore accurate.
     now = time.time()
     midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
-    return midnight, now - 7 * 86400
+    return midnight, now - 86400
 
 
 def _hermes_agent_activity(profile: str) -> dict:
@@ -156,15 +160,16 @@ def _hermes_agent_activity(profile: str) -> dict:
         conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=2)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA busy_timeout=2000")
-        midnight, week_ago = _day_bounds()
+        midnight, day_ago = _day_bounds()
+        live = "archived = 0 AND hidden = 0"
         out["sessions_today"] = conn.execute(
-            "SELECT count(*) FROM sessions WHERE started_at > ?", (midnight,)).fetchone()[0]
-        out["sessions_7d"] = conn.execute(
-            "SELECT count(*) FROM sessions WHERE started_at > ?", (week_ago,)).fetchone()[0]
+            f"SELECT count(*) FROM sessions WHERE {live} AND started_at > ?", (midnight,)).fetchone()[0]
+        out["sessions_24h"] = conn.execute(
+            f"SELECT count(*) FROM sessions WHERE {live} AND started_at > ?", (day_ago,)).fetchone()[0]
         rows = conn.execute(
-            "SELECT source, title, message_count, "
-            "coalesce(ended_at, last_activity_at, started_at) AS act "
-            "FROM sessions ORDER BY started_at DESC LIMIT 5").fetchall()
+            f"SELECT source, title, message_count, "
+            f"coalesce(ended_at, last_activity_at, started_at) AS act "
+            f"FROM sessions WHERE {live} ORDER BY started_at DESC LIMIT 5").fetchall()
         conn.close()
         for r in rows:
             title = (r["title"] or "").strip().splitlines()[0][:80] if r["title"] else None
@@ -193,13 +198,13 @@ def _agy_activity() -> dict:
     files = glob.glob(os.path.join(AGY_LOG_DIR, "cli-*.log"))
     if not files:
         return out
-    midnight, week_ago = _day_bounds()
+    midnight, day_ago = _day_bounds()
     entries = sorted(
         ((os.path.basename(f), os.path.getmtime(f)) for f in files),
         key=lambda e: e[1], reverse=True,
     )
     out["sessions_today"] = sum(1 for _, mt in entries if mt > midnight)
-    out["sessions_7d"] = sum(1 for _, mt in entries if mt > week_ago)
+    out["sessions_24h"] = sum(1 for _, mt in entries if mt > day_ago)
     out["recent"] = [
         {"title": name, "source": "cli-log", "ts": int(mt * 1000), "msgs": 0}
         for name, mt in entries[:5]

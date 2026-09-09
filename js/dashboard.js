@@ -55,12 +55,12 @@ async function loadAgentsJson() {
 // Per-agent activity from agents.json (server reads the real ~/.hermes state.db).
 function getAgentData(id) {
     const a = (_agentsJson && _agentsJson.agents && _agentsJson.agents[id]) || null;
-    if (!a) return { status: 'dormant', ts: 0, sessions_today: 0, sessions_7d: 0, recent: [] };
+    if (!a) return { status: 'dormant', ts: 0, sessions_today: 0, sessions_24h: 0, recent: [] };
     return {
         status: a.status || 'dormant',
         ts: a.last_active_ms || 0,
         sessions_today: a.sessions_today || 0,
-        sessions_7d: a.sessions_7d || 0,
+        sessions_24h: a.sessions_24h || 0,
         last_title: a.last_title || null,
         last_source: a.last_source || null,
         recent: a.recent || [],
@@ -155,9 +155,9 @@ function cardHTML(agent, data) {
     <span class="status-label status-${status}">${STATUS_TEXT[status] || 'DORMANT'}</span>
     <span class="time-ago" title="${exactTime(ts)}">${ageStr || 'no activity'}</span>
   </div>
-  <div class="agent-metrics">
+  <div class="agent-metrics" title="Distinct agent sessions. Older history is pruned nightly, so only today / 24h are shown.">
     <div class="agent-metric"><span class="am-num">${data?.sessions_today ?? 0}</span><span class="am-lbl">today</span></div>
-    <div class="agent-metric"><span class="am-num">${data?.sessions_7d ?? 0}</span><span class="am-lbl">7 days</span></div>
+    <div class="agent-metric"><span class="am-num">${data?.sessions_24h ?? 0}</span><span class="am-lbl">24 h</span></div>
   </div>
   <div class="card-foot">
     <span class="foot-label">Last:</span>
@@ -457,12 +457,12 @@ function updateCronStats() {
     renderCronDetails(cronJobs);
 }
 
-// "Sessions · 7d" = real agent sessions in the last 7 days (from state.db).
+// "Sessions · 24h" = real agent sessions in the last 24h (from state.db).
 function updateTotalSessionCounts() {
     const el = document.getElementById('stat-total-sessions-all');
     if (!el) return;
     const agents = (_agentsJson && _agentsJson.agents) || {};
-    const total = Object.values(agents).reduce((acc, a) => acc + (a.sessions_7d || 0), 0);
+    const total = Object.values(agents).reduce((acc, a) => acc + (a.sessions_24h || 0), 0);
     el.textContent = total;
 }
 
