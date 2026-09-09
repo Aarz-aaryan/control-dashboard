@@ -211,53 +211,57 @@ function cardHTML(agent, data) {
 
 // ── Dynamic Tree Connecting Lines ───────────────────────────────────────────
 
+const SVGNS = 'http://www.w3.org/2000/svg';
+let _treeVinesAnimated = false;
+
 function drawTreeLines() {
     const svg = document.getElementById('treeLinesSvg');
     if (!svg) return;
-    svg.innerHTML = '';
-    
+    const panel = document.getElementById('panel-agents');
+    if (panel && !panel.classList.contains('active')) return; // hidden → skip work
     const container = document.querySelector('.tree-container');
     if (!container) return;
+
+    // Read phase — gather every rect first so we don't interleave layout reads
+    // with DOM writes (layout thrash).
     const containerRect = container.getBoundingClientRect();
-    
-    const connections = AGENTS
-        .filter(a => a.id !== 'aarz')
-        .map(a => ({ from: 'aarz', to: a.id }));
-    
-    connections.forEach(conn => {
-        const fromEl = document.getElementById('card-' + conn.from);
-        const toEl = document.getElementById('card-' + conn.to);
-        if (!fromEl || !toEl) return;
-        
-        const fromRect = fromEl.getBoundingClientRect();
+    const fromEl = document.getElementById('card-aarz');
+    if (!fromEl) return;
+    const fromRect = fromEl.getBoundingClientRect();
+    const segments = [];
+    for (const a of AGENTS) {
+        if (a.id === 'aarz') continue;
+        const toEl = document.getElementById('card-' + a.id);
+        if (!toEl) continue;
         const toRect = toEl.getBoundingClientRect();
-        
         const x1 = fromRect.left + fromRect.width / 2 - containerRect.left;
         const y1 = fromRect.bottom - containerRect.top;
-        
         const x2 = toRect.left + toRect.width / 2 - containerRect.left;
         const y2 = toRect.top - containerRect.top;
-        
-        const controlY1 = y1 + (y2 - y1) * 0.45;
-        const controlY2 = y1 + (y2 - y1) * 0.55;
-        const pathData = `M ${x1} ${y1} C ${x1} ${controlY1}, ${x2} ${controlY2}, ${x2} ${y2}`;
-        
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', pathData);
-        path.setAttribute('stroke', 'rgba(196, 154, 108, 0.35)');
-        path.setAttribute('stroke-width', '2.2');
-        path.setAttribute('fill', 'none');
-        path.classList.add('tree-vine');
-        svg.appendChild(path);
-        
-        const pathTendril = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        const pathDataTendril = `M ${x1} ${y1} C ${x1 + 8} ${controlY1 - 2}, ${x2 - 8} ${controlY2 + 2}, ${x2} ${y2}`;
-        pathTendril.setAttribute('d', pathDataTendril);
-        pathTendril.setAttribute('stroke', 'rgba(126, 181, 166, 0.22)');
-        pathTendril.setAttribute('stroke-width', '1.2');
-        pathTendril.setAttribute('fill', 'none');
-        svg.appendChild(pathTendril);
-    });
+        const cy1 = y1 + (y2 - y1) * 0.45;
+        const cy2 = y1 + (y2 - y1) * 0.55;
+        segments.push(
+            { d: `M ${x1} ${y1} C ${x1} ${cy1}, ${x2} ${cy2}, ${x2} ${y2}`,
+              stroke: 'rgba(196, 154, 108, 0.35)', w: 2.2, vine: true },
+            { d: `M ${x1} ${y1} C ${x1 + 8} ${cy1 - 2}, ${x2 - 8} ${cy2 + 2}, ${x2} ${y2}`,
+              stroke: 'rgba(126, 181, 166, 0.22)', w: 1.2, vine: false },
+        );
+    }
+
+    // Write phase — one fragment, one DOM swap.
+    const frag = document.createDocumentFragment();
+    for (const s of segments) {
+        const p = document.createElementNS(SVGNS, 'path');
+        p.setAttribute('d', s.d);
+        p.setAttribute('stroke', s.stroke);
+        p.setAttribute('stroke-width', s.w);
+        p.setAttribute('fill', 'none');
+        // Only the first paint gets the grow-in animation; later redraws are static.
+        if (s.vine && !_treeVinesAnimated) p.classList.add('tree-vine');
+        frag.appendChild(p);
+    }
+    svg.replaceChildren(frag);
+    _treeVinesAnimated = true;
 }
 
 // ── Cache management ────────────────────────────────────────────────────────
@@ -279,7 +283,14 @@ function setCache(id, data) {
     } catch {}
 }
 
+let _cardsFirstPaint = true;
 function renderCards(results) {
+    const container = document.querySelector('.tree-container');
+    if (_cardsFirstPaint && container) {
+        container.classList.add('first-paint');
+        setTimeout(() => container.classList.remove('first-paint'), 900);
+        _cardsFirstPaint = false;
+    }
     results.forEach(({ a, d }) => {
         const node = document.getElementById('node-' + a.id);
         if (node) {
@@ -292,8 +303,9 @@ function renderCards(results) {
 function updateCard(agent, data) {
     const el = document.getElementById('card-' + agent.id);
     if (el) {
+        // Only touching card #agent.id — card sizes don't change, so the tree
+        // lines don't need redrawing here. Callers redraw once after a batch.
         el.outerHTML = cardHTML(agent, data);
-        drawTreeLines();
     }
 }
 
@@ -1736,8 +1748,12 @@ window.addEventListener('load', () => {
     probeRServer();
     setInterval(probeRServer, 60000);
 
-    // Refresh card relative timers every 30s (no network)
+    // Refresh card relative timers every 30s (no network) — only while the
+    // Agents panel is actually visible.
     setInterval(() => {
-        if (!isFetching) AGENTS.forEach(a => updateCard(a, getCached(a.id)));
+        const panel = document.getElementById('panel-agents');
+        if (isFetching || !panel || !panel.classList.contains('active')) return;
+        AGENTS.forEach(a => updateCard(a, getCached(a.id)));
+        drawTreeLines();
     }, 30000);
 });

@@ -47,6 +47,7 @@
             filter: blur(80px);
             pointer-events: none;
             z-index: 0;
+            will-change: opacity;
         }
         .glow-orb-1 {
             width: 700px; height: 700px;
@@ -66,13 +67,15 @@
             background: radial-gradient(circle, rgba(126, 181, 166, 0.05) 0%, transparent 70%);
             animation: orbBreath3 10s ease-in-out infinite;
         }
+        /* opacity-only: animating transform:scale() forces the 80px blur to
+           re-rasterise every frame. */
         @keyframes orbBreath1 {
-            0%, 100% { opacity: 0.7; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.08); }
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
         }
         @keyframes orbBreath2 {
-            0%, 100% { opacity: 0.8; transform: scale(1.05); }
-            50% { opacity: 0.6; transform: scale(0.95); }
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.55; }
         }
         @keyframes orbBreath3 {
             0%, 100% { opacity: 0.5; }
@@ -95,7 +98,8 @@
             content: '';
             position: fixed;
             inset: 0;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-size: 160px 160px;
             opacity: 0.038;
             pointer-events: none;
             z-index: 9998;
@@ -301,8 +305,8 @@
             z-index: 0;
         }
         
+        .tree-lines-svg path { filter: drop-shadow(0 0 3px rgba(196, 154, 108, 0.15)); }
         .tree-vine {
-            filter: drop-shadow(0 0 3px rgba(196, 154, 108, 0.15));
             stroke-dasharray: 1000;
             stroke-dashoffset: 1000;
             animation: growVine 2s ease-out forwards;
@@ -315,22 +319,27 @@
         /* ── Card Styling ── */
         .card {
             position: relative;
-            background: var(--card-bg);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
+            /* No backdrop-filter: it re-blurs every frame while the ambient orbs
+               animate behind 6 cards — the main cause of Agents-tab lag. A more
+               opaque panel reads the same on the near-black ground. */
+            background: rgba(17, 22, 30, 0.82);
             border: 1px solid var(--card-border);
             border-radius: 20px;
             padding: 24px;
             overflow: hidden;
-            transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
+                        border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
             box-shadow:
                 0 4px 24px rgba(0, 0, 0, 0.5),
                 0 1px 4px rgba(0, 0, 0, 0.3),
                 inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            animation: cardIn 0.7s cubic-bezier(0.19, 1, 0.22, 1) both;
             color: var(--text-main);
             z-index: 1;
             width: 100%;
+        }
+        /* Entrance animation only on first paint — not on the 30s card refresh. */
+        .tree-container.first-paint .card {
+            animation: cardIn 0.7s cubic-bezier(0.19, 1, 0.22, 1) both;
         }
 
         /* Specular highlight — one bright edge, premium light-catching border */
@@ -377,7 +386,8 @@
             100% { left: 150%; }
         }
 
-        /* Animated rainbow gradient border on hover — via mask technique */
+        /* Animated rainbow gradient border — only runs on hover (was animating
+           on all 6 cards continuously even at opacity:0). */
         .card::before {
             content: '';
             position: absolute;
@@ -388,10 +398,10 @@
             z-index: -1;
             opacity: 0;
             transition: opacity 0.35s ease;
-            animation: holoShift 8s linear infinite;
         }
         .card:hover::before {
             opacity: 0.7;
+            animation: holoShift 8s linear infinite;
         }
         @keyframes holoShift {
             0% { background-position: 0% 50%; }
