@@ -68,6 +68,16 @@ thread. Two gitignored files, single-writer each:
 
 ## Session log
 
+### 2026-09-15 — Deep audit + repos loop fix + docs refresh
+
+- **Audit**: 8-layer deep audit (processes, collectors, daemons, writers, HTTP API, UI frontend, write paths, git history) — all green except 3 documented issues.
+- **`repos.json` continuous loop** — created `repos-collector.service` (systemd user unit mirroring `agent-dashboard-collector.service` pattern) and `systemd-repos-collector.service` mirror in repo. `repos.json` now refreshes every 30s instead of once daily at 03:00.
+- **`missions_details.json` cron** — verified as designed: cron `9357471e79e4` is agent-driven (`no_agent: false`), runs every 6h, last successful run 2026-09-15 12:01 EDT. The 3.5h staleness was expected, not a bug. No fix needed.
+- **`r-server Audit Watchdog` failure** — confirmed transient (SettingsMapper patch check returns CLEAN now). Last failure 2026-09-13 was a one-time SSH/config drift. Will self-resolve on next scheduled run (Sun 2026-09-20 06:30).
+- **r-server Nextcloud Housekeeping "error"** — false alarm from a stale `modelrelay-logs.json` snapshot. Real `jobs.json` shows `last_status=ok, failure_streak=0, last_run=2026-09-15 06:31`.
+- **Doc refresh**: MISSION.md Files table rewritten to reflect post-`89641f5` split (index.html 359 lines + js/dashboard.js 1980 + css/dashboard.css 2325, three files not one). All other "stale" architecture notes (the old 2986 line index.html) now removed.
+- **Dormant profiles**: builder/coder/scout/tester last active 2026-08-22 — flagged for Aaryan review (deletion not done, requires confirmation per STOP-AND-ASK rule).
+
 ### 2026-09-08 — Security + correctness + split overhaul
 
 - **Security:** removed the hard-coded r-server SSH password from `update_data.py`
@@ -183,13 +193,19 @@ Pre-fix the JSON files and log dirs accumulated forever → 548. Post-fix (manua
 
 | Path | Purpose | Lines |
 |------|---------|-------|
-| `index.html` | Main single-file app (inline CSS/JS) | 2986 |
+| `index.html` | Markup only (tabs, panels, modals) | 359 |
+| `css/dashboard.css` | All styling (theme, panels, cards, animations) | 2325 |
+| `js/dashboard.js` | Client logic (fetchers, renderers, drag/drop, modals) | 1980 |
+| `dashboard_server.py` | Static + same-origin API proxy on Tailscale IP | 154 |
 | `missions_daemon.py` | 6h sync loop, stale-mission cleanup | 209 |
-| `missions_http_server.py` | :8001 endpoint for UI actions | 157 |
-| `missions_writer.py` | All writes go through here (atomic, audited) | 266 |
-| `update_data.py` | Fetches GitHub repo data into `repos.json` | 203 |
-| `update_repos.py` | Daemon wrapper (30s loop) | 81 |
-| `assets/*.svg` | Agent logos (aarz, agy, copi, jarvis, scout, logo) | — |
+| `missions_http_server.py` | :8001 endpoint for UI actions (token-gated) | 380 |
+| `missions_writer.py` | All writes go through here (atomic, audited) | 471 |
+| `missions_detail_probe.py` | Mechanical GitHub probe + activity merge for cron `9357471e79e4` | 198 |
+| `update_data.py` | Daemon: health/missions/r_server/agents JSON, 30s loop | 389 |
+| `update_repos.py` | Daemon: repos.json from gh CLI, 30s loop (systemd unit `repos-collector.service`) | 81 |
+| `systemd-agent-dashboard-collector.service` | Mirror of `agent-dashboard-collector.service` | — |
+| `systemd-repos-collector.service` | Mirror of `repos-collector.service` (added 2026-09-15) | — |
+| `assets/*.svg` | Agent logos (aarz, agy, scout, coder, builder, tester, logo) | — |
 
 ## Architecture
 

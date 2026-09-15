@@ -1,0 +1,14 @@
+[Unit]
+Description=Agent Dashboard Repos Collector (update_repos.py) — 30s loop
+After=network.target
+PartOf=agent-dashboard.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/Aarz/agent-dashboard
+ExecStart=/usr/bin/python3 /home/Aarz/agent-dashboard/update_repos.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
