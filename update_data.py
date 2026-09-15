@@ -272,11 +272,66 @@ def parse_job(j):
     }
 
 
+def _is_cron_entry(data: dict) -> bool:
+    """Filter out state files that happen to live in the cron dir.
+
+    Real cron entries always have at least: an `id` (or `job_id`), a `name`, AND
+    either a `prompt` (agent-driven) or a `script` (script-driven) field. State
+    files (e.g. scout-digest-state.json, daily-pipeline-cron.json with no
+    schedule-aware fields) lack one or more of these and should not be exposed
+    as cron jobs.
+    """
+    if not isinstance(data, dict):
+        return False
+    if not data.get("id") and not data.get("job_id"):
+        return False
+    if not data.get("name"):
+        return False
+    if not data.get("prompt") and not data.get("script"):
+        return False
+    return True
+
+
 def get_cron_jobs():
+    """Read the aarz profile's cron jobs.
+
+    Source of truth is `~/.hermes/profiles/aarz/cron/jobs.json` (the file
+    Hermes cron itself maintains). Per-file JSONs in the same directory may
+    exist as legacy fragments, state files, or stale duplicates — we dedupe
+    by (job_id, normalized name) so stale entries never inflate the count,
+    and we require the minimal cron-entry shape (id + name + prompt-or-script)
+    so state files like `scout-digest-state.json` aren't reported as crons.
+
+    Note: dedupe by name alone is required because historical crons were
+    renamed mid-flight (e.g. id 9585ec21c6e5 → id 607c910ef279 for the
+    "Daily Internship Pipeline — 5 jobs/day" job); the stale per-file JSON
+    keeps the old id, so an id-only dedupe misses it.
+    """
     cron_dir = os.path.expanduser("~/.hermes/profiles/aarz/cron")
-    jobs = []
     if not os.path.exists(cron_dir):
-        return jobs
+        return []
+
+    seen_ids: set[str] = set()
+    seen_names: set[str] = set()
+    jobs: list[dict] = []
+
+    def _already_seen(parsed: dict) -> bool:
+        jid = parsed.get("job_id", "")
+        name = (parsed.get("name") or "").strip()
+        if jid and jid in seen_ids:
+            return True
+        if name and name in seen_names:
+            return True
+        return False
+
+    def _record(parsed: dict) -> None:
+        jid = parsed.get("job_id", "")
+        name = (parsed.get("name") or "").strip()
+        if jid:
+            seen_ids.add(jid)
+        if name:
+            seen_names.add(name)
+        jobs.append(parsed)
 
     jobs_json = os.path.join(cron_dir, "jobs.json")
     if os.path.exists(jobs_json):
@@ -285,7 +340,12 @@ def get_cron_jobs():
                 data = json.load(file)
                 if isinstance(data, dict) and "jobs" in data:
                     for j in data["jobs"]:
-                        jobs.append(parse_job(j))
+                        if not _is_cron_entry(j):
+                            continue
+                        parsed = parse_job(j)
+                        if _already_seen(parsed):
+                            continue
+                        _record(parsed)
         except Exception as e:
             print(f"Error reading jobs.json: {e}")
 
@@ -296,8 +356,13 @@ def get_cron_jobs():
         try:
             with open(path) as file:
                 data = json.load(file)
-                if isinstance(data, dict):
-                    jobs.append(parse_job(data))
+                if not _is_cron_entry(data):
+                    continue
+                parsed = parse_job(data)
+                if _already_seen(parsed):
+                    # Stale duplicate of an entry already read from jobs.json — skip.
+                    continue
+                _record(parsed)
         except Exception as e:
             print(f"Error reading cron file {f}: {e}")
 
