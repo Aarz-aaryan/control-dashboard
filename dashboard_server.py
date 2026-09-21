@@ -99,7 +99,10 @@ class Handler(SimpleHTTPRequestHandler):
     # ── proxy helper ───────────────────────────────────────────────────────────
 
     def _proxy(self, method: str):
-        length = int(self.headers.get("Content-Length") or 0)
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except (ValueError, TypeError):
+            length = 0
         body = self.rfile.read(length) if length else b""
         try:
             conn = http.client.HTTPConnection(BACKEND_HOST, BACKEND_PORT, timeout=15)
