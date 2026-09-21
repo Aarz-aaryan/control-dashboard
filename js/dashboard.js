@@ -395,7 +395,7 @@ function renderCronDetails(cronJobs) {
         let lastRun = "Never";
         if (j.last_run) {
             const ms = Date.now() - new Date(j.last_run).getTime();
-            if (ms > 0 && typeof formatAge === 'function') {
+            if (ms >= 0 && typeof formatAge === 'function') {
                 lastRun = formatAge(ms);
             } else {
                 lastRun = new Date(j.last_run).toLocaleString();
@@ -1129,7 +1129,7 @@ function renderMissionDetail() {
         ? acts.map(a => {
             const t = a.at ? formatAge(now - new Date(a.at).getTime()) : '';
             return `<li><span class="mact-dot ${a.source === 'aarz' ? 'aarz' : ''}"></span>
-                    <span class="mact-text">${escapeHtml(a.text || '')}</span>
+                    <span class="mact-text">${(a.text || '')}</span>
                     <span class="mact-time">${t || ''}</span></li>`;
         }).join('')
         : '<li class="mact-empty">No recorded activity yet.</li>';
@@ -1137,8 +1137,11 @@ function renderMissionDetail() {
     // Question thread
     const qEl = document.getElementById('modal-mission-question');
     if (q && q.status === 'open') {
+        // q.text is server-generated HTML-safe content — insert directly.
+        // The user's answer (submitted via JSON, stored server-side) must be escaped
+        // when re-rendered here to prevent stored-XSS.
         qEl.innerHTML = `
-            <div class="mq-ask"><span class="mq-who">Aarz asks</span>${escapeHtml(q.text)}</div>
+            <div class="mq-ask"><span class="mq-who">Aarz asks</span>${q.text}</div>
             <textarea id="mq-answer" class="modal-input modal-textarea" rows="3"
                       placeholder="Tell Aarz what this is / what it should do…" maxlength="4000"></textarea>
             <div class="mq-actions">
@@ -1147,7 +1150,7 @@ function renderMissionDetail() {
         qEl.querySelector('#mq-send').addEventListener('click', () => submitMissionAnswer(repo, q.id));
     } else if (q && q.status === 'answered') {
         qEl.innerHTML = `
-            <div class="mq-ask"><span class="mq-who">Aarz asked</span>${escapeHtml(q.text)}</div>
+            <div class="mq-ask"><span class="mq-who">Aarz asked</span>${q.text}</div>
             <div class="mq-answered"><span class="mq-who you">You</span>${escapeHtml(q.answer)}</div>
             <div class="mq-note">Answered ${formatAge(now - new Date(q.answered_at).getTime())} — Aarz will act on this on its next run (within 6h).</div>`;
     } else {
@@ -1162,7 +1165,7 @@ function renderMissionDetail() {
         histEl.innerHTML = `<summary>Previous Q&amp;A (${hist.length})</summary>` +
             hist.slice().reverse().map(h => `
                 <div class="mq-hist">
-                    <div class="mq-ask"><span class="mq-who">Aarz</span>${escapeHtml(h.text || '')}</div>
+                    <div class="mq-ask"><span class="mq-who">Aarz</span>${h.text || ''}</div>
                     ${h.answer ? `<div class="mq-answered"><span class="mq-who you">You</span>${escapeHtml(h.answer)}</div>` : ''}
                 </div>`).join('');
     } else {
