@@ -181,11 +181,19 @@ def main() -> int:
             ans_data["answers"] = keep
             ans_data["_updated_at"] = now_iso()
             atmp = ANSWERS_FILE.with_suffix(f".tmp.{os.getpid()}")
-            atmp.write_text(json.dumps(ans_data, indent=2) + "\n")
+            with atmp.open("w") as f:
+                json.dump(ans_data, f, indent=2)
+                f.write("\n")
+                f.flush()
+                os.fsync(f.fileno())
             os.replace(atmp, ANSWERS_FILE)
 
     tmp = DETAILS_FILE.with_suffix(f".tmp.{os.getpid()}")
-    tmp.write_text(json.dumps(details, indent=2) + "\n")
+    with tmp.open("w") as f:
+        json.dump(details, f, indent=2)
+        f.write("\n")
+        f.flush()
+        os.fsync(f.fileno())
     os.replace(tmp, DETAILS_FILE)
 
     report["counts"] = {
