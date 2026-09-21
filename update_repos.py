@@ -4,6 +4,7 @@ Fetch GitHub repos for the authenticated user and write repos.json.
 Run manually or via cron. Writes to /home/Aarz/agent-dashboard/repos.json.
 """
 import json
+import os
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -67,8 +68,12 @@ def main():
                     "_fetched_at": datetime.now(timezone.utc).isoformat(),
                     "repos": repos
                 }
-                with open(output_path, "w") as f:
+                tmp = f"{output_path}.tmp.{os.getpid()}"
+                with open(tmp, "w") as f:
                     json.dump(payload, f, indent=2)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp, output_path)
                 print(f"Wrote {len(repos)} repos to {output_path}")
             else:
                 print("Failed to fetch repos, will retry in 30s.")
