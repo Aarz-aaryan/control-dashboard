@@ -2045,13 +2045,7 @@ function renderMotoResults(title, actions) {
             
             const sourceRefs = a.sources.map(s => `Pg ${s.page}`).join(', ');
             
-            const getViewerUrl = (filename) => {
-                const fileId = filename === 'Exiv_250_owner_manual.pdf' ? '821' : '822';
-                return `http://100.84.224.18:9080/index.php/apps/files/files/${fileId}?dir=/Motorcycle&openfile=true`;
-            };
-
-            const primarySource = a.sources[0];
-            const primaryViewerUrl = primarySource ? getViewerUrl(primarySource.filename) : `http://100.84.224.18:9080/index.php/apps/files/?dir=/Motorcycle`;
+            const canonicalUrl = 'http://100.84.224.18:9080/index.php/apps/files/?dir=/Motorcycle';
             
             card.innerHTML = `
                 <div class="moto-action-header" onclick="toggleMotoDetail(${idx})">
@@ -2065,16 +2059,16 @@ function renderMotoResults(title, actions) {
                         ${a.sources.map(s => `
                             <div class="moto-source-item">
                                 <div class="moto-source-meta">
-                                    <a href="${getViewerUrl(s.filename)}" target="_blank" style="text-decoration: none; color: #4CAF50; font-weight: bold; margin-bottom: 4px; display: inline-block;">Open Manual ↗</a>
+                                    <a href="${canonicalUrl}" target="_blank" style="text-decoration: none; color: #4CAF50; font-weight: bold; margin-bottom: 4px; display: inline-block;">Open Manual ↗</a>
                                     <br>
-                                    <span style="font-size: 0.85em; color: #888;">(${escapeHtml(s.filename)} - Page ${escapeHtml(String(s.page))})</span>
+                                    <span style="font-size: 0.85em; color: #888;">${escapeHtml(s.filename)} - Page ${escapeHtml(String(s.page))}</span>
                                 </div>
                                 <div class="moto-source-text">"${escapeHtml(s.excerpt).replace(/"/g, '&quot;')}"</div>
                             </div>
                         `).join('')}
                     </div>
                     <div style="display: flex; gap: 10px;">
-                        <a href="${primaryViewerUrl}" target="_blank" class="moto-card-link">OPEN IN NEXTCLOUD FILES</a>
+                        <a href="${canonicalUrl}" target="_blank" class="moto-card-link">OPEN IN NEXTCLOUD FILES</a>
                     </div>
                 </div>
             `;
