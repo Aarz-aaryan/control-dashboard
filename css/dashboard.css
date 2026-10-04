@@ -2679,3 +2679,51 @@
     margin-top: 50px;
     font-size: 1.2rem;
 }
+
+.moto-action-card {
+    background: rgba(10, 15, 20, 0.95);
+    border: 1px solid var(--accent);
+    padding: 0;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+.moto-action-header {
+    padding: 15px;
+    cursor: pointer;
+}
+.moto-action-header:hover {
+    background: rgba(0, 255, 170, 0.1);
+}
+.moto-card-desc {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin: 5px 0;
+    line-height: 1.4;
+}
+.moto-action-detail {
+    border-top: 1px solid rgba(0, 255, 170, 0.3);
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+}
+.moto-detail-content h5 {
+    color: var(--accent);
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+.moto-source-item {
+    margin-bottom: 15px;
+}
+.moto-source-meta {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 3px;
+}
+.moto-source-text {
+    font-size: 0.8rem;
+    color: var(--text-main);
+    font-style: italic;
+    padding-left: 10px;
+    border-left: 2px solid var(--accent);
+}

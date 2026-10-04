@@ -2000,45 +2000,16 @@ async function loadMotoIndex() {
     }
 }
 
-function renderMotoResults(title, results) {
-    document.getElementById('moto-results-title').innerText = title.toUpperCase();
-    const list = document.getElementById('moto-results-list');
-    list.innerHTML = '';
-    
-    if (!results || results.length === 0) {
-        list.innerHTML = `<div class="moto-empty-state">NO DATA FOUND FOR: ${title}</div>`;
-    } else {
-        results.forEach(r => {
-            const card = document.createElement('div');
-            card.className = 'moto-card';
-            
-            // Generate link to Nextcloud folder (as requested)
-            const ncUrl = "http://100.84.224.18:9080/apps/files/files/820?dir=/Motorcycle";
-            
-            card.innerHTML = `
-                <h4 class="moto-card-title">${r.document} — Page ${r.page}</h4>
-                <div class="moto-card-meta">Zone: ${r.zone.toUpperCase()} | File: ${r.filename}</div>
-                <div class="moto-card-excerpt">${r.excerpt}</div>
-                <a href="${ncUrl}" target="_blank" class="moto-card-link">OPEN IN NEXTCLOUD ↗</a>
-            `;
-            list.appendChild(card);
-        });
-    }
-    
-    document.getElementById('moto-results-area').style.display = 'flex';
-}
 
+function closeMotoResults() {
+    document.getElementById('moto-results-area').style.display = 'none';
+}
+// Dashboard JS Patch for Moto Results
 async function openMotoZone(zone) {
     const data = await loadMotoIndex();
     if (!data) return;
-    const matches = data.index.filter(r => r.zone === zone);
-    renderMotoResults(`ZONE: ${zone}`, matches);
-}
-
-function handleMotoSearch(e) {
-    if (e.key === 'Enter') {
-        executeMotoSearch();
-    }
+    const matches = data.actions.filter(r => r.zone === zone);
+    renderMotoResults(`ZONE: ${zone.toUpperCase()}`, matches);
 }
 
 async function executeMotoSearch() {
@@ -2048,15 +2019,64 @@ async function executeMotoSearch() {
     const data = await loadMotoIndex();
     if (!data) return;
     
-    // Simple text search
-    const matches = data.index.filter(r => 
-        r.excerpt.toLowerCase().includes(input) || 
-        r.zone.toLowerCase().includes(input)
-    );
+    // Search actions
+    const matches = data.actions.filter(r => {
+        const inTitle = r.actionTitle.toLowerCase().includes(input);
+        const inDesc = r.description.toLowerCase().includes(input);
+        const inZone = r.zone.toLowerCase().includes(input);
+        const inSources = r.sources.some(s => s.excerpt.toLowerCase().includes(input));
+        return inTitle || inDesc || inZone || inSources;
+    });
     
-    renderMotoResults(`SEARCH: ${input}`, matches);
+    renderMotoResults(`SEARCH: ${input.toUpperCase()}`, matches);
 }
 
-function closeMotoResults() {
-    document.getElementById('moto-results-area').style.display = 'none';
+function renderMotoResults(title, actions) {
+    document.getElementById('moto-results-title').innerText = title;
+    const list = document.getElementById('moto-results-list');
+    list.innerHTML = '';
+    
+    if (!actions || actions.length === 0) {
+        list.innerHTML = `<div class="moto-empty-state">NO ACTIONS FOUND FOR: ${title}</div>`;
+    } else {
+        actions.forEach((a, idx) => {
+            const card = document.createElement('div');
+            card.className = 'moto-action-card';
+            
+            // Short source references
+            const sourceRefs = a.sources.map(s => `Pg ${s.page}`).join(', ');
+            
+            card.innerHTML = `
+                <div class="moto-action-header" onclick="toggleMotoDetail(${idx})">
+                    <h4 class="moto-card-title">${a.actionTitle}</h4>
+                    <p class="moto-card-desc">${a.description}</p>
+                    <div class="moto-card-meta">Sources: ${sourceRefs}</div>
+                </div>
+                <div class="moto-action-detail" id="moto-detail-${idx}" style="display:none;">
+                    <div class="moto-detail-content">
+                        <h5>MANUAL EXCERPTS</h5>
+                        ${a.sources.map(s => `
+                            <div class="moto-source-item">
+                                <div class="moto-source-meta"><b>${s.document}</b> (${s.filename}, Page ${s.page})</div>
+                                <div class="moto-source-text">"${s.excerpt}"</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <a href="http://100.84.224.18:9080/apps/files/files/820?dir=/Motorcycle" target="_blank" class="moto-card-link">OPEN IN NEXTCLOUD ↗</a>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+    }
+    
+    document.getElementById('moto-results-area').style.display = 'flex';
+}
+
+window.toggleMotoDetail = function(idx) {
+    const detail = document.getElementById(`moto-detail-${idx}`);
+    if (detail.style.display === 'none') {
+        detail.style.display = 'block';
+    } else {
+        detail.style.display = 'none';
+    }
 }

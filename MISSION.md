@@ -1,3 +1,9 @@
+## Feature Record: Motorcycle Maintenance UX & Accuracy Upgrade (2026-10-04)
+- **Image**: Replaced temporary hero image with the definitive user-provided photo (`img_69313bd00de7.jpeg`), fully attributed and preserving original crop.
+- **Intelligent Actions**: Rewrote `extract_moto_index.py` to produce deterministic, taxonomy-based maintenance actions (e.g., "Checking / changing engine oil", "Brake-pad inspection / replacement") rather than raw page dumps.
+- **UI Update**: Redesigned motorcycle action cards. Selecting an action now opens a detail panel with specific manual excerpts and source references. Search fully integrates with the new action-first model.
+- **Hotspots**: Recalibrated hotspot coordinates to match precise mechanical locations on the user's uploaded side-profile photo (e.g. brakes pointing to visible caliper assemblies).
+
 # Control Dashboard — Mission
 
 **Live:** http://100.100.35.6:8000/agent-dashboard/ (Tailscale-bound, not 0.0.0.0)
