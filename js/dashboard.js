@@ -2046,6 +2046,18 @@ function renderMotoResults(title, actions) {
             // Short source references
             const sourceRefs = a.sources.map(s => `Pg ${s.page}`).join(', ');
             
+            const getFileUrl = (filename, page) => {
+                const fileId = filename === 'Exiv_250_owner_manual.pdf' ? 821 : 
+                               filename === 'Exiv250_service_manual_english.pdf' ? 822 : null;
+                if (fileId) {
+                    return `http://100.84.224.18:9080/index.php/f/${fileId}#page=${encodeURIComponent(page)}`;
+                }
+                return `http://100.84.224.18:9080/apps/files/files/820?dir=/Motorcycle`;
+            };
+
+            const primarySource = a.sources[0];
+            const primaryUrl = primarySource ? getFileUrl(primarySource.filename, primarySource.page) : `http://100.84.224.18:9080/apps/files/files/820?dir=/Motorcycle`;
+            
             card.innerHTML = `
                 <div class="moto-action-header" onclick="toggleMotoDetail(${idx})">
                     <h4 class="moto-card-title">${a.actionTitle}</h4>
@@ -2057,12 +2069,16 @@ function renderMotoResults(title, actions) {
                         <h5>MANUAL EXCERPTS</h5>
                         ${a.sources.map(s => `
                             <div class="moto-source-item">
-                                <div class="moto-source-meta"><b>${s.document}</b> (${s.filename}, Page ${s.page})</div>
-                                <div class="moto-source-text">"${s.excerpt}"</div>
+                                <div class="moto-source-meta">
+                                    <a href="${getFileUrl(s.filename, s.page)}" target="_blank" style="text-decoration: none; color: #4CAF50; font-weight: bold; margin-bottom: 4px; display: inline-block;">Open ${s.document} · p. ${s.page} ↗</a>
+                                    <br>
+                                    <span style="font-size: 0.85em; color: #888;">(${s.filename})</span>
+                                </div>
+                                <div class="moto-source-text">"${s.excerpt.replace(/"/g, '&quot;')}"</div>
                             </div>
                         `).join('')}
                     </div>
-                    <a href="http://100.84.224.18:9080/apps/files/files/820?dir=/Motorcycle" target="_blank" class="moto-card-link">OPEN IN NEXTCLOUD ↗</a>
+                    <a href="${primaryUrl}" target="_blank" class="moto-card-link">OPEN IN NEXTCLOUD ↗</a>
                 </div>
             `;
             list.appendChild(card);
