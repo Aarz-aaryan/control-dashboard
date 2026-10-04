@@ -375,34 +375,38 @@
             
             <div class="moto-interactive-area" id="moto-interactive-area">
                 <div class="moto-schematic">
-                    <!-- Very stylized blocky motorcycle -->
-                    <svg class="moto-art" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet">
-                        <!-- Frame/Engine block -->
-                        <rect x="250" y="180" width="300" height="100" fill="#333" stroke="#c49a6c" stroke-width="4"/>
-                        <rect x="300" y="150" width="150" height="40" fill="#444" stroke="#c49a6c" stroke-width="4"/> <!-- Tank -->
-                        <rect x="450" y="150" width="120" height="30" fill="#222" stroke="#c49a6c" stroke-width="4"/> <!-- Seat -->
-                        <!-- Wheels -->
-                        <circle cx="180" cy="280" r="70" fill="none" stroke="#7eb5a6" stroke-width="16" stroke-dasharray="10 5"/>
-                        <circle cx="620" cy="280" r="70" fill="none" stroke="#7eb5a6" stroke-width="16" stroke-dasharray="10 5"/>
-                        <!-- Forks/Exhaust -->
-                        <line x1="620" y1="280" x2="520" y2="120" stroke="#8bbccc" stroke-width="12"/>
-                        <line x1="180" y1="280" x2="300" y2="220" stroke="#8bbccc" stroke-width="12"/>
-                        <line x1="300" y1="260" x2="100" y2="260" stroke="#d97d64" stroke-width="12"/>
-                        <!-- Handlebars/Light -->
-                        <path d="M 520 120 L 500 100 L 550 90" fill="none" stroke="#f5f0e6" stroke-width="8"/>
-                        <circle cx="560" cy="110" r="15" fill="#f5f0e6"/> <!-- Light -->
-                    </svg>
+                    <div class="moto-image-wrapper">
+                        <img src="assets/hyosung_gd250r_web.jpg" class="moto-photo" alt="2017 Hyosung GD250R">
 
-                    <!-- Hotspots -->
-                    <button class="moto-hotspot" style="top: 70%; left: 22%;" onclick="openMotoZone('tires/wheels')">REAR TIRE</button>
-                    <button class="moto-hotspot" style="top: 70%; left: 77%;" onclick="openMotoZone('tires/wheels')">FRONT TIRE</button>
-                    <button class="moto-hotspot" style="top: 55%; left: 50%;" onclick="openMotoZone('oil/engine')">ENGINE/OIL</button>
-                    <button class="moto-hotspot" style="top: 62%; left: 35%;" onclick="openMotoZone('chain')">DRIVE CHAIN</button>
-                    <button class="moto-hotspot" style="top: 55%; left: 22%;" onclick="openMotoZone('brake pads')">REAR BRAKE</button>
-                    <button class="moto-hotspot" style="top: 55%; left: 77%;" onclick="openMotoZone('brake pads')">FRONT BRAKE</button>
-                    <button class="moto-hotspot" style="top: 40%; left: 45%;" onclick="openMotoZone('battery/electrical')">BATTERY</button>
-                    <button class="moto-hotspot" style="top: 25%; left: 70%;" onclick="openMotoZone('lights')">LIGHTS</button>
-                    <button class="moto-hotspot" style="top: 20%; left: 63%;" onclick="openMotoZone('controls')">CONTROLS</button>
+                        <!-- Hotspots -->
+                        <button class="moto-hotspot" style="top: 70%; left: 25%;" onclick="openMotoZone('tires/wheels')">
+                            <div class="pin"></div><span class="label">REAR TIRE</span>
+                        </button>
+                        <button class="moto-hotspot" style="top: 75%; left: 75%;" onclick="openMotoZone('tires/wheels')">
+                            <div class="pin"></div><span class="label">FRONT TIRE</span>
+                        </button>
+                        <button class="moto-hotspot" style="top: 65%; left: 45%;" onclick="openMotoZone('oil/engine')">
+                            <div class="pin"></div><span class="label">ENGINE / OIL</span>
+                        </button>
+                        <button class="moto-hotspot" style="top: 60%; left: 30%;" onclick="openMotoZone('chain')">
+                            <div class="pin"></div><span class="label">DRIVE CHAIN</span>
+                        </button>
+                        <button class="moto-hotspot" style="top: 65%; left: 28%;" onclick="openMotoZone('brake pads')">
+                            <div class="pin"></div><span class="label">REAR BRAKE</span>
+                        </button>
+                        <button class="moto-hotspot" style="top: 65%; left: 70%;" onclick="openMotoZone('brake pads')">
+                            <div class="pin"></div><span class="label">FRONT BRAKE</span>
+                        </button>
+                        <button class="moto-hotspot" style="top: 45%; left: 55%;" onclick="openMotoZone('battery/electrical')">
+                            <div class="pin"></div><span class="label">BATTERY</span>
+                        </button>
+                        <button class="moto-hotspot" style="top: 35%; left: 75%;" onclick="openMotoZone('lights')">
+                            <div class="pin"></div><span class="label">LIGHTS</span>
+                        </button>
+                        <button class="moto-hotspot" style="top: 35%; left: 60%;" onclick="openMotoZone('controls')">
+                            <div class="pin"></div><span class="label">CONTROLS</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
