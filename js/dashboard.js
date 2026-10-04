@@ -1981,3 +1981,82 @@ window.addEventListener('load', () => {
         drawTreeLines();
     }, 30000);
 });
+
+// --- MOTORCYCLE MAINTENANCE CONSOLE ---
+
+let motoIndexData = null;
+
+async function loadMotoIndex() {
+    if (motoIndexData) return motoIndexData;
+    try {
+        // Cache buster isn't strictly necessary but good for development
+        const res = await fetch('motorcycle_index.json?_t=' + Date.now());
+        if (!res.ok) throw new Error('Network error loading motorcycle index');
+        motoIndexData = await res.json();
+        return motoIndexData;
+    } catch (e) {
+        console.error("Failed to load motorcycle index:", e);
+        return null;
+    }
+}
+
+function renderMotoResults(title, results) {
+    document.getElementById('moto-results-title').innerText = title.toUpperCase();
+    const list = document.getElementById('moto-results-list');
+    list.innerHTML = '';
+    
+    if (!results || results.length === 0) {
+        list.innerHTML = `<div class="moto-empty-state">NO DATA FOUND FOR: ${title}</div>`;
+    } else {
+        results.forEach(r => {
+            const card = document.createElement('div');
+            card.className = 'moto-card';
+            
+            // Generate link to Nextcloud folder (as requested)
+            const ncUrl = "http://100.84.224.18:9080/apps/files/files/820?dir=/Motorcycle";
+            
+            card.innerHTML = `
+                <h4 class="moto-card-title">${r.document} — Page ${r.page}</h4>
+                <div class="moto-card-meta">Zone: ${r.zone.toUpperCase()} | File: ${r.filename}</div>
+                <div class="moto-card-excerpt">${r.excerpt}</div>
+                <a href="${ncUrl}" target="_blank" class="moto-card-link">OPEN IN NEXTCLOUD ↗</a>
+            `;
+            list.appendChild(card);
+        });
+    }
+    
+    document.getElementById('moto-results-area').style.display = 'flex';
+}
+
+async function openMotoZone(zone) {
+    const data = await loadMotoIndex();
+    if (!data) return;
+    const matches = data.index.filter(r => r.zone === zone);
+    renderMotoResults(`ZONE: ${zone}`, matches);
+}
+
+function handleMotoSearch(e) {
+    if (e.key === 'Enter') {
+        executeMotoSearch();
+    }
+}
+
+async function executeMotoSearch() {
+    const input = document.getElementById('moto-search-input').value.toLowerCase().trim();
+    if (!input) return;
+    
+    const data = await loadMotoIndex();
+    if (!data) return;
+    
+    // Simple text search
+    const matches = data.index.filter(r => 
+        r.excerpt.toLowerCase().includes(input) || 
+        r.zone.toLowerCase().includes(input)
+    );
+    
+    renderMotoResults(`SEARCH: ${input}`, matches);
+}
+
+function closeMotoResults() {
+    document.getElementById('moto-results-area').style.display = 'none';
+}

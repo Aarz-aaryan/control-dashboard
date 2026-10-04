@@ -57,6 +57,16 @@
             <span class="tab-label">r-server</span>
             <span class="tab-error-badge" id="tab-error-r-server"></span>
         </div>
+        <div class="tab-item" data-tab="motorcycle" onclick="switchTab('motorcycle')">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="4"></circle>
+              <line x1="12" y1="2" x2="12" y2="8"></line>
+              <line x1="12" y1="16" x2="12" y2="22"></line>
+            </svg>
+            <span class="tab-label">Motorcycle</span>
+            <span class="tab-error-badge" id="tab-error-motorcycle"></span>
+        </div>
     </div>
     <div class="sidebar-footer">
         <div class="dashboard-uptime" id="dashboard-uptime" title="Dashboard uptime">⏱ --</div>
@@ -349,6 +359,64 @@
                 </div>
             </div>
         </div>
+    </div> <!-- close panel-r-server -->
+
+    <!-- 5. MOTORCYCLE MAINTENANCE TAB -->
+    <div class="panel" id="panel-motorcycle">
+        <h2 class="panel-title" style="font-family: 'Share Tech Mono', monospace; text-transform: uppercase; color: #c49a6c; text-shadow: 2px 2px 0px #000;">Motorcycle Maintenance</h2>
+        
+        <div class="moto-console">
+            <div class="moto-scanlines"></div>
+            
+            <div class="moto-search-bar">
+                <input type="text" id="moto-search-input" class="moto-input" placeholder="SEARCH QUERY (e.g. 'oil change', 'brake')..." onkeyup="handleMotoSearch(event)">
+                <button class="moto-btn" onclick="executeMotoSearch()">[ EXECUTE ]</button>
+            </div>
+            
+            <div class="moto-interactive-area" id="moto-interactive-area">
+                <div class="moto-schematic">
+                    <!-- Very stylized blocky motorcycle -->
+                    <svg class="moto-art" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet">
+                        <!-- Frame/Engine block -->
+                        <rect x="250" y="180" width="300" height="100" fill="#333" stroke="#c49a6c" stroke-width="4"/>
+                        <rect x="300" y="150" width="150" height="40" fill="#444" stroke="#c49a6c" stroke-width="4"/> <!-- Tank -->
+                        <rect x="450" y="150" width="120" height="30" fill="#222" stroke="#c49a6c" stroke-width="4"/> <!-- Seat -->
+                        <!-- Wheels -->
+                        <circle cx="180" cy="280" r="70" fill="none" stroke="#7eb5a6" stroke-width="16" stroke-dasharray="10 5"/>
+                        <circle cx="620" cy="280" r="70" fill="none" stroke="#7eb5a6" stroke-width="16" stroke-dasharray="10 5"/>
+                        <!-- Forks/Exhaust -->
+                        <line x1="620" y1="280" x2="520" y2="120" stroke="#8bbccc" stroke-width="12"/>
+                        <line x1="180" y1="280" x2="300" y2="220" stroke="#8bbccc" stroke-width="12"/>
+                        <line x1="300" y1="260" x2="100" y2="260" stroke="#d97d64" stroke-width="12"/>
+                        <!-- Handlebars/Light -->
+                        <path d="M 520 120 L 500 100 L 550 90" fill="none" stroke="#f5f0e6" stroke-width="8"/>
+                        <circle cx="560" cy="110" r="15" fill="#f5f0e6"/> <!-- Light -->
+                    </svg>
+
+                    <!-- Hotspots -->
+                    <button class="moto-hotspot" style="top: 70%; left: 22%;" onclick="openMotoZone('tires/wheels')">REAR TIRE</button>
+                    <button class="moto-hotspot" style="top: 70%; left: 77%;" onclick="openMotoZone('tires/wheels')">FRONT TIRE</button>
+                    <button class="moto-hotspot" style="top: 55%; left: 50%;" onclick="openMotoZone('oil/engine')">ENGINE/OIL</button>
+                    <button class="moto-hotspot" style="top: 62%; left: 35%;" onclick="openMotoZone('chain')">DRIVE CHAIN</button>
+                    <button class="moto-hotspot" style="top: 55%; left: 22%;" onclick="openMotoZone('brake pads')">REAR BRAKE</button>
+                    <button class="moto-hotspot" style="top: 55%; left: 77%;" onclick="openMotoZone('brake pads')">FRONT BRAKE</button>
+                    <button class="moto-hotspot" style="top: 40%; left: 45%;" onclick="openMotoZone('battery/electrical')">BATTERY</button>
+                    <button class="moto-hotspot" style="top: 25%; left: 70%;" onclick="openMotoZone('lights')">LIGHTS</button>
+                    <button class="moto-hotspot" style="top: 20%; left: 63%;" onclick="openMotoZone('controls')">CONTROLS</button>
+                </div>
+            </div>
+
+            <div id="moto-results-area" class="moto-results" style="display:none;">
+                <div class="moto-results-header">
+                    <h3 id="moto-results-title">DATABASE RESULTS</h3>
+                    <button class="moto-btn-close" onclick="closeMotoResults()">[ X ]</button>
+                </div>
+                <div id="moto-results-list" class="moto-results-list"></div>
+            </div>
+        </div>
+    </div>
+</div> <!-- close content-panels -->
+
 <div class="refresh" id="refreshRing">
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="12" r="10" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="32 8"/>

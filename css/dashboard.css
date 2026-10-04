@@ -2323,3 +2323,213 @@
 .mq-hist { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; opacity: 0.85; }
 
 .gh-btn { display: inline-flex; align-items: center; gap: 7px; text-decoration: none; }
+
+/* MOTORCYCLE TAB CONSOLE (16-bit / SNES retro style) */
+.moto-console {
+    position: relative;
+    background: #000;
+    border: 4px solid #444;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5);
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+    min-height: 500px;
+}
+
+/* CRT Scanlines */
+.moto-scanlines {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 4px, 6px 100%;
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0.7;
+}
+
+.moto-search-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 15;
+}
+
+.moto-input {
+    flex-grow: 1;
+    background: #111;
+    border: 2px solid #555;
+    color: #0f0;
+    padding: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    box-shadow: inset 0 0 5px #000;
+}
+
+.moto-input:focus {
+    outline: none;
+    border-color: #0f0;
+}
+
+.moto-btn {
+    background: #333;
+    border: 2px solid #666;
+    color: #fff;
+    padding: 10px 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.2rem;
+    cursor: pointer;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.moto-btn:hover {
+    background: #555;
+    border-color: #0f0;
+    color: #0f0;
+}
+
+.moto-interactive-area {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    background: #050505;
+    border: 2px solid #333;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.moto-schematic {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.moto-art {
+    width: 100%;
+    height: 100%;
+    opacity: 0.8;
+}
+
+.moto-hotspot {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 255, 0, 0.2);
+    border: 2px solid #0f0;
+    color: #0f0;
+    font-family: 'Share Tech Mono', monospace;
+    font-weight: bold;
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    box-shadow: 0 0 5px #0f0;
+    z-index: 20;
+    transition: all 0.1s;
+}
+
+.moto-hotspot:hover {
+    background: rgba(0, 255, 0, 0.6);
+    color: #000;
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.moto-results {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 30;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    border: 2px solid #0f0;
+}
+
+.moto-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #333;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.moto-results-header h3 {
+    color: #0f0;
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.moto-btn-close {
+    background: transparent;
+    border: none;
+    color: #f00;
+    font-size: 1.5rem;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.moto-btn-close:hover {
+    color: #fff;
+    background: #f00;
+}
+
+.moto-results-list {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding-right: 10px;
+}
+
+.moto-card {
+    background: #111;
+    border: 1px solid #333;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-left: 4px solid #0f0;
+}
+
+.moto-card-title {
+    color: #c49a6c;
+    margin: 0 0 5px 0;
+    font-size: 1.2rem;
+}
+
+.moto-card-meta {
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.moto-card-excerpt {
+    color: #ccc;
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.5;
+    background: #000;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 0.95rem;
+}
+
+.moto-card-link {
+    display: inline-block;
+    margin-top: 10px;
+    color: #8bbccc;
+    text-decoration: none;
+    border: 1px solid #8bbccc;
+    padding: 4px 8px;
+    transition: all 0.2s;
+}
+
+.moto-card-link:hover {
+    background: #8bbccc;
+    color: #000;
+}
+
+.moto-empty-state {
+    color: #888;
+    text-align: center;
+    margin-top: 50px;
+    font-size: 1.2rem;
+}

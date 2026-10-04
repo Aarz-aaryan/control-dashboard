@@ -1,0 +1,343 @@
+{
+  "_note": "Generated from Aaryan's Nextcloud files",
+  "zones": {
+    "brake pads": [
+      "brake pad",
+      "brake caliper",
+      "braking",
+      "brake fluid"
+    ],
+    "oil/engine": [
+      "engine oil",
+      "oil change",
+      "oil filter",
+      "lubrication"
+    ],
+    "chain": [
+      "drive chain",
+      "chain slack",
+      "chain tension",
+      "lubricating chain"
+    ],
+    "tires/wheels": [
+      "tire pressure",
+      "tires",
+      "wheel",
+      "tread depth"
+    ],
+    "battery/electrical": [
+      "battery",
+      "fuse",
+      "electrical",
+      "voltage"
+    ],
+    "lights": [
+      "headlight",
+      "turn signal",
+      "taillight",
+      "bulb"
+    ],
+    "controls": [
+      "clutch lever",
+      "throttle",
+      "brake lever",
+      "steering"
+    ]
+  },
+  "index": [
+    {
+      "zone": "brake pads",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 41,
+      "excerpt": "Front brake caliper mounting bolt : 21 ~ 31 N\u00b7m (2.1 ~ 3.1 kgf\u00b7m) Rear brake caliper mounting bolt : 21 ~ 31 N\u00b7m (2.1 ~ 3.1 kgf\u00b7m) \u2461 \u2461 NOTE After replacing the brake pads, pump or press the brake lever or pedal few times to check for proper brake operation and then check the brake fluid level."
+    },
+    {
+      "zone": "brake pads",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 42,
+      "excerpt": "\u25cf \u0007C lose the air bleeder valve and disconnect the transparent hose. Fill the reservoir with new brake fluid to the upper line. \u25cf \u0007Replace the rear brake\u2019s fluid with the same manner of the front brake. Front brake caliper air bleeder valve : 4 ~ 7 N\u00b7m (0.4 ~ 0.7 kgf\u00b7m) Rear brake caliper air bleeder valve : 4 ~ 7 N\u00b7m (0.4 ~ 0.7 kgf\u00b7m)"
+    },
+    {
+      "zone": "brake pads",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 43,
+      "excerpt": "\u25cf \u0007Close the air bleeder valve, and disconnect the hose. Fill the reservoir with brake fluid to the upper line. \u25cf \u0007Bleed the rear brake\u2019s air with the same manner of front brake. \u0007Front brake caliper air bleeder valve : 4 ~ 7 N\u00b7m (0.4 ~ 0.7 kgf\u00b7m) Rear brake caliper air bleeder valve : 4 ~ 7 N\u00b7m (0.4 ~ 0.7 kgf\u00b7m)"
+    },
+    {
+      "zone": "brake pads",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 220,
+      "excerpt": "\u25cf \u0007Tighten the caliper mounting bolts \u2461 and brake hose union bolt \u2460 to the specified torque. Front brake caliper mounting bolts : 21 ~ 31 N\u00b7m (2.1 ~ 3.1 kgf\u00b7m)                     \u2460 Front brake hose union bolts : 20 ~ 25 N\u00b7m (2.0 ~ 2.5 kgf\u00b7m) \u2461"
+    },
+    {
+      "zone": "brake pads",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 248,
+      "excerpt": "\u25cf \u0007Tighten the caliper mounting bolts \u2460 and brake hose union bolt \u2461 to the specified torque. \u2461 Rear brake caliper mounting bolts : 21 ~ 31 N\u00b7m (2.1 ~ 3.1 kgf\u00b7m) Rear brake hose union bolts                        \u2460 : 20 ~ 25 N\u00b7m (2.0 ~ 2.5 kgf\u00b7m)"
+    },
+    {
+      "zone": "brake pads",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 253,
+      "excerpt": "\u25cf Install the rear shock absorber. (Refer to page 8-42) \u25cf Install the rear wheel. (Refer to page 8-34) \u25cf \u0007C onnect the rear brake hose and install the rear brake caliper. (Refer to page 8-40) \u25cf \u0007\u0007\u0007\u0007\u0007\u0007\u0007Adjust the following points : \u273d Drive chain slack : Refer to page 2-20"
+    },
+    {
+      "zone": "oil/engine",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 12,
+      "excerpt": "\u2299 ENGINE OIL \u25a0 ENGINE OIL SPECIFICATION Classification system             Grade                                                                    20W50 API                     Over SL                                                         15W40 15W50 SAE                      10W/40                           ENGINE OIL                   10W40 10W50 10W30 \u203b \u0007If a SAE 10W/40 motor oil is not available, select an alternative according to the following chart.                                                      5W30"
+    },
+    {
+      "zone": "oil/engine",
+      "document": "Exiv 250 Owner Manual",
+      "filename": "Exiv_250_owner_manual.pdf",
+      "page": 16,
+      "excerpt": "CAUTION                            \u203b \u0007I f a SAE 10W/40 motor oil is not Spilling gasoline can damage the                    available, select alternative according to painted surfaces.                                   the following chart. Be careful not to spill any fuel when filling the fuel tank.                                                                    20W50 Wipe spilled gasoline up immediately.                                               15W40 15W50 ENGINE OIL                   10W40 10W50 10W30 WARNING                                                            5W30"
+    },
+    {
+      "zone": "oil/engine",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 16,
+      "excerpt": "\u2299 ENGINE ITEM Type                  Four-stroke, DOHC, Liquid-cooled Number of cylinder                        1 cylinder Bore                         73.0 mm (2.87 in) Stroke                        59.6 mm (2.35 in) Piston displacement                 249.5 \u33a4 (15.2 in3 ) Fuel system                     Electric fuel injection Starter system                      Electric starter Lubrication system                       Wet sump"
+    },
+    {
+      "zone": "oil/engine",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 31,
+      "excerpt": "E\u0007NGINE OIL AND ENGINE OIL FILTER Inspect Interval Replace Initial 1,000 km and Every 4,000 km thereafter. \u2460 Necessary amount of engine oil Oil change                         1,100 \u3396 Oil and filter change                    1,300 \u3396 Engine overhaul                        1,500 \u3396 SAE 10W/40 Engine oil type API Over SL"
+    },
+    {
+      "zone": "oil/engine",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 17,
+      "excerpt": "\u2299 CAPACITIES ITEM Fuel tank                                                11.0 \u2113 Oil change                                    1,100 \u3396 Engine oil capacity      Oil and filter change                              1,300 \u3396 Engine overhaul                                  1,500 \u3396 Front fork oil capacity (One side)                                    345 \u00b1 2 cc"
+    },
+    {
+      "zone": "oil/engine",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 283,
+      "excerpt": "\u25c9 FUEL + OIL ITEM                                 SPECIFICATION                        NOTE Gasoline should be used a graded 91 octane or higher. Fuel type An unleaded gasoline is recommened. Fuel tank capacity                                     11 \u2113 Engine oil type                            API Over SL (SAE 10W/40) Oil change                   1,100 \u3396 Engine oil capacity            Oil and filter change              1,300 \u3396 Engine overhaul                  1,500 \u3396"
+    },
+    {
+      "zone": "chain",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 16,
+      "excerpt": "\u2299 TRANSMISSION ITEM Clutch                       Wet multi-plate type Transmission                    6-speed constant mesh Gearshift pattern                     1-down, 5-up Final reduction ratio                        2.95 1st                  2.46 2nd                  1.56 Gear ratio                    3rd                  1.19 4th                  1.00 5th                  0.88 6th                  0.80 Drive chain                 RK520STX, 110 Links"
+    },
+    {
+      "zone": "chain",
+      "document": "Exiv 250 Owner Manual",
+      "filename": "Exiv_250_owner_manual.pdf",
+      "page": 95,
+      "excerpt": "Clutch                    Wet multi-plate type Reduction ratio                        2.95 Drive chain                   RK520STX, 110 Links 1st : 2.46 2nd : 1.56 Transmission                        3rd : 1.19 4th : 1.00 5th : 0.88 6th : 0.80"
+    },
+    {
+      "zone": "chain",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 253,
+      "excerpt": "\u25cf Install the rear shock absorber. (Refer to page 8-42) \u25cf Install the rear wheel. (Refer to page 8-34) \u25cf \u0007C onnect the rear brake hose and install the rear brake caliper. (Refer to page 8-40) \u25cf \u0007\u0007\u0007\u0007\u0007\u0007\u0007Adjust the following points : \u273d Drive chain slack : Refer to page 2-20"
+    },
+    {
+      "zone": "chain",
+      "document": "Exiv 250 Owner Manual",
+      "filename": "Exiv_250_owner_manual.pdf",
+      "page": 73,
+      "excerpt": "CAUTION The drive chain should be inspected every time before riding. 20 ~ 30 mm (0.79 ~ 1.18 in)                   Excessive chain slack could cause the chain to come off the sprockets and result in accident or serious engine damage."
+    },
+    {
+      "zone": "chain",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 38,
+      "excerpt": "20 \u301c 30 mm Drive chain slack                 (0.79 ~ 1.18 in)"
+    },
+    {
+      "zone": "chain",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 38,
+      "excerpt": "\u25cf \u0007After adjusting the drive chain, tighten the axle nut \u2460 to the specified torque.                                \u2466 Rear axle nut                                                \u2464         \u2462 : 90 ~ 140 N\u00b7m (9.0 ~ 14.0 kg\u00b7m) \u25cf \u0007Tighten both chain adjuster lock nuts \u2461, \u2462 securely."
+    },
+    {
+      "zone": "tires/wheels",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 45,
+      "excerpt": "COLD INFLATION SOLO RIDING DUAL RIDING TIRE PRESSURE kPa kgf/cm2 psi kPa kgf/cm2 psi Front           200 2.00 29.0 200 2.00 29.0 Rear            211 2.11 30.0 225 2.25 32.0"
+    },
+    {
+      "zone": "tires/wheels",
+      "document": "Exiv 250 Owner Manual",
+      "filename": "Exiv_250_owner_manual.pdf",
+      "page": 79,
+      "excerpt": "Inspect the tire pressure and the tire                                2.00 kgf/\u33a0   2.00 kgf/\u33a0 thread depth periodically.                                FRONT          200 kPa      200 kPa Inspect frequently the tire pressure for the                           29.0 psi     29.0 psi safety and the tire life.                                               2.11 kgf/\u33a0   2.25 kgf/\u33a0 REAR          211 kPa      225 kPa WARNING                                                   30.0 psi     32.0 psi"
+    },
+    {
+      "zone": "tires/wheels",
+      "document": "Exiv 250 Owner Manual",
+      "filename": "Exiv_250_owner_manual.pdf",
+      "page": 95,
+      "excerpt": "Overall length                  1,955 mm (77.0 in) Overall width                    793 mm (31.2 in) Overall height                  1,047 mm (41.2 in) Wheelbase                      1,358 mm (53.5 in) Ground clearance                    135 mm (5.3 in) Mass                        153 kg (337 lbs)"
+    },
+    {
+      "zone": "tires/wheels",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 16,
+      "excerpt": "\u2299 DIMENSIONS AND DRY MASS ITEM Overall length                    1,955 mm (77.0 in) Overall width                      793 mm (31.2 in) Overall height                    1,047 mm (41.2 in) Wheelbase                        1,358 mm (53.5 in) Ground clearance                      135 mm (5.3 in) Mass of vehicle in running order            153 kg (337 lbs)"
+    },
+    {
+      "zone": "tires/wheels",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 283,
+      "excerpt": "\u25c9 TIRE PRESSURE NORMAL RIDING COLD INFLATION SOLO RIDING                           DUAL RIDING TIRE PRESSURE kPa         kgf/\u33a0           psi         kPa           kgf/\u33a0     psi FRONT            200          2.00          29.0        200            2.00     29.0 REAR         211          2.11          30.0        225            2.25     32.0"
+    },
+    {
+      "zone": "tires/wheels",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 281,
+      "excerpt": "Front fork oil capacity (each leg)                                   345 \u00b1 2 cc                        \u2015\u2015\u2015 Rear wheel travel                                                     130 (5.1)                        \u2015\u2015\u2015 Swingarm pivot shaft runout                                             \u2015\u2015\u2015                         0.6 (0.024) Free 187.5 (7.38) Rear shock absorber spring length                                                                      \u2015\u2015\u2015 Setting 177.5 (6.99)"
+    },
+    {
+      "zone": "battery/electrical",
+      "document": "Exiv 250 Owner Manual",
+      "filename": "Exiv_250_owner_manual.pdf",
+      "page": 96,
+      "excerpt": "Ignition type                   ECU 13 \u001aB.T.D.C. at 2,000 rpm ~ Ignition timing 30 \u001aB.T.D.C. at 6,000 rpm Spark plug                    CR8E Battery                12V 10Ah (MF) Fuse                 [Refer to page 84] [HI/LO] : 12V - H4 : 60/55W \u00d7 1 Head lamp [Position] : 12V - W5W \u00d7 1 Brake / Tail lamp              LED type Tum signal lamp           12V - RY10W \u00d7 4 License plate lamp          12V - W5W \u00d7 1"
+    },
+    {
+      "zone": "battery/electrical",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 278,
+      "excerpt": "\u25c9 FUEL INJECTOR + FUEL PUMP ITEM                                       STANDARD                               NOTE Fuel injector resistance                             11.4 ~ 12.6 \u2126 at 20\u2103 (68\u2109) Fuel injector voltage                                       Battery voltage Approx. 3.39 ~ 3.74 kgf/cm2 Fuel pressure of fuel pump (332 ~ 367 kPa, 48.2 ~ 53.2 psi)"
+    },
+    {
+      "zone": "battery/electrical",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 135,
+      "excerpt": "The sensor should produce following voltage. 0.15 V \u2266 Sensor output voltage Without the above range for 2.2 sec. and more, the code P0107 Low Voltage P0107                                    is indicated. or Open Intake air pressure & temperature sensor, lead wire / coupler IAP&TS (Pressure                   connection. function) The sensor should produce following voltage. Circuit Sensor output voltage \u2266 5 V Without the above range for 10.0 sec. and more, the code P0108 P0108                      High Voltage is indicated."
+    },
+    {
+      "zone": "battery/electrical",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 137,
+      "excerpt": "After engine running, if fuel pump relay signal open or is happened the ground short fault 10 times more than 1 sec. for Low Voltage   20 test cycles, the code P0230 is indicated. P0230 or Open Fuel pump relay, connecting lead wire, power source to fuel Fuel pump                     pump relay, fuel injector. relay Circuit After engine running, if fuel pump relay signal is happened the high short fault 10 times more than 1 sec. for 20 test cycles, the P0232                       High Voltage code P0232 is indicated."
+    },
+    {
+      "zone": "battery/electrical",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 136,
+      "excerpt": "Oxygen sensor, lead wire / coupler connection. O2S Circuit After engine running, the oxygen sensor signal should be inputted to ECU 300 sec. later. In this case, the sensor voltage should be the following. P0132                                 Sensor output voltage \u2266 1.0 V High Voltage Without the above range for 29.4 sec. and more, the code P0132 is indicated."
+    },
+    {
+      "zone": "battery/electrical",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 147,
+      "excerpt": "3) Disconnect the TP sensor coupler \u2460. 4) Turn the ignition switch to the \u201cON\u201d position. 5) Measure the voltage at the OB wire and ground. 6) \u0007If OK, then measure the voltage at the OB wire and GR wire. 4.9 ~ 5.1 V TP sensor input ( \u2295 OB - \u2296 Ground ) voltage                  ( \u2295 OB - \u2296 GR )"
+    },
+    {
+      "zone": "lights",
+      "document": "Exiv 250 Owner Manual",
+      "filename": "Exiv_250_owner_manual.pdf",
+      "page": 84,
+      "excerpt": "1. R\u0007 emove the lamp housing by unscrewing the screw \u2460. 2. \u0007P ull out the socket \u2461 from the lamp housing. 3. P\u0007 ull out the bulb \u2462 at the socket \u2461. 4. Replace the new bulb. 5. \u0007To reinstall the license plate lamp, reverse the above sequence."
+    },
+    {
+      "zone": "lights",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 15,
+      "excerpt": "\u0018\u0019\u0011\u0001 780   \u2b25\u11e1\u0001\u1079\u150d\u0291 (Rear reflector) 793   \u0569\u12a5 \u0018\u0019\u0011\u0001(Width) 800\u0019\u0011\u0011\u0001 \u108a\u2a06\u1e21\u173d\u0952 (Turn signal lamp) \u001a\u0013\u0016\u0001 \u1c7d\u083a\u0952 \u0001\u2b25\u1059\u0952 925 (Brake & Tail lamp) Unit : mm"
+    },
+    {
+      "zone": "lights",
+      "document": "Exiv 250 Owner Manual",
+      "filename": "Exiv_250_owner_manual.pdf",
+      "page": 14,
+      "excerpt": "10. INSPECTION AND MAINTENANCE\u00b7 \u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b761 TOOL ENGINE OIL FUEL HOSE GASOLINE ENGINE COOLANT RADIATOR RADIATOR HOSE RUBBER CAP OF CABLES EXHAUST PIPE AND MUFFLER FRONT AND REAR SUSPENSIONS REAR-VIEW MIRROR REFLECTOR BATTERY AIR CLEANER SPARK PLUG IDLING ADJUSTMENT THROTTLE CABLE PLAY ADJUSTMENT CLUTCH CABLE ADJUSTMENT DRIVE CHAIN BRAKES TIRE BULBS"
+    },
+    {
+      "zone": "lights",
+      "document": "Exiv 250 Owner Manual",
+      "filename": "Exiv_250_owner_manual.pdf",
+      "page": 84,
+      "excerpt": "\u2299 TURN SIGNAL LAMP\u2019S BULB                              \u2299 BRAKE / TAIL LAMP\u2019S BULB REPLACEMENT                                            REPLACEMENT 1. \u0007R emove the lens by removing the screw. 2. \u0007While pushing the bulb, turn it to the counter-clockwise and pull it out."
+    },
+    {
+      "zone": "lights",
+      "document": "Exiv 250 Owner Manual",
+      "filename": "Exiv_250_owner_manual.pdf",
+      "page": 84,
+      "excerpt": "3. \u0007After stick in the new bulb, turn it to the clockwise. 4. \u0007To reinstall the lens, reverse the above sequence.                                          \u2299 LICENSE PLATE LAMP\u2019S BULB REPLACEMENT CAUTION Overtightening the screws may cause the lens to crack."
+    },
+    {
+      "zone": "lights",
+      "document": "Exiv 250 Owner Manual",
+      "filename": "Exiv_250_owner_manual.pdf",
+      "page": 83,
+      "excerpt": "\u2299 H\u0007EAD LAMP\u2019S BULB CAUTION                               REPLACEMENT The position lamp, meter lamp, tail             1. R \u0007 emove the two bolts \u2460 (right and left) lamp and license plate lamp on this                and the head lamp assembly. motorcycle always comes on when the ignition switch is turned to the \u201cON\u201d position . The head lamp is always lit when starting the engine."
+    },
+    {
+      "zone": "controls",
+      "document": "Exiv 250 Owner Manual",
+      "filename": "Exiv_250_owner_manual.pdf",
+      "page": 96,
+      "excerpt": "Front suspension             Telescopic type Rear suspension             Swing arm type Caster                      23.5 \u001a Trail                93.6 mm (3.69 in) Steering angle            28 \u001a(right & left) Front tire size         110/70 - R17 54S Rear tire size           150/60 - R17 66S Front brake                    Disk Rear brake                     Disk"
+    },
+    {
+      "zone": "controls",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 14,
+      "excerpt": "The general rules are as follows : \u25cf Keep to these break-in procedures : Interval               Maximum throttle opening Initial 800 km (500 miles)           Less than 1/2 throttle Up to 1,600 km (1,000 miles)           Less than 3/4 throttle \u25cf \u0007Upon reaching an odometer reading of 1,600 km (1,000 miles) you can subject the motorcycle to full throttle operation. \u25cf \u0007Do not maintain constant engine speed for an extended period during any portion of the break-in. Try to vary the throttle position."
+    },
+    {
+      "zone": "controls",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 278,
+      "excerpt": "\u25c9 THROTTLE BODY ITEM                                       STANDARD                               NOTE Bore size                                                          36 Idle rpm                                                   1,500 ~ 1,700 rpm Throttle cable play                                  0.5 ~ 1.0 mm (0.02 ~ 0.04 in)"
+    },
+    {
+      "zone": "controls",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 27,
+      "excerpt": "THROTTLE CABLE PLAY \u2462 Inspect Interval Inspect Initial 1,000 km and Every 4,000 km \u2463 thereafter. There should be 0.5 ~ 1.0 mm (0.02 ~ 0.04 in) play on the throttle cable."
+    },
+    {
+      "zone": "controls",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 41,
+      "excerpt": "Front brake caliper mounting bolt : 21 ~ 31 N\u00b7m (2.1 ~ 3.1 kgf\u00b7m) Rear brake caliper mounting bolt : 21 ~ 31 N\u00b7m (2.1 ~ 3.1 kgf\u00b7m) \u2461 \u2461 NOTE After replacing the brake pads, pump or press the brake lever or pedal few times to check for proper brake operation and then check the brake fluid level."
+    },
+    {
+      "zone": "controls",
+      "document": "Exiv 250 Service Manual",
+      "filename": "Exiv250_service_manual_english.pdf",
+      "page": 208,
+      "excerpt": "FRONT FORK\u2026 \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026 8-18 STEERING \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026 8-25 R \u0007 EAR WHEEL\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026 8-32 REAR BRAKE\u2026 \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026 8-36 REAR \u0007\u0007\u0007  SHOCK ABSORBER\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026 8-41 SWING \u0007\u0007\u0007   ARM\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026 8-43"
+    }
+  ]
+}
