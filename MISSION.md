@@ -274,3 +274,10 @@ Prior to 2026-06-27, this project lived under a private `agent-dashboard` repo. 
 ## Feature Record: Motorcycle Maintenance Security & Stress Test (2026-10-04)
 - **Security Fix**: Fixed a DOM-based Cross-Site Scripting (XSS) vulnerability in the motorcycle search empty state (`NO ACTIONS FOUND FOR: <query>`) and details renderer. All search inputs and JSON strings are now properly HTML-escaped.
 - **Stress Test**: Executed live browser DOM checks and integrity tests. Verified 16/16 unique actions mapped to positive pages, all Nextcloud deep-links strictly enforce exact document routing (File IDs 821/822), 9 hotspot clicks map correctly, layout remains responsive (no bounds overflow), and system regressions pass cleanly.
+
+## Feature Record: Motorcycle Link Label Fixes (2026-10-04)
+- Fixed confusing link labels in the Motorcycle Maintenance console to align with user expectations and reduce ambiguity between direct pages and file detail views.
+- **Primary exact WebDAV links** are now labeled `OPEN IN NEXTCLOUD · PAGE N` (previously "OPEN PRIMARY (DIRECT)").
+- **Per-source exact links** are now explicitly labeled `Open Manual · page N` (previously "Open [Document] · p. N (Direct)").
+- **Non-page generic file details links** (both primary and per-source) were demoted in visual prominence and relabeled from `OPEN IN NEXTCLOUD` to `Open file details`, resolving the label conflict.
+- Verified live links including brake pages (e.g., p. 41) and oil/engine pages (e.g., p. 12) to ensure accurate href mapping and routing fidelity.

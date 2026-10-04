@@ -2077,9 +2077,9 @@ function renderMotoResults(title, actions) {
                         ${a.sources.map(s => `
                             <div class="moto-source-item">
                                 <div class="moto-source-meta">
-                                    <a href="${getWebdavUrl(s.filename, s.page)}" target="_blank" style="text-decoration: none; color: #4CAF50; font-weight: bold; margin-bottom: 4px; display: inline-block;">Open ${escapeHtml(s.document)} · p. ${escapeHtml(String(s.page))} (Direct) ↗</a>
+                                    <a href="${getWebdavUrl(s.filename, s.page)}" target="_blank" style="text-decoration: none; color: #4CAF50; font-weight: bold; margin-bottom: 4px; display: inline-block;">Open Manual · page ${escapeHtml(String(s.page))} ↗</a>
                                     &nbsp;|&nbsp;
-                                    <a href="${getNextcloudUrl(s.filename)}" target="_blank" style="text-decoration: none; color: #888; margin-bottom: 4px; display: inline-block;">Nextcloud ↗</a>
+                                    <a href="${getNextcloudUrl(s.filename)}" target="_blank" style="text-decoration: none; color: #888; margin-bottom: 4px; display: inline-block;">Open file details ↗</a>
                                     <br>
                                     <span style="font-size: 0.85em; color: #888;">(${escapeHtml(s.filename)})</span>
                                 </div>
@@ -2088,8 +2088,8 @@ function renderMotoResults(title, actions) {
                         `).join('')}
                     </div>
                     <div style="display: flex; gap: 10px;">
-                        <a href="${primaryWebdavUrl}" target="_blank" class="moto-card-link">OPEN PRIMARY (DIRECT) ↗</a>
-                        <a href="${primaryNextcloudUrl}" target="_blank" class="moto-card-link" style="background-color: #555;">OPEN IN NEXTCLOUD ↗</a>
+                        <a href="${primaryWebdavUrl}" target="_blank" class="moto-card-link">OPEN IN NEXTCLOUD · PAGE ${primarySource ? escapeHtml(String(primarySource.page)) : ''} ↗</a>
+                        <a href="${primaryNextcloudUrl}" target="_blank" class="moto-card-link" style="background-color: transparent; border: 1px solid #555; color: #ccc;">Open file details ↗</a>
                     </div>
                 </div>
             `;
