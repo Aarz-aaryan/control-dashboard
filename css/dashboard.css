@@ -2398,13 +2398,13 @@
     border: 2px solid #333;
     z-index: 15;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: row;
+    align-items: stretch;
 }
 
 .moto-schematic {
     position: relative;
-    width: 100%;
+    flex: 1;
     height: 100%;
     display: flex;
     justify-content: center;
@@ -2439,17 +2439,25 @@
     gap: 4px;
     padding: 0;
     margin: 0;
+    outline: none;
 }
 
 .moto-hotspot .pin {
-    width: 10px;
-    height: 10px;
-    background: rgba(196, 154, 108, 0.7);
-    border: 1px solid #c49a6c;
+    width: 28px;
+    height: 28px;
+    background: rgba(10, 10, 10, 0.85);
+    border: 2px solid #c49a6c;
     border-radius: 50%;
     box-shadow: 0 0 8px rgba(196, 154, 108, 0.5);
     position: relative;
     transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #c49a6c;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: bold;
 }
 
 .moto-hotspot .pin::after {
@@ -2458,47 +2466,121 @@
     top: 100%;
     left: 50%;
     width: 1px;
-    height: 15px;
+    height: 0px;
     background: #c49a6c;
     transform: translateX(-50%);
-    opacity: 0.5;
+    opacity: 0;
     transition: all 0.2s ease;
 }
 
 .moto-hotspot .label {
     font-family: 'Share Tech Mono', monospace;
     font-size: 0.8rem;
-    color: #c49a6c;
-    background: rgba(10, 10, 10, 0.85);
+    color: #fff;
+    background: rgba(10, 10, 10, 0.95);
     border: 1px solid #c49a6c;
     padding: 2px 6px;
     text-transform: uppercase;
     white-space: nowrap;
-    opacity: 0.9;
+    opacity: 0;
+    pointer-events: none;
     box-shadow: 0 2px 4px rgba(0,0,0,0.5);
     transition: all 0.2s ease;
+    position: absolute;
+    top: 35px;
+    z-index: 21;
 }
 
 .moto-hotspot:hover .pin,
-.moto-hotspot:focus .pin {
+.moto-hotspot:focus .pin,
+.moto-hotspot.active .pin {
     background: #c49a6c;
+    color: #000;
     box-shadow: 0 0 15px #c49a6c;
 }
 
 .moto-hotspot:hover .pin::after,
-.moto-hotspot:focus .pin::after {
+.moto-hotspot:focus .pin::after,
+.moto-hotspot.active .pin::after {
     opacity: 1;
-    height: 25px;
+    height: 20px;
 }
 
 .moto-hotspot:hover .label,
-.moto-hotspot:focus .label {
+.moto-hotspot:focus .label,
+.moto-hotspot.active .label {
     opacity: 1;
-    color: #fff;
-    background: #c49a6c;
-    border-color: #fff;
-    transform: translateY(10px);
+    transform: translateY(20px);
 }
+
+.moto-legend {
+    width: 220px;
+    background: rgba(10, 10, 10, 0.6);
+    border-left: 1px solid #333;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.moto-legend-title {
+    font-family: 'Share Tech Mono', monospace;
+    color: #c49a6c;
+    font-size: 1.1rem;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #c49a6c;
+    padding-bottom: 5px;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.moto-legend-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.moto-legend-list li {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    color: #ddd;
+    cursor: pointer;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.moto-legend-list li:hover {
+    background: rgba(196, 154, 108, 0.15);
+    border-color: #c49a6c;
+    color: #c49a6c;
+}
+
+.moto-legend-list li .legend-num {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 20px;
+    height: 20px;
+    background: rgba(10, 10, 10, 0.8);
+    border: 1px solid #c49a6c;
+    border-radius: 50%;
+    color: #c49a6c;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.moto-legend-list li:hover .legend-num {
+    background: #c49a6c;
+    color: #000;
+}
+
 
 .moto-results {
     position: absolute;

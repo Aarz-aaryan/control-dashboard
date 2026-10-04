@@ -262,3 +262,4 @@ Prior to 2026-06-27, this project lived under a private `agent-dashboard` repo. 
 ## Feature Record: Motorcycle Maintenance Visual Upgrade (2026-10-04)
 - Replaced SVG block diagram with visually verified high-quality side-profile photograph of Hyosung GD250R / EXIV-R platform.
 - Upgraded pixel-art styling into a premium dark 16-bit UI chrome with gold accents, precise absolute-positioned pin/leader-line hotspots over the real bike photograph, maintaining factual index linking.
+- Refined hotspot layer to remove cramped overlapping text labels; replaced them with clean numbered circular pins on the image and a non-overlapping interactive legend sidebar for clarity and improved visual polish.
