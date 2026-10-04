@@ -2046,7 +2046,8 @@ function renderMotoResults(title, actions) {
             const sourceRefs = a.sources.map(s => `Pg ${s.page}`).join(', ');
             
             const getViewerUrl = (filename) => {
-                return `http://100.84.224.18:9080/index.php/apps/files/?dir=/Motorcycle&scrollto=${encodeURIComponent(filename)}`;
+                const fileId = filename === 'Exiv_250_owner_manual.pdf' ? '821' : '822';
+                return `http://100.84.224.18:9080/index.php/apps/files/files/${fileId}?dir=/Motorcycle&openfile=true`;
             };
 
             const primarySource = a.sources[0];
