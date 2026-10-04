@@ -270,3 +270,7 @@ Prior to 2026-06-27, this project lived under a private `agent-dashboard` repo. 
 - Replaced SVG block diagram with visually verified high-quality side-profile photograph of Hyosung GD250R / EXIV-R platform.
 - Upgraded pixel-art styling into a premium dark 16-bit UI chrome with gold accents, precise absolute-positioned pin/leader-line hotspots over the real bike photograph, maintaining factual index linking.
 - Refined hotspot layer to remove cramped overlapping text labels; replaced them with clean numbered circular pins on the image and a non-overlapping interactive legend sidebar for clarity and improved visual polish.
+
+## Feature Record: Motorcycle Maintenance Security & Stress Test (2026-10-04)
+- **Security Fix**: Fixed a DOM-based Cross-Site Scripting (XSS) vulnerability in the motorcycle search empty state (`NO ACTIONS FOUND FOR: <query>`) and details renderer. All search inputs and JSON strings are now properly HTML-escaped.
+- **Stress Test**: Executed live browser DOM checks and integrity tests. Verified 16/16 unique actions mapped to positive pages, all Nextcloud deep-links strictly enforce exact document routing (File IDs 821/822), 9 hotspot clicks map correctly, layout remains responsive (no bounds overflow), and system regressions pass cleanly.

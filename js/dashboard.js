@@ -2037,13 +2037,12 @@ function renderMotoResults(title, actions) {
     list.innerHTML = '';
     
     if (!actions || actions.length === 0) {
-        list.innerHTML = `<div class="moto-empty-state">NO ACTIONS FOUND FOR: ${title}</div>`;
+        list.innerHTML = `<div class="moto-empty-state">NO ACTIONS FOUND FOR: ${escapeHtml(title)}</div>`;
     } else {
         actions.forEach((a, idx) => {
             const card = document.createElement('div');
             card.className = 'moto-action-card';
             
-            // Short source references
             const sourceRefs = a.sources.map(s => `Pg ${s.page}`).join(', ');
             
             const getFileUrl = (filename, page) => {
@@ -2060,9 +2059,9 @@ function renderMotoResults(title, actions) {
             
             card.innerHTML = `
                 <div class="moto-action-header" onclick="toggleMotoDetail(${idx})">
-                    <h4 class="moto-card-title">${a.actionTitle}</h4>
-                    <p class="moto-card-desc">${a.description}</p>
-                    <div class="moto-card-meta">Sources: ${sourceRefs}</div>
+                    <h4 class="moto-card-title">${escapeHtml(a.actionTitle)}</h4>
+                    <p class="moto-card-desc">${escapeHtml(a.description)}</p>
+                    <div class="moto-card-meta">Sources: ${escapeHtml(sourceRefs)}</div>
                 </div>
                 <div class="moto-action-detail" id="moto-detail-${idx}" style="display:none;">
                     <div class="moto-detail-content">
@@ -2070,11 +2069,11 @@ function renderMotoResults(title, actions) {
                         ${a.sources.map(s => `
                             <div class="moto-source-item">
                                 <div class="moto-source-meta">
-                                    <a href="${getFileUrl(s.filename, s.page)}" target="_blank" style="text-decoration: none; color: #4CAF50; font-weight: bold; margin-bottom: 4px; display: inline-block;">Open ${s.document} · p. ${s.page} ↗</a>
+                                    <a href="${getFileUrl(s.filename, s.page)}" target="_blank" style="text-decoration: none; color: #4CAF50; font-weight: bold; margin-bottom: 4px; display: inline-block;">Open ${escapeHtml(s.document)} · p. ${escapeHtml(String(s.page))} ↗</a>
                                     <br>
-                                    <span style="font-size: 0.85em; color: #888;">(${s.filename})</span>
+                                    <span style="font-size: 0.85em; color: #888;">(${escapeHtml(s.filename)})</span>
                                 </div>
-                                <div class="moto-source-text">"${s.excerpt.replace(/"/g, '&quot;')}"</div>
+                                <div class="moto-source-text">"${escapeHtml(s.excerpt).replace(/"/g, '&quot;')}"</div>
                             </div>
                         `).join('')}
                     </div>
