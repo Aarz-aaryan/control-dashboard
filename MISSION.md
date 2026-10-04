@@ -68,6 +68,17 @@ thread. Two gitignored files, single-writer each:
 
 ## Session log
 
+### 2026-10-04 — Motorcycle Maintenance Console
+
+- **Shipped**: A retro 16-bit / SNES inspired interactive Motorcycle Maintenance tab.
+- **Features**:
+  - SVG schematic motorcycle with clickable hotspots for 7 zones: Tires/Wheels, Engine/Oil, Chain, Brakes, Battery, Lights, Controls.
+  - Search input for practical queries (e.g. "oil change", "brake pads").
+  - Extracted factual index `motorcycle_index.json` from Nextcloud PDFs (`Exiv_250_owner_manual.pdf` and `Exiv250_service_manual_english.pdf`).
+  - Nextcloud deep-link integration for opening original source files.
+- **Security**: Original PDFs remain on `r-server` in Nextcloud; only a derived JSON index with page/excerpt data is checked in.
+- **Commit**: `a1b4925c3dfc33bf1bd37914b3f8902524b11689`
+
 ### 2026-09-15 — Deep audit + repos loop fix + docs refresh
 
 - **Audit**: 8-layer deep audit (processes, collectors, daemons, writers, HTTP API, UI frontend, write paths, git history) — all green except 3 documented issues.
