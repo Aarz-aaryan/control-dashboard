@@ -9,10 +9,6 @@
 const AGENT_META = {
     aarz:    { name: 'Aarz',    role: 'Chief Orchestrator', color: '#c49a6c', icon: 'aarz.svg' },
     agy:     { name: 'agy',     role: 'Anti-Gravity CLI',   color: '#8bbccc', icon: 'agy.svg' },
-    scout:   { name: 'Scout',   role: 'Research Agent',      color: '#3a6ea5', icon: 'scout.svg' },
-    coder:   { name: 'Coder',   role: 'Coding Agent',        color: '#7eb5a6', icon: 'coder.svg' },
-    builder: { name: 'Builder', role: 'Build / DevOps Agent', color: '#8a6f5a', icon: 'builder.svg' },
-    tester:  { name: 'Tester',  role: 'QA / Testing Agent',  color: '#c47060', icon: 'tester.svg' },
 };
 function agentMeta(id) {
     const m = AGENT_META[id] || {};

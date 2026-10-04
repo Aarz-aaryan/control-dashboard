@@ -29,10 +29,10 @@ update_data.py (systemd agent-dashboard-collector.service), every 30s:
 `index.html` (markup) + `css/dashboard.css` + `js/dashboard.js` (classic script).
 
 **Agent roster:** auto-discovered — every `~/.hermes/profiles/<p>/` with a
-`state.db` (currently aarz, scout, coder, builder, tester) plus `agy` (separate
-CLI). Dormant agents still render, flagged `DORMANT` and dimmed — nothing is
-hidden. `js/dashboard.js` `AGENT_META` only supplies colour/icon/role per id
-(with a fallback), so a new profile appears automatically.
+`state.db` (currently aarz) plus `agy` (separate CLI). Dormant agents still render,
+flagged `DORMANT` and dimmed — nothing is hidden. `js/dashboard.js` `AGENT_META`
+only supplies colour/icon/role per id (with a fallback), so a new profile appears
+automatically.
 
 `agents.json` is computed server-side from the **real** session store —
 `~/.hermes/profiles/<p>/state.db` table `sessions` (count today / 24h, last
@@ -223,7 +223,7 @@ Pre-fix the JSON files and log dirs accumulated forever → 548. Post-fix (manua
 | `update_repos.py` | Daemon: repos.json from gh CLI, 30s loop (systemd unit `repos-collector.service`) | 81 |
 | `systemd-agent-dashboard-collector.service` | Mirror of `agent-dashboard-collector.service` | — |
 | `systemd-repos-collector.service` | Mirror of `repos-collector.service` (added 2026-09-15) | — |
-| `assets/*.svg` | Agent logos (aarz, agy, scout, coder, builder, tester, logo) | — |
+| `assets/*.svg` | Agent logos (aarz, agy, logo) | — |
 
 ## Architecture
 
@@ -287,3 +287,8 @@ Prior to 2026-06-27, this project lived under a private `agent-dashboard` repo. 
 - **Viewer Link Consolidation**: Replaced dual links (WebDAV exact page + File details) with a single, unified, secure link to the native Files viewer (`apps/files/files/820?dir=/Motorcycle&openfile=821` / `822`).
 - **Verified Limitations**: Acknowledged that Nextcloud's native PDF Viewer drops `#page=` fragments natively. The UI now transparently informs the user of this limitation (e.g., "Requires scrolling to page N - Viewer limitation") rather than presenting false claims about deep-linking to exact pages. No unsafe cross-origin, public share, or auth changes were made.
 - **Link Integrity**: Verified actual behavior for maintenance items like brake (p. 41) and oil (p. 12); links correctly load the Nextcloud viewer with the correct file, while users handle manual scrolling.
+
+## Feature Record: Roster Cleanup & Architecture Sync (2026-10-04)
+- **Roster Sync**: Removed hard-coded `AGENT_META` entries in `js/dashboard.js` for retired legacy profiles (Builder, Coder, Scout, Tester). The UI now natively auto-discovers only active agents (`aarz`, `agy`) from `agents.json`.
+- **Assets Cleanup**: Purged stale SVG agent logo assets (`builder.svg`, `coder.svg`, `scout.svg`, `tester.svg`).
+- **Validation**: Verified through `agents.json` response and code search that no remaining static assets, node bindings, or metadata loops for the retired profiles remain. Aarz (Orchestrator) and agy (CLI) remain correctly mapped.
