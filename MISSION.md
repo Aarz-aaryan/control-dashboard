@@ -281,3 +281,9 @@ Prior to 2026-06-27, this project lived under a private `agent-dashboard` repo. 
 - **Per-source exact links** are now explicitly labeled `Open Manual · page N` (previously "Open [Document] · p. N (Direct)").
 - **Non-page generic file details links** (both primary and per-source) were demoted in visual prominence and relabeled from `OPEN IN NEXTCLOUD` to `Open file details`, resolving the label conflict.
 - Verified live links including brake pages (e.g., p. 41) and oil/engine pages (e.g., p. 12) to ensure accurate href mapping and routing fidelity.
+
+## Feature Record: Motorcycle WebDAV Removal & Nextcloud Link Fix (2026-10-04)
+- **WebDAV Removal**: Completely removed the broken WebDAV fallback (`remote.php/webdav/...`) that caused `Strict Cookie has not been found in request` errors in production. The system now strictly relies on the authenticated Nextcloud Files viewer path.
+- **Viewer Link Consolidation**: Replaced dual links (WebDAV exact page + File details) with a single, unified, secure link to the native Files viewer (`apps/files/files/820?dir=/Motorcycle&openfile=821` / `822`).
+- **Verified Limitations**: Acknowledged that Nextcloud's native PDF Viewer drops `#page=` fragments natively. The UI now transparently informs the user of this limitation (e.g., "Requires scrolling to page N - Viewer limitation") rather than presenting false claims about deep-linking to exact pages. No unsafe cross-origin, public share, or auth changes were made.
+- **Link Integrity**: Verified actual behavior for maintenance items like brake (p. 41) and oil (p. 12); links correctly load the Nextcloud viewer with the correct file, while users handle manual scrolling.

@@ -2045,25 +2045,17 @@ function renderMotoResults(title, actions) {
             
             const sourceRefs = a.sources.map(s => `Pg ${s.page}`).join(', ');
             
-            const getWebdavUrl = (filename, page) => {
-                if (filename === 'Exiv_250_owner_manual.pdf' || filename === 'Exiv250_service_manual_english.pdf') {
-                    return `http://100.84.224.18:9080/remote.php/webdav/Motorcycle/${filename}#page=${encodeURIComponent(page)}`;
-                }
-                return `http://100.84.224.18:9080/remote.php/webdav/Motorcycle`;
-            };
-
-            const getNextcloudUrl = (filename) => {
+            const getViewerUrl = (filename) => {
                 const fileId = filename === 'Exiv_250_owner_manual.pdf' ? 821 : 
                                filename === 'Exiv250_service_manual_english.pdf' ? 822 : null;
                 if (fileId) {
-                    return `http://100.84.224.18:9080/index.php/f/${fileId}`;
+                    return `http://100.84.224.18:9080/apps/files/files/820?dir=/Motorcycle&openfile=${fileId}`;
                 }
                 return `http://100.84.224.18:9080/apps/files/files/820?dir=/Motorcycle`;
             };
 
             const primarySource = a.sources[0];
-            const primaryWebdavUrl = primarySource ? getWebdavUrl(primarySource.filename, primarySource.page) : `http://100.84.224.18:9080/remote.php/webdav/Motorcycle`;
-            const primaryNextcloudUrl = primarySource ? getNextcloudUrl(primarySource.filename) : `http://100.84.224.18:9080/apps/files/files/820?dir=/Motorcycle`;
+            const primaryViewerUrl = primarySource ? getViewerUrl(primarySource.filename) : `http://100.84.224.18:9080/apps/files/files/820?dir=/Motorcycle`;
             
             card.innerHTML = `
                 <div class="moto-action-header" onclick="toggleMotoDetail(${idx})">
@@ -2077,9 +2069,8 @@ function renderMotoResults(title, actions) {
                         ${a.sources.map(s => `
                             <div class="moto-source-item">
                                 <div class="moto-source-meta">
-                                    <a href="${getWebdavUrl(s.filename, s.page)}" target="_blank" style="text-decoration: none; color: #4CAF50; font-weight: bold; margin-bottom: 4px; display: inline-block;">Open Manual · page ${escapeHtml(String(s.page))} ↗</a>
-                                    &nbsp;|&nbsp;
-                                    <a href="${getNextcloudUrl(s.filename)}" target="_blank" style="text-decoration: none; color: #888; margin-bottom: 4px; display: inline-block;">Open file details ↗</a>
+                                    <a href="${getViewerUrl(s.filename)}" target="_blank" style="text-decoration: none; color: #4CAF50; font-weight: bold; margin-bottom: 4px; display: inline-block;">Open Manual ↗</a>
+                                    <span style="font-size: 0.8em; color: #aaa; margin-left: 8px;">(Requires scrolling to page ${escapeHtml(String(s.page))} - Viewer limitation)</span>
                                     <br>
                                     <span style="font-size: 0.85em; color: #888;">(${escapeHtml(s.filename)})</span>
                                 </div>
@@ -2088,8 +2079,8 @@ function renderMotoResults(title, actions) {
                         `).join('')}
                     </div>
                     <div style="display: flex; gap: 10px;">
-                        <a href="${primaryWebdavUrl}" target="_blank" class="moto-card-link">OPEN IN NEXTCLOUD · PAGE ${primarySource ? escapeHtml(String(primarySource.page)) : ''} ↗</a>
-                        <a href="${primaryNextcloudUrl}" target="_blank" class="moto-card-link" style="background-color: transparent; border: 1px solid #555; color: #ccc;">Open file details ↗</a>
+                        <a href="${primaryViewerUrl}" target="_blank" class="moto-card-link">OPEN IN NEXTCLOUD</a>
+                        <span style="font-size: 0.8em; color: #999; align-self: center;">Exact page ${primarySource ? escapeHtml(String(primarySource.page)) : ''} deep-linking is unsupported by native viewer.</span>
                     </div>
                 </div>
             `;
