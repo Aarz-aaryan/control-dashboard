@@ -1,76 +1,31 @@
-# Control Dashboard
+# Control Dashboard — Pi fleet and homelab
 
-Hermes multi-agent control hub — a single-page dashboard for monitoring the
-Aarz multi-agent system, mission/repo tracking, and r-server health.
+The deployed dashboard monitors Pi-backed Discord/scheduled jobs, CLI, voice/Echo and WhatsApp integrations, GitHub missions/projects, crypto/climate telemetry, motorcycle maintenance and r-server health. **Hermes is no longer the active agent runtime.**
 
-**Live at:** `http://100.100.35.6:8000/agent-dashboard/` (Tailscale only — the
-server binds the Tailscale IP, not `0.0.0.0`).
+**[Current system documentation →](docs/current-system/README.md)**
 
----
+Verified documentation baseline: **2026-11-15**. The documentation describes inspected production state. **The implementation in this repository still trails the production working tree**; this update is not a complete source synchronization or a deployable backup.
 
-## Tabs
+Live URL: `http://100.100.35.6:8000/agent-dashboard/` (private Tailscale access).
 
-| Tab | Source | Notes |
-|-----|--------|-------|
-| **Agents** | `agents.json` | Tree of aarz → agy, scout, coder, builder, tester. Per-card ACTIVE/STANDBY + session count. |
-| **Stats** | `health.json`, `agents.json`, `missions.json` | Local + r-server system health, cron job health panel, in-progress + stored session counts. |
-| **Missions** | `repos.json` + `missions_state.json` | GitHub repo grid; toggle / promote / demote / priority / create / remove. |
-| **r-server** | `r_server_info.json` | Embedded r-server Homepage (`:8383`) + docker tables. |
+## Documentation
 
----
+- [System map and ownership](docs/current-system/README.md)
+- [Pi runtime, Discord and scheduler](docs/current-system/agent-server.md)
+- [Browser voice, Echo Dot and WhatsApp](docs/current-system/voice-and-whatsapp.md)
+- [Dashboard architecture, panels and security](docs/current-system/dashboard.md)
+- [Migration decisions and explicit remaining gaps](docs/current-system/migration-and-gaps.md)
 
-## Architecture
+## Production architecture
 
-```
-Browser ──► dashboard_server.py  (:8000, binds Tailscale IP)
-              │  static files  ─► ~/dashboard-www/agent-dashboard  (symlink → this repo)
-              │  /api/token    ─► shared write token (reachable only on the bound IP)
-              └─ /api/missions/* ─► reverse-proxy ─► missions_http_server.py (127.0.0.1:8001)
-                                                      └─► missions_writer.py (atomic state writes)
+Python serves static HTML/CSS/JS and same-origin APIs on port 8000. The collector publishes atomic JSON snapshots. Mission writes use a shared-token gate and a loopback backend on port 8001. Crypto/climate requests use fixed upstreams with bounded caching. r-server telemetry is collected over SSH keys.
 
-update_data.py  (systemd: agent-dashboard-collector.service)
-   every 30s ─► health.json, agents.json, missions.json, r_server_info.json
-```
+Agents are independent integration/activity cards, **not the old Hermes specialist delegation tree**. Service health, running tasks and recent activity are distinct. Aggregate counts mix turns, runs and sessions; they are not unique conversations.
 
-- The browser only ever talks to `:8000`, **same-origin**. Writes carry
-  `X-Dashboard-Token` (from `/api/token`); `missions_http_server.py` is not
-  reachable from the network.
-- `agents.json` is computed server-side from `~/.hermes/profiles/*/sessions` and
-  `~/.gemini/antigravity-cli/log` — the browser no longer scrapes directory
-  listings, so no dotfiles are exposed through the web root.
-- r-server access uses SSH **key auth** (`~/.ssh/id_ed25519`, already authorized
-  on r-server). No passwords in this repo.
+**Warning:** Missions → Remove permanently deletes a GitHub repository. Do not use mutation endpoints to test availability. The write token is reachable within the dashboard's network boundary; this is not a multi-user identity/authorization system.
 
-### Mission state (`missions_state.json`)
+## Historical files and development
 
-Hand-curated, gitignored, atomic writes (tmp + fsync + rename). See
-`INTEGRATION.md`. Entries flagged `"pinned": true` are exempt from
-`missions_daemon.py` reconciliation (use for local-only missions with no GitHub
-repo).
+`INTEGRATION.md` and `MISSION.md` contain historical contracts/notes. Prefer the dated current-system guide when they conflict. Existing mission-detail tooling and its contracts remain in the repository; this documentation pass does not change operational state.
 
----
-
-## Crons
-
-| Name | Schedule | Does |
-|------|----------|------|
-| GitHub Repos Nightly Sync | `0 3 * * *` | `update_repos.py` → `repos.json` |
-| Mission State Sync | `0 */6 * * *` | `missions_daemon.py --once` cleanup |
-| Missions Watchdog | `*/5 * * * *` | restart `missions_daemon` / `missions_http_server` if down |
-| GitHub Orphan Repo Auditor | `0 4 * * 0` | flag repos on GitHub missing from state |
-
----
-
-## Local dev
-
-```bash
-python3 missions_http_server.py           # 127.0.0.1:8001
-python3 dashboard_server.py --bind 127.0.0.1 --directory ~/dashboard-www
-# open http://127.0.0.1:8000/agent-dashboard/
-```
-
-## Dependencies
-
-- **gh CLI** — authenticated, for `update_repos.py` and repo create/delete
-- **Python 3.11+** — stdlib only
-- **SSH key** to r-server for `update_data.py`
+Production source lives at `/home/Aarz/agent-dashboard`. Runtime, voice and WhatsApp deployment sources need separate sanitized publication/review. Never bulk add generated JSON, private state, logs, session files, credentials or backups. Review source diffs and tests before deploying anything from GitHub.

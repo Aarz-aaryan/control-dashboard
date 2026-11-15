@@ -1,5 +1,7 @@
 # Integration Guide — Missions State
 
+> Historical integration contract. For inspected production routing/security and migration differences, see [current dashboard architecture](docs/current-system/dashboard.md). Do not use the old open-CORS/separate-network-write-port description below as deployment guidance. Production writes go through the same-origin token-gated proxy to a loopback backend.
+
 This file explains how other cron jobs and tools should consume the **missions state** maintained by the agent dashboard.
 
 ## Files
