@@ -31,6 +31,7 @@ r-server: Nextcloud/MariaDB/Redis + Collabora + Immich stack
 - [Browser voice, Echo Dot and WhatsApp](voice-and-whatsapp.md)
 - [Dashboard architecture and data semantics](dashboard.md)
 - [Migration decisions and remaining work](migration-and-gaps.md)
+- [Source publication and verification results](source-publication.md)
 - [Resource-server current inventory](https://github.com/Aarz-aaryan/r-server/blob/main/README.md)
 - [Home devices and relay roles](https://github.com/Aarz-aaryan/homepi/blob/main/README.md)
 - [Historical Hermes setup](https://github.com/Aarz-aaryan/hermes-agent-setup)

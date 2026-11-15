@@ -67,6 +67,9 @@ class Handler(SimpleHTTPRequestHandler):
         return super().send_head()
 
     def do_GET(self):
+        from crypto_api import SOURCES, serve
+        if self.path in SOURCES:
+            return serve(self, self.path)
         if self.path == "/":
             self.send_response(302)
             self.send_header("Location", "/agent-dashboard/")

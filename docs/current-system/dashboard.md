@@ -1,6 +1,6 @@
 # Dashboard: deployed architecture
 
-Verified 2026-11-15. **This describes production; the repository's existing implementation is not yet fully synchronized with production.**
+Verified 2026-11-15. Production frontend, Pi adapter/collector, crypto API and system-overview source are synchronized through the [allowlisted publication pass](source-publication.md); generated state and unrelated local artifacts remain excluded.
 
 Production checkout: `/home/Aarz/agent-dashboard`; served through `~/dashboard-www/agent-dashboard` symlink. URL: `http://100.100.35.6:8000/agent-dashboard/` (Tailscale only).
 
@@ -23,7 +23,7 @@ Production checkout: `/home/Aarz/agent-dashboard`; served through `~/dashboard-w
 | r-server | SSH-collected container/image/system inventory; embedded Homepage on port 8383 |
 | Motorcycle | Searchable maintenance index, component hotspots, links to maintenance files |
 
-Production additions include `pi_data.py`, `system_overview.py`, `crypto_api.py`, split system/stats/crypto assets and updated frontend. They were present in a dirty working tree; this documentation pass intentionally does not bulk commit that tree.
+Production additions include `pi_data.py`, `system_overview.py`, `crypto_api.py`, split system/stats/crypto assets and updated frontend. They were selected from a dirty production tree into an isolated publication checkout and tested there; the production tree itself was neither committed nor changed.
 
 ## Semantics
 

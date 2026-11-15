@@ -23,7 +23,11 @@ Baseline date: 2026-11-15.
 | homescreen-kiosk | Already superseded by homepi/kiosk-pc; do not revive as a second source of truth |
 | OpenWA | Historical upstream/fork material, not the deployed WhatsApp agent |
 
-## Unfinished work (explicitly not claimed complete)
+## Source-publication follow-up
+
+The subsequent [source publication pass](source-publication.md) preserves private owner-controlled baselines for runtime, voice/Echo and WhatsApp deployment code, and a reviewed dashboard synchronization PR. It does not establish portable recovery or complete all items below. Statements below about missing source remotes describe the original **production checkout** audit, not absence of the new private publication repositories.
+
+## Original audit gaps and remaining work (explicitly not claimed complete)
 
 - Publish sanitized Pi runtime source in an owner-controlled repository, including a minimal configuration example and recovery tests. The production checkout currently has no configured remote.
 - Publish sanitized voice/Echo source and relay deployment files. Exclude sessions, state, access links, firmware signing material and backups; preserve upstream attribution/licenses.

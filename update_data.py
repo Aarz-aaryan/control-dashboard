@@ -1,454 +1,170 @@
 #!/usr/bin/env python3
-"""
-Dashboard background data collector.
+"""Collect Pi activity, canonical jobs, retained mission data and host health.
 
-Writes four JSON files into /home/Aarz/agent-dashboard every 30s:
-  health.json        — local + r-server system health
-  missions.json      — cron jobs + kanban tasks
-  r_server_info.json — r-server docker/system detail for the r-server tab
-  agents.json        — per-agent activity from the real session store
-                       (~/.hermes/profiles/<p>/state.db; agy from its CLI logs)
-
-r-server access is over SSH **key auth** (no password). The key at
-~/.ssh/id_ed25519 is already authorized on r-server.
+Legacy kanban data is intentionally retained; Hermes session/cron stores are
+not a source of truth. All output is atomically published every 30 seconds.
 """
-import os
 import glob
 import json
+import os
 import sqlite3
 import subprocess
 import time
 from datetime import datetime, timezone
 
-OUTPUT_DIR = "/home/Aarz/agent-dashboard"
+import pi_data
 
-# Agent roster is auto-discovered from ~/.hermes/profiles/ (any dir with a
-# state.db is a Hermes agent, whether it's been used lately or not — dormant ones
-# still show, just flagged as such). agy is a separate CLI whose runs are one log
-# file each. The visual side (colour/icon/role per agent) lives in the AGENTS
-# array in js/dashboard.js.
-AGY_LOG_DIR = os.path.expanduser("~/.gemini/antigravity-cli/log")
-HERMES_PROFILES_DIR = os.path.expanduser("~/.hermes/profiles")
+OUTPUT_DIR = '/home/Aarz/agent-dashboard'
+AGY_LOG_DIR = os.path.expanduser('~/.gemini/antigravity-cli/log')
 
 
-def _discover_hermes_agents() -> list[str]:
-    try:
-        names = [
-            d for d in os.listdir(HERMES_PROFILES_DIR)
-            if os.path.isfile(os.path.join(HERMES_PROFILES_DIR, d, "state.db"))
-        ]
-    except OSError:
-        return ["aarz"]
-    # aarz (the orchestrator) first, then the rest alphabetically.
-    names.sort(key=lambda n: (n != "aarz", n))
-    return names
-
-ACTIVE_H = 6      # activity within this many hours  -> "active"
-IDLE_H = 48       # activity within this many hours  -> "idle" (ran on schedule)
-                 # older than IDLE_H                -> "dormant"
-
-
-def iso(ts: float | None) -> str | None:
-    if not ts:
-        return None
-    return datetime.fromtimestamp(ts, timezone.utc).isoformat()
-
-
-def now_iso() -> str:
+def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
 def run_local_cmd(cmd):
     try:
-        res = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=5)
+        res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=5)
         return res.stdout.strip(), res.returncode == 0
-    except Exception as e:
-        return f"Error: {e}", False
+    except Exception as exc:
+        return f'Error: {exc}', False
 
 
 def run_ssh_cmd(cmd):
-    # Escape single quotes for nesting inside the outer single-quoted arg.
-    escaped_cmd = cmd.replace("'", "'\\''")
-    ssh_prefix = (
-        "ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "
-        "-o ConnectTimeout=5 r-server@100.84.224.18"
-    )
-    full_cmd = f"{ssh_prefix} '{escaped_cmd}'"
     try:
-        res = subprocess.run(full_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+        res = subprocess.run(['ssh', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=accept-new',
+                              '-o', 'ConnectTimeout=5', 'r-server@100.84.224.18', cmd],
+                             capture_output=True, text=True, timeout=10)
         return res.stdout.strip(), res.returncode == 0
-    except Exception as e:
-        return f"Error: {e}", False
+    except Exception as exc:
+        return f'Error: {exc}', False
 
 
 def get_health_stats():
-    uptime_local, ok1 = run_local_cmd("uptime")
-    loadavg_local, ok2 = run_local_cmd("cat /proc/loadavg")
-    mem_local, ok3 = run_local_cmd("free -h | grep Mem")
-    disk_local, ok4 = run_local_cmd("df -h / | tail -1")
+    local = {'checks': {}}
+    checks = []
+    for key, cmd in [('uptime', 'uptime'), ('cpu', 'cat /proc/loadavg'),
+                     ('memory', 'free -h | grep Mem'), ('disk', 'df -h / | tail -1')]:
+        output, ok = run_local_cmd(cmd)
+        local[key] = output if ok else 'Unavailable'
+        local['checks'][key] = ok
+        checks.append(ok)
+    docker, ok = run_local_cmd("docker ps --format '{{.Names}}: {{.Status}}'")
+    local['docker'] = (docker or 'No running containers') if ok else 'Docker not available'
+    local['checks']['docker'] = ok
+    local['pi_runtime'] = pi_data.runtime_health()
+    local['pi'] = local['pi_runtime']['status']
+    local['status'] = 'healthy' if all(checks) and local['pi'] == 'Running' else 'error'
+    remote = {}
+    for key, cmd in [('uptime', 'uptime'), ('docker', "sudo docker ps --format '{{.Names}}: {{.Status}}'"),
+                     ('memory', 'free -h'), ('disk', 'df -h /')]:
+        output, ok = run_ssh_cmd(cmd)
+        remote[key] = {'output': output, 'ok': ok}
+    remote['status'] = 'healthy' if all(v['ok'] for v in remote.values()) else 'error'
+    return {'_generated_at': now_iso(), 'local': local, 'r_server': remote}
 
-    docker_local, ok5 = run_local_cmd("docker ps --format '{{.Names}}: {{.Status}}'")
-    if not ok5 or not docker_local:
-        docker_local = "Docker not available"
 
-    hermes_proc_output, ok_hermes = run_local_cmd("pgrep -f hermes")
-    hermes_running = "Running" if (ok_hermes and hermes_proc_output) else "Not running"
+def _agy_activity():
+    entries = []
+    for path in glob.glob(os.path.join(AGY_LOG_DIR, 'cli-*.log')):
+        try:
+            ts = os.path.getmtime(path)
+            entries.append(dict(started=ts, ts=int(ts * 1000), title=os.path.basename(path),
+                                source='antigravity-cli', msgs=0))
+        except OSError:
+            continue
+    return pi_data.summarize(entries, 'runs')
 
-    uptime_r, ok_r1 = run_ssh_cmd("uptime")
-    docker_r, ok_r2 = run_ssh_cmd("sudo docker ps --format '{{.Names}}: {{.Status}}'")
-    mem_r, ok_r3 = run_ssh_cmd("free -h")
-    disk_r, ok_r4 = run_ssh_cmd("df -h /")
 
+def get_agent_activity():
+    agents = pi_data.runtime_activity()
+    for name, directory in pi_data.SESSION_DIRS.items():
+        agents[name] = pi_data.session_activity(directory)
+    agents['agy'] = _agy_activity()
+    from system_overview import snapshot
+    return {'_generated_at': now_iso(), '_source': 'pi', 'agents': agents,
+            'system': snapshot()}
+
+
+def parse_job(job):
+    schedule = job.get('schedule')
+    if isinstance(schedule, dict):
+        schedule = schedule.get('display') or schedule.get('expr') or ''
     return {
-        "_generated_at": now_iso(),
-        "local": {
-            "uptime": uptime_local if ok1 else "Unavailable",
-            "cpu": loadavg_local if ok2 else "Unavailable",
-            "memory": mem_local if ok3 else "Unavailable",
-            "disk": disk_local if ok4 else "Unavailable",
-            "docker": docker_local,
-            "hermes": hermes_running,
-            "status": "healthy" if (ok1 and ok2 and ok3 and ok4) else "error"
-        },
-        "r_server": {
-            "uptime": {"output": uptime_r, "ok": ok_r1},
-            "docker": {"output": docker_r, "ok": ok_r2},
-            "memory": {"output": mem_r, "ok": ok_r3},
-            "disk": {"output": disk_r, "ok": ok_r4},
-            "status": "healthy" if (ok_r1 and ok_r2 and ok_r3 and ok_r4) else "error"
-        }
+        'job_id': job.get('id') or job.get('job_id') or '',
+        'name': job.get('name') or 'Unnamed Job',
+        'schedule': schedule or job.get('schedule_display') or '',
+        'last_run': job.get('last_run_at') or '',
+        'next_run': job.get('next_run_at') or '',
+        'status': 'ACTIVE' if job.get('enabled', True) else 'PAUSED',
+        'last_status': job.get('last_status', ''),
+        'last_error': job.get('last_error', ''),
+        'prompt': job.get('prompt', ''),
+        'script': job.get('script', ''),
+        'paused_reason': job.get('paused_reason', ''),
+        'engine': 'script' if job.get('no_agent') else 'pi',
     }
-
-
-# ── Agent activity ─────────────────────────────────────────────────────────────
-# The real session store is per-profile: ~/.hermes/profiles/<p>/state.db, table
-# `sessions` (id, source, started_at, ended_at, last_activity_at, title,
-# message_count, ...). We read it directly rather than counting the
-# request_dump_*.json diagnostic files that used to be miscounted as "sessions".
-
-def _blank_agent() -> dict:
-    return {
-        "status": "dormant",
-        "last_active": None,
-        "last_active_ms": 0,
-        "sessions_today": 0,
-        "sessions_24h": 0,
-        "last_title": None,
-        "last_source": None,
-        "recent": [],
-    }
-
-
-def _status_for(last_ms: int) -> str:
-    if not last_ms:
-        return "dormant"
-    age_h = (time.time() * 1000 - last_ms) / 3_600_000
-    if age_h < ACTIVE_H:
-        return "active"
-    if age_h < IDLE_H:
-        return "idle"
-    return "dormant"
-
-
-def _day_bounds():
-    # (local midnight, 24h ago). We deliberately do NOT expose a 7-day count:
-    # the nightly session-prune cron deletes rows older than ~2 days, so a
-    # "last 7 days" number would silently under-report. today / 24h are both
-    # inside the retention window and therefore accurate.
-    now = time.time()
-    midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
-    return midnight, now - 86400
-
-
-def _hermes_agent_activity(profile: str) -> dict:
-    out = _blank_agent()
-    db = os.path.join(HERMES_PROFILES_DIR, profile, "state.db")
-    if not os.path.exists(db):
-        return out
-    mtime_ms = int(os.path.getmtime(db) * 1000)
-    try:
-        conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=2)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA busy_timeout=2000")
-        midnight, day_ago = _day_bounds()
-        live = "archived = 0 AND hidden = 0"
-        out["sessions_today"] = conn.execute(
-            f"SELECT count(*) FROM sessions WHERE {live} AND started_at > ?", (midnight,)).fetchone()[0]
-        out["sessions_24h"] = conn.execute(
-            f"SELECT count(*) FROM sessions WHERE {live} AND started_at > ?", (day_ago,)).fetchone()[0]
-        rows = conn.execute(
-            f"SELECT source, title, message_count, "
-            f"coalesce(ended_at, last_activity_at, started_at) AS act "
-            f"FROM sessions WHERE {live} ORDER BY started_at DESC LIMIT 5").fetchall()
-        conn.close()
-        for r in rows:
-            title = (r["title"] or "").strip().splitlines()[0][:80] if r["title"] else None
-            out["recent"].append({
-                "title": title,
-                "source": r["source"],
-                "ts": int((r["act"] or 0) * 1000),
-                "msgs": r["message_count"] or 0,
-            })
-        out["recent"].sort(key=lambda x: x["ts"], reverse=True)  # by last activity
-        if out["recent"]:
-            out["last_title"] = out["recent"][0]["title"]
-            out["last_source"] = out["recent"][0]["source"]
-    except Exception as e:
-        print(f"agent activity ({profile}): {e}")
-    session_last = max((x["ts"] for x in out["recent"] if x["ts"]), default=0)
-    # Count db mtime as "activity" ONLY when it is genuinely recent — i.e. a run
-    # is in flight and hasn't finalised its session row yet. An old migration
-    # touch (all the dormant profiles were bumped on the same day) must not read
-    # as recent activity.
-    recent_write = (time.time() * 1000 - mtime_ms) < ACTIVE_H * 3_600_000
-    last_ms = max(session_last, mtime_ms) if recent_write else session_last
-    out["last_active_ms"] = last_ms
-    out["last_active"] = iso(last_ms / 1000) if last_ms else None
-    out["status"] = _status_for(last_ms)
-    return out
-
-
-def _agy_activity() -> dict:
-    out = _blank_agent()
-    out["last_source"] = "antigravity-cli"
-    files = glob.glob(os.path.join(AGY_LOG_DIR, "cli-*.log"))
-    if not files:
-        return out
-    midnight, day_ago = _day_bounds()
-    entries = sorted(
-        ((os.path.basename(f), os.path.getmtime(f)) for f in files),
-        key=lambda e: e[1], reverse=True,
-    )
-    out["sessions_today"] = sum(1 for _, mt in entries if mt > midnight)
-    out["sessions_24h"] = sum(1 for _, mt in entries if mt > day_ago)
-    out["recent"] = [
-        {"title": name, "source": "cli-log", "ts": int(mt * 1000), "msgs": 0}
-        for name, mt in entries[:5]
-    ]
-    out["last_title"] = entries[0][0]          # newest log filename
-    last_ms = int(entries[0][1] * 1000)
-    out["last_active_ms"] = last_ms
-    out["last_active"] = iso(last_ms / 1000)
-    out["status"] = _status_for(last_ms)
-    return out
-
-
-def get_agent_activity() -> dict:
-    agents = {p: _hermes_agent_activity(p) for p in _discover_hermes_agents()}
-    agents["agy"] = _agy_activity()
-    return {"_generated_at": now_iso(), "agents": agents}
-
-
-def parse_job(j):
-    job_id = j.get("job_id") or j.get("id") or ""
-    name = j.get("name") or "Unnamed Job"
-
-    sched_val = j.get("schedule")
-    schedule = ""
-    if isinstance(sched_val, dict):
-        schedule = sched_val.get("display") or sched_val.get("expr") or ""
-    else:
-        schedule = sched_val or j.get("schedule_display") or ""
-
-    last_run = j.get("last_run_at") or j.get("last_run") or ""
-
-    status = "ACTIVE"
-    if "enabled" in j:
-        status = "ACTIVE" if j["enabled"] else "PAUSED"
-    elif "status" in j:
-        status = j["status"]
-
-    return {
-        "job_id": job_id,
-        "name": name,
-        "schedule": schedule,
-        "last_run": last_run,
-        "status": status,
-        "last_status": j.get("last_status", ""),
-        "last_error": j.get("last_error", ""),
-        "prompt": j.get("prompt", ""),
-        "script": j.get("script", ""),
-        "paused_reason": j.get("paused_reason", "")
-    }
-
-
-def _is_cron_entry(data: dict) -> bool:
-    """Filter out state files that happen to live in the cron dir.
-
-    Real cron entries always have at least: an `id` (or `job_id`), a `name`, AND
-    either a `prompt` (agent-driven) or a `script` (script-driven) field. State
-    files (e.g. scout-digest-state.json, daily-pipeline-cron.json with no
-    schedule-aware fields) lack one or more of these and should not be exposed
-    as cron jobs.
-    """
-    if not isinstance(data, dict):
-        return False
-    if not data.get("id") and not data.get("job_id"):
-        return False
-    if not data.get("name"):
-        return False
-    if not data.get("prompt") and not data.get("script"):
-        return False
-    return True
 
 
 def get_cron_jobs():
-    """Read the aarz profile's cron jobs.
-
-    Source of truth is `~/.hermes/profiles/aarz/cron/jobs.json` (the file
-    Hermes cron itself maintains). Per-file JSONs in the same directory may
-    exist as legacy fragments, state files, or stale duplicates — we dedupe
-    by (job_id, normalized name) so stale entries never inflate the count,
-    and we require the minimal cron-entry shape (id + name + prompt-or-script)
-    so state files like `scout-digest-state.json` aren't reported as crons.
-
-    Note: dedupe by name alone is required because historical crons were
-    renamed mid-flight (e.g. id 9585ec21c6e5 → id 607c910ef279 for the
-    "Daily Internship Pipeline — 5 jobs/day" job); the stale per-file JSON
-    keeps the old id, so an id-only dedupe misses it.
-    """
-    cron_dir = os.path.expanduser("~/.hermes/profiles/aarz/cron")
-    if not os.path.exists(cron_dir):
-        return []
-
-    seen_ids: set[str] = set()
-    seen_names: set[str] = set()
-    jobs: list[dict] = []
-
-    def _already_seen(parsed: dict) -> bool:
-        jid = parsed.get("job_id", "")
-        name = (parsed.get("name") or "").strip()
-        if jid and jid in seen_ids:
-            return True
-        if name and name in seen_names:
-            return True
-        return False
-
-    def _record(parsed: dict) -> None:
-        jid = parsed.get("job_id", "")
-        name = (parsed.get("name") or "").strip()
-        if jid:
-            seen_ids.add(jid)
-        if name:
-            seen_names.add(name)
-        jobs.append(parsed)
-
-    jobs_json = os.path.join(cron_dir, "jobs.json")
-    if os.path.exists(jobs_json):
-        try:
-            with open(jobs_json) as file:
-                data = json.load(file)
-                if isinstance(data, dict) and "jobs" in data:
-                    for j in data["jobs"]:
-                        if not _is_cron_entry(j):
-                            continue
-                        parsed = parse_job(j)
-                        if _already_seen(parsed):
-                            continue
-                        _record(parsed)
-        except Exception as e:
-            print(f"Error reading jobs.json: {e}")
-
-    for f in os.listdir(cron_dir):
-        if not f.endswith(".json") or f == "jobs.json" or "bak" in f:
-            continue
-        path = os.path.join(cron_dir, f)
-        try:
-            with open(path) as file:
-                data = json.load(file)
-                if not _is_cron_entry(data):
-                    continue
-                parsed = parse_job(data)
-                if _already_seen(parsed):
-                    # Stale duplicate of an entry already read from jobs.json — skip.
-                    continue
-                _record(parsed)
-        except Exception as e:
-            print(f"Error reading cron file {f}: {e}")
-
-    return jobs
+    return [parse_job(job) for job in pi_data.jobs()]
 
 
 def get_kanban_tasks():
-    tasks = []
-    paths = [
-        "/home/Aarz/.hermes/profiles/aarz/kanban.db",
-        "/home/Aarz/.hermes/kanban.db"
-    ]
-    for path in paths:
+    # Existing mission data is not runtime state; keep it until separately migrated.
+    for path in ['/home/Aarz/.hermes/profiles/aarz/kanban.db', '/home/Aarz/.hermes/kanban.db']:
         if not os.path.exists(path):
             continue
         try:
-            conn = sqlite3.connect(path)
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='tasks';")
-            if not cursor.fetchone():
-                conn.close()
-                continue
-            cursor.execute("SELECT id, title, body, assignee, status, priority FROM tasks;")
-            rows = cursor.fetchall()
-            for r in rows:
-                tasks.append({
-                    "id": r[0],
-                    "title": r[1],
-                    "body": r[2] or "",
-                    "assignee": r[3] or "unassigned",
-                    "status": r[4],
-                    "priority": r[5] or 0
-                })
-            conn.close()
-            if tasks:
-                break
-        except Exception as e:
-            print(f"Error querying sqlite db {path}: {e}")
-    return tasks
+            with sqlite3.connect(f'file:{path}?mode=ro', uri=True, timeout=2) as db:
+                rows = db.execute('SELECT id, title, body, assignee, status, priority FROM tasks').fetchall()
+            if rows:
+                return [dict(id=r[0], title=r[1], body=r[2] or '', assignee=r[3] or 'unassigned',
+                             status=r[4], priority=r[5] or 0) for r in rows]
+        except sqlite3.Error as exc:
+            print(f'Kanban: {exc}')
+    return []
 
 
 def get_r_server_info():
-    docker_ps, ok_ps = run_ssh_cmd("sudo docker ps -a --format '{{.Names}}\\t{{.Status}}\\t{{.Ports}}'")
-    docker_images, ok_images = run_ssh_cmd("sudo docker images --format '{{.Repository}}\\t{{.Tag}}\\t{{.Size}}'")
-    uptime, ok_up = run_ssh_cmd("uptime")
-    free_h, ok_free = run_ssh_cmd("free -h")
-    df_h, ok_df = run_ssh_cmd("df -h /")
-
+    def remote(cmd):
+        output, ok = run_ssh_cmd(cmd)
+        return {'output': output, 'ok': ok}
     return {
-        "_generated_at": now_iso(),
-        "docker_ps": {"output": docker_ps, "ok": ok_ps},
-        "docker_images": {"output": docker_images, "ok": ok_images},
-        "system": {
-            "uptime": {"output": uptime, "ok": ok_up},
-            "free_h": {"output": free_h, "ok": ok_free},
-            "df_h": {"output": df_h, "ok": ok_df}
-        }
+        '_generated_at': now_iso(),
+        'docker_ps': remote("sudo docker ps -a --format '{{.Names}}\\t{{.Status}}\\t{{.Ports}}'"),
+        'docker_images': remote("sudo docker images --format '{{.Repository}}\\t{{.Tag}}\\t{{.Size}}'"),
+        'system': {key: remote(cmd) for key, cmd in [('uptime', 'uptime'), ('free_h', 'free -h'), ('df_h', 'df -h /')]},
     }
 
 
-def write_json(name: str, payload) -> None:
-    """Atomic write so the HTTP server never serves a half-written file."""
+def write_json(name, payload):
     path = os.path.join(OUTPUT_DIR, name)
-    tmp = f"{path}.tmp.{os.getpid()}"
-    with open(tmp, "w") as f:
-        json.dump(payload, f, indent=2)
-        f.flush()
-        os.fsync(f.fileno())
+    tmp = f'{path}.tmp.{os.getpid()}'
+    with open(tmp, 'w') as stream:
+        json.dump(payload, stream, indent=2)
+        stream.flush()
+        os.fsync(stream.fileno())
     os.replace(tmp, path)
 
 
 def main():
-    print("Dashboard background data collector started.")
+    print('Pi dashboard collector started.', flush=True)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-
     while True:
-        try:
-            write_json("health.json", get_health_stats())
-            write_json("missions.json", {"cron": get_cron_jobs(), "kanban": get_kanban_tasks()})
-            write_json("r_server_info.json", get_r_server_info())
-            write_json("agents.json", get_agent_activity())
-        except Exception as e:
-            print(f"Error in data collector loop: {e}")
-
+        # A failed source must not prevent other panels from refreshing.
+        for name, collect in [
+            ('agents.json', get_agent_activity), ('health.json', get_health_stats),
+            ('missions.json', lambda: {'_generated_at': now_iso(), '_source': 'pi',
+                                     'cron': get_cron_jobs(), 'kanban': get_kanban_tasks()}),
+            ('r_server_info.json', get_r_server_info),
+        ]:
+            try:
+                write_json(name, collect())
+            except Exception as exc:
+                print(f'Error collecting {name}: {exc}', flush=True)
         time.sleep(30)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
