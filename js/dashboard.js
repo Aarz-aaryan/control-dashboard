@@ -3,12 +3,16 @@
 // module) so the inline onclick= handlers in index.html keep working.
 
 // Visual metadata per agent. The roster itself (who exists) is discovered from
-// agents.json, which the collector builds from ~/.hermes/profiles/. Add a new
-// profile there and it shows up here automatically — this map just supplies a
+// agents.json, built from the live Pi runtime and configured session stores.
+// The collector owns discovery — this map just supplies a
 // colour/icon/role, with a sensible fallback for anything not listed.
 const AGENT_META = {
-    aarz:    { name: 'Aarz',    role: 'Chief Orchestrator', color: '#c49a6c', icon: 'aarz.svg' },
-    agy:     { name: 'agy',     role: 'Anti-Gravity CLI',   color: '#8bbccc', icon: 'agy.svg' },
+    aarz:    { name: 'Aarz · Pi', role: 'Discord Assistant', color: '#c49a6c', icon: 'aarz.svg' },
+    'pi-scheduler': { name: 'Pi Scheduler', role: 'Cron Jobs & Scripts', color: '#b5a0d9', icon: 'pi.svg' },
+    'pi-cli': { name: 'Pi CLI', role: 'Coding Sessions', color: '#8bbccc', icon: 'pi.svg' },
+    'pi-voice': { name: 'Voice · Pi', role: 'Browser & Echo Session Store', color: '#7eb5a6', icon: 'pi.svg' },
+    'pi-whatsapp': { name: 'WhatsApp · Pi', role: 'Personal Assistant', color: '#89bc8b', icon: 'pi.svg' },
+    agy:     { name: 'agy Utility',     role: 'CLI Tool Invocations · Not an Agent',   color: '#8bbccc', icon: 'agy.svg' },
 };
 function agentMeta(id) {
     const m = AGENT_META[id] || {};
@@ -67,7 +71,7 @@ async function getWriteToken() {
 }
 
 // ── Agent activity — read from server-computed agents.json ──────────────────
-// No more directory-listing scraping of ~/.hermes, ~/.gemini, ~/.copilot.
+// No browser access to private runtime databases or session transcripts.
 
 let _agentsJson = null;
 let _agentsJsonTs = 0;
@@ -81,7 +85,7 @@ async function loadAgentsJson() {
     return _agentsJson;
 }
 
-// Per-agent activity from agents.json (server reads the real ~/.hermes state.db).
+// Per-integration activity from Pi runtime history and JSONL session metadata.
 function getAgentData(id) {
     const a = (_agentsJson && _agentsJson.agents && _agentsJson.agents[id]) || null;
     if (!a) return { status: 'dormant', ts: 0, sessions_today: 0, sessions_24h: 0, recent: [] };
@@ -93,6 +97,10 @@ function getAgentData(id) {
         last_title: a.last_title || null,
         last_source: a.last_source || null,
         recent: a.recent || [],
+        metric_unit: a.metric_unit || 'sessions',
+        running: a.running || 0,
+        queued: a.queued || 0,
+        error: a.error || null,
     };
 }
 
@@ -144,15 +152,221 @@ function exactTime(ms) {
     return ms ? new Date(ms).toLocaleString() : '—';
 }
 
-// ── Renderer ───────────────────────────────────────────────────────────────
+// ── Operational Health & Renderer ──────────────────────────────────────────
 
-const STATUS_TEXT = { active: 'ACTIVE', idle: 'IDLE', dormant: 'DORMANT' };
+function getAgentHealth(id, data, system) {
+    const error = data?.error;
+    const working = (data?.running || 0) > 0;
+    const isRecent = data?.status === 'active';
+    const services = system?.services || [];
+    const runtime = system?.runtime || {};
+
+    let isHealthy = true;
+    let status = 'standby'; // 'running', 'active', 'standby', 'degraded', 'down'
+    let statusLabel = 'ONLINE · READY';
+    let issueDetail = '';
+    let daemonInfo = '';
+
+    if (error) {
+        return {
+            isHealthy: false,
+            status: 'down',
+            statusLabel: 'UNAVAILABLE',
+            issueDetail: error,
+            daemonInfo: 'Runtime data unavailable',
+            isWorking: false
+        };
+    }
+
+    switch (id) {
+        case 'aarz': {
+            const svc = services.find(s => s.unit === 'aarz-agent.service');
+            const svcOk = svc ? svc.state === 'active' : true;
+            const discordOk = runtime.discord_connected ?? true;
+            const heartbeatAge = runtime.heartbeat_age_s;
+            const heartbeatOk = heartbeatAge === null || heartbeatAge === undefined || heartbeatAge < 90;
+
+            if (!svcOk) {
+                isHealthy = false;
+                status = 'down';
+                statusLabel = 'OFFLINE · STOPPED';
+                issueDetail = 'aarz-agent.service is stopped';
+                daemonInfo = 'aarz-agent.service: inactive';
+            } else if (!discordOk) {
+                isHealthy = false;
+                status = 'degraded';
+                statusLabel = 'DISCONNECTED';
+                issueDetail = 'Discord gateway disconnected';
+                daemonInfo = 'Discord: disconnected';
+            } else if (!heartbeatOk) {
+                isHealthy = false;
+                status = 'degraded';
+                statusLabel = 'STALE HEARTBEAT';
+                issueDetail = `Heartbeat is ${heartbeatAge}s old (>90s)`;
+                daemonInfo = `Heartbeat: ${heartbeatAge}s ago`;
+            } else if (working) {
+                status = 'running';
+                statusLabel = 'RUNNING TASK';
+                daemonInfo = 'Discord bot · executing task';
+            } else if (isRecent) {
+                status = 'active';
+                statusLabel = 'ONLINE · ACTIVE';
+                daemonInfo = 'Discord bot · recent interaction';
+            } else {
+                status = 'standby';
+                statusLabel = 'ONLINE · READY';
+                daemonInfo = 'Discord bot · listening & ready';
+            }
+            break;
+        }
+
+        case 'pi-scheduler': {
+            const svc = services.find(s => s.unit === 'aarz-agent.service');
+            const svcOk = svc ? svc.state === 'active' : true;
+            const sched = system?.schedules;
+
+            if (!svcOk) {
+                isHealthy = false;
+                status = 'down';
+                statusLabel = 'OFFLINE · STOPPED';
+                issueDetail = 'Scheduler runner service inactive';
+                daemonInfo = 'aarz-agent.service: inactive';
+            } else if (working) {
+                status = 'running';
+                statusLabel = 'RUNNING JOB';
+                daemonInfo = 'Executing cron/scheduled task';
+            } else if (isRecent) {
+                status = 'active';
+                statusLabel = 'ONLINE · ACTIVE';
+                daemonInfo = `${sched ? sched.enabled : 27} active schedules · runs executing`;
+            } else {
+                status = 'standby';
+                statusLabel = 'ONLINE · SCHEDULED';
+                daemonInfo = `${sched ? sched.enabled : 27} schedules enabled`;
+            }
+            break;
+        }
+
+        case 'pi-voice': {
+            const svc = services.find(s => s.unit === 'pi-live-voice.service');
+            const svcOk = svc ? svc.state === 'active' : true;
+            const echo = system?.echo || {};
+
+            if (!svcOk) {
+                isHealthy = false;
+                status = 'down';
+                statusLabel = 'OFFLINE · STOPPED';
+                issueDetail = 'pi-live-voice.service inactive';
+                daemonInfo = 'pi-live-voice.service: inactive';
+            } else if (working || echo.busy) {
+                status = 'running';
+                statusLabel = 'VOICE IN CALL';
+                daemonInfo = 'Live speech session in progress';
+            } else if (isRecent) {
+                status = 'active';
+                statusLabel = 'ONLINE · ACTIVE';
+                daemonInfo = 'Voice Gateway: active · GPU speech ready';
+            } else {
+                status = 'standby';
+                statusLabel = 'ONLINE · READY';
+                daemonInfo = 'Voice Gateway: active · Echo waiting';
+            }
+            break;
+        }
+
+        case 'pi-whatsapp': {
+            const svc = services.find(s => s.unit === 'whatsapp-pi.service');
+            const svcOk = svc ? svc.state === 'active' : true;
+
+            if (!svcOk) {
+                isHealthy = false;
+                status = 'down';
+                statusLabel = 'OFFLINE · STOPPED';
+                issueDetail = 'whatsapp-pi.service inactive';
+                daemonInfo = 'whatsapp-pi.service: inactive';
+            } else if (working) {
+                status = 'running';
+                statusLabel = 'RUNNING TASK';
+                daemonInfo = 'WhatsApp assistant · processing';
+            } else if (isRecent) {
+                status = 'active';
+                statusLabel = 'ONLINE · ACTIVE';
+                daemonInfo = 'WhatsApp assistant · recent chats';
+            } else {
+                status = 'standby';
+                statusLabel = 'ONLINE · READY';
+                daemonInfo = 'whatsapp-pi daemon: active · listening';
+            }
+            break;
+        }
+
+        case 'pi-cli': {
+            if (working) {
+                status = 'running';
+                statusLabel = 'RUNNING SESSION';
+                daemonInfo = 'Coding CLI session active';
+            } else if (isRecent) {
+                status = 'active';
+                statusLabel = 'ONLINE · ACTIVE';
+                daemonInfo = 'Pi coding CLI · recent sessions';
+            } else {
+                status = 'standby';
+                statusLabel = 'ONLINE · READY';
+                daemonInfo = 'Pi coding CLI harness · ready';
+            }
+            break;
+        }
+
+        case 'agy': {
+            if (working) {
+                status = 'running';
+                statusLabel = 'EXECUTING RUN';
+                daemonInfo = 'Antigravity CLI tool executing';
+            } else if (isRecent) {
+                status = 'active';
+                statusLabel = 'ONLINE · ACTIVE';
+                daemonInfo = 'Antigravity CLI tool · active runs';
+            } else {
+                status = 'standby';
+                statusLabel = 'ONLINE · READY';
+                daemonInfo = 'Antigravity CLI tool · ready';
+            }
+            break;
+        }
+
+        default: {
+            if (working) {
+                status = 'running';
+                statusLabel = 'RUNNING TASK';
+                daemonInfo = 'Task executing';
+            } else if (isRecent) {
+                status = 'active';
+                statusLabel = 'ONLINE · ACTIVE';
+                daemonInfo = 'Recent activity';
+            } else {
+                status = 'standby';
+                statusLabel = 'ONLINE · READY';
+                daemonInfo = 'Agent standing by';
+            }
+            break;
+        }
+    }
+
+    return {
+        isHealthy,
+        status,
+        statusLabel,
+        issueDetail,
+        daemonInfo,
+        isWorking: working
+    };
+}
 
 function cardHTML(agent, data) {
     const now = Date.now();
     const ts = data?.ts || 0;
-    const status = data?.status || 'dormant';
-    const working = status === 'active';
+    const system = _agentsJson?.system;
+    const health = getAgentHealth(agent.id, data, system);
     const ageStr = ts ? formatAge(now - ts) : null;
     const recent = data?.recent || [];
 
@@ -160,7 +374,7 @@ function cardHTML(agent, data) {
 
     const recentHtml = recent.length ? `
     <div class="session-tooltip">
-      <div class="session-tooltip-title">Recent runs</div>
+      <div class="session-tooltip-title">Recent Activity Logs</div>
       ${recent.slice(0, 5).map(r => `
       <div class="session-tooltip-row">
         <span class="st-name">${escapeHtml(r.title || r.source || '—')}</span>
@@ -168,7 +382,12 @@ function cardHTML(agent, data) {
       </div>`).join('')}
     </div>` : '';
 
-    return `<div class="card status-${status} ${working ? 'active-core' : ''}" id="card-${agent.id}" style="--agent-color: ${agent.color}; --agent-dim: ${agent.dim};">
+    const statusClass = health.isHealthy ? `health-${health.status}` : 'health-down';
+    const isWorking = health.isWorking;
+    const dotClass = !health.isHealthy ? 'down' : (isWorking ? 'working' : (health.status === 'active' ? 'active' : 'ready'));
+    const pillClass = !health.isHealthy ? 'pill-down' : (health.status === 'running' ? 'pill-running' : (health.status === 'active' ? 'pill-active' : (health.status === 'standby' ? 'pill-standby' : 'pill-ready')));
+
+    return `<div class="card ${statusClass} ${isWorking ? 'active-core' : ''}" id="card-${agent.id}" style="--agent-color: ${agent.color}; --agent-dim: ${agent.dim};">
   <div class="card-shimmer"></div>
   <div class="card-top">
     <div class="avatar-container">
@@ -180,22 +399,269 @@ function cardHTML(agent, data) {
       <div class="card-name">${escapeHtml(agent.name)}</div>
       <div class="card-role">${escapeHtml(agent.role)}</div>
     </div>
-    <div class="dot ${working ? 'working' : ''}"></div>
+    <div class="health-dot ${dotClass}" title="${escapeHtml(health.statusLabel)}"></div>
   </div>
+
   <div class="status-row">
-    <span class="status-label status-${status}">${STATUS_TEXT[status] || 'DORMANT'}</span>
-    <span class="time-ago" title="${exactTime(ts)}">${ageStr || 'no activity'}</span>
+    <span class="health-pill ${pillClass}">
+      <span class="pill-dot"></span>
+      ${escapeHtml(health.statusLabel)}
+    </span>
+    <span class="time-ago" title="${exactTime(ts)}">${ageStr || (health.isHealthy ? 'Standing by' : 'No data')}</span>
   </div>
-  <div class="agent-metrics" title="Distinct agent sessions. Older history is pruned nightly, so only today / 24h are shown.">
-    <div class="agent-metric"><span class="am-num">${data?.sessions_today ?? 0}</span><span class="am-lbl">today</span></div>
-    <div class="agent-metric"><span class="am-num">${data?.sessions_24h ?? 0}</span><span class="am-lbl">24 h</span></div>
+
+  <div class="card-daemon-chip" title="${escapeHtml(health.daemonInfo)}">
+    <span class="daemon-icon">⚡</span>
+    <span class="daemon-text">${escapeHtml(health.daemonInfo)}</span>
   </div>
+
+  <div class="agent-metrics" title="${escapeHtml(data?.metric_unit || 'sessions')} recorded in each period.">
+    <div class="agent-metric">
+      <span class="am-num">${data?.sessions_today ?? 0}</span>
+      <span class="am-lbl">${escapeHtml(data?.metric_unit || 'sessions')} today</span>
+    </div>
+    <div class="agent-metric">
+      <span class="am-num">${data?.sessions_24h ?? 0}</span>
+      <span class="am-lbl">24 hours</span>
+    </div>
+  </div>
+
+  ${data?.queued ? `<div class="card-queued-badge">${data.queued} queued in runtime</div>` : ''}
+
   <div class="card-foot">
     <span class="foot-label">Last:</span>
     <span class="foot-value" title="${escapeHtml(lastLabel)}">${escapeHtml(lastLabel)}</span>
   </div>
   ${recentHtml}
 </div>`;
+}
+
+// ── Quick Filter & Instant Search ──────────────────────────────────────────
+
+let _currentAgentFilter = 'all';
+let _agentSearchQuery = '';
+
+function filterAgents(filterKey) {
+    _currentAgentFilter = filterKey;
+    document.querySelectorAll('.agents-filter-pills .filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-filter') === filterKey);
+    });
+    applyAgentFilters();
+}
+
+function onAgentSearch(query) {
+    _agentSearchQuery = (query || '').trim().toLowerCase();
+    const clearBtn = document.getElementById('agents-search-clear');
+    if (clearBtn) clearBtn.style.display = _agentSearchQuery ? 'block' : 'none';
+    applyAgentFilters();
+}
+
+function clearAgentSearch() {
+    const input = document.getElementById('agents-search-input');
+    if (input) input.value = '';
+    onAgentSearch('');
+}
+
+function applyAgentFilters() {
+    const container = document.querySelector('.agents-fleet-grid');
+    if (!container) return;
+    const cards = container.querySelectorAll('.card');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        const id = card.id.replace('card-', '');
+        const data = getAgentData(id);
+        const health = getAgentHealth(id, data, _agentsJson?.system);
+
+        let matchesFilter = true;
+        if (_currentAgentFilter === 'healthy') matchesFilter = health.isHealthy;
+        else if (_currentAgentFilter === 'active') matchesFilter = (health.status === 'active' || health.status === 'running');
+        else if (_currentAgentFilter === 'standby') matchesFilter = (health.status === 'standby');
+        else if (_currentAgentFilter === 'issues') matchesFilter = (!health.isHealthy || health.status === 'down' || health.status === 'degraded');
+
+        let matchesSearch = true;
+        if (_agentSearchQuery) {
+            const text = (card.textContent || '').toLowerCase();
+            matchesSearch = text.includes(_agentSearchQuery);
+        }
+
+        const isVisible = matchesFilter && matchesSearch;
+        const parentNode = card.closest('.tree-node') || card;
+        parentNode.style.display = isVisible ? '' : 'none';
+        if (isVisible) visibleCount++;
+    });
+
+    const emptyState = document.getElementById('agents-empty-state');
+    if (emptyState) emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+}
+
+function updateMasterStatus() {
+    const masterEl = document.getElementById('agents-master-status');
+    if (!masterEl) return;
+
+    const system = _agentsJson?.system;
+    const stale = agentsDataAgeMs() > STALE_DATA_MS;
+
+    const agentsList = AGENTS.map(a => {
+        const d = getAgentData(a.id);
+        const h = getAgentHealth(a.id, d, system);
+        return { agent: a, data: d, health: h };
+    });
+
+    const total = agentsList.length;
+    const healthyCount = agentsList.filter(x => x.health.isHealthy).length;
+    const activeCount = agentsList.filter(x => x.health.status === 'active' || x.health.status === 'running').length;
+    const standbyCount = agentsList.filter(x => x.health.status === 'standby').length;
+    const issues = agentsList.filter(x => !x.health.isHealthy || x.health.status === 'down' || x.health.status === 'degraded');
+    const issueCount = issues.length;
+
+    const elAll = document.getElementById('filter-count-all');
+    if (elAll) elAll.textContent = total;
+    const elHealthy = document.getElementById('filter-count-healthy');
+    if (elHealthy) elHealthy.textContent = healthyCount;
+    const elActive = document.getElementById('filter-count-active');
+    if (elActive) elActive.textContent = activeCount;
+    const elStandby = document.getElementById('filter-count-standby');
+    if (elStandby) elStandby.textContent = standbyCount;
+    const elIssues = document.getElementById('filter-count-issues');
+    if (elIssues) {
+        elIssues.textContent = issueCount;
+        elIssues.className = 'filter-count ' + (issueCount > 0 ? 'alert-active' : 'alert-zero');
+    }
+
+    const tabBadge = document.getElementById('tab-error-agents');
+    if (tabBadge) {
+        if (issueCount > 0 || stale) {
+            tabBadge.textContent = issueCount > 0 ? String(issueCount) : '!';
+            tabBadge.classList.add('visible');
+        } else {
+            tabBadge.classList.remove('visible');
+        }
+    }
+
+    const updateText = document.getElementById('agents-updated-text');
+    if (updateText) {
+        if (stale) {
+            updateText.textContent = 'Collector Stale (' + (formatAge(agentsDataAgeMs()) || '') + ')';
+        } else {
+            updateText.textContent = 'Live Telemetry · ' + (formatAge(agentsDataAgeMs()) || 'just now');
+        }
+    }
+    const liveBadge = document.getElementById('agents-live-badge');
+    if (liveBadge) liveBadge.classList.toggle('system-bad', stale);
+
+    const rt = system?.runtime || {};
+    const discordOk = rt.discord_connected === true;
+    const schedOk = (system?.schedules?.enabled || 0) > 0;
+    const voiceOk = system?.services?.find(s => s.unit === 'pi-live-voice.service')?.state === 'active';
+    const waOk = system?.services?.find(s => s.unit === 'whatsapp-pi.service')?.state === 'active';
+
+    if (issueCount === 0 && !stale) {
+        masterEl.className = 'master-status-card status-all-green';
+        masterEl.innerHTML = `
+            <div class="master-status-main">
+                <div class="master-status-indicator">
+                    <span class="status-pulse-ring"></span>
+                    <span class="status-core-dot"></span>
+                </div>
+                <div class="master-status-info">
+                    <div class="master-status-badge">SYSTEM STATUS: OPTIMAL</div>
+                    <div class="master-status-title">ALL AGENTS & SERVICES OPERATIONAL</div>
+                    <div class="master-status-sub">All ${total} agent interfaces are online and responding normally. 0 issues detected across agent-server.</div>
+                </div>
+            </div>
+            <div class="master-status-chips">
+                <div class="status-chip chip-green" title="Discord gateway connected and listening">
+                    <span class="chip-dot"></span><span class="chip-label">Discord:</span> <strong>Connected</strong>
+                </div>
+                <div class="status-chip chip-green" title="${system?.schedules?.enabled || 0} scheduled operations enabled">
+                    <span class="chip-dot"></span><span class="chip-label">Schedulers:</span> <strong>${system?.schedules?.enabled || 0} Active</strong>
+                </div>
+                <div class="status-chip chip-green" title="Voice gateway service active, Echo ready">
+                    <span class="chip-dot"></span><span class="chip-label">Voice Gateway:</span> <strong>Ready</strong>
+                </div>
+                <div class="status-chip chip-green" title="WhatsApp-Pi background assistant active">
+                    <span class="chip-dot"></span><span class="chip-label">WhatsApp · Pi:</span> <strong>Listening</strong>
+                </div>
+                <div class="status-chip chip-green" title="Agent-server collector is reporting live data">
+                    <span class="chip-dot"></span><span class="chip-label">Telemetry:</span> <strong>Live (30s)</strong>
+                </div>
+            </div>
+        `;
+    } else {
+        masterEl.className = 'master-status-card status-has-issues';
+        const issueDescriptions = [];
+        if (stale) issueDescriptions.push('Telemetry collector is stale (' + formatAge(agentsDataAgeMs()) + ')');
+        issues.forEach(x => {
+            issueDescriptions.push(`${x.agent.name}: ${x.health.issueDetail || x.health.statusLabel}`);
+        });
+
+        masterEl.innerHTML = `
+            <div class="master-status-main">
+                <div class="master-status-indicator issue-indicator">
+                    <span class="status-pulse-ring red"></span>
+                    <span class="status-core-dot red"></span>
+                </div>
+                <div class="master-status-info">
+                    <div class="master-status-badge badge-red">ATTENTION REQUIRED</div>
+                    <div class="master-status-title">${issueCount > 0 ? `${issueCount} AGENT${issueCount > 1 ? 'S' : ''} WITH ISSUES` : 'COLLECTOR STALE'}</div>
+                    <div class="master-status-sub">${escapeHtml(issueDescriptions.join(' · '))}</div>
+                </div>
+            </div>
+            <div class="master-status-chips">
+                <div class="status-chip ${discordOk ? 'chip-green' : 'chip-red'}">
+                    <span class="chip-dot"></span><span class="chip-label">Discord:</span> <strong>${discordOk ? 'Connected' : 'Disconnected'}</strong>
+                </div>
+                <div class="status-chip ${schedOk ? 'chip-green' : 'chip-red'}">
+                    <span class="chip-dot"></span><span class="chip-label">Schedulers:</span> <strong>${system?.schedules?.enabled || 0} Active</strong>
+                </div>
+                <div class="status-chip ${voiceOk ? 'chip-green' : 'chip-red'}">
+                    <span class="chip-dot"></span><span class="chip-label">Voice Gateway:</span> <strong>${voiceOk ? 'Ready' : 'Down'}</strong>
+                </div>
+                <div class="status-chip ${waOk ? 'chip-green' : 'chip-red'}">
+                    <span class="chip-dot"></span><span class="chip-label">WhatsApp · Pi:</span> <strong>${waOk ? 'Ready' : 'Down'}</strong>
+                </div>
+                <button class="status-chip-btn" onclick="filterAgents('issues')">Filter Issues Only &rarr;</button>
+            </div>
+        `;
+    }
+
+    applyAgentFilters();
+}
+
+function renderSystemOverview() {
+    const system = _agentsJson?.system;
+    const target = document.getElementById('system-services');
+    if (!target) return;
+    const stale = agentsDataAgeMs() > STALE_DATA_MS;
+    const label = document.getElementById('system-updated');
+    if (label) {
+        label.textContent = stale ? 'Collector data stale' : 'Updated ' + (formatAge(agentsDataAgeMs()) || 'just now');
+        label.classList.toggle('system-bad', stale);
+    }
+    if (!system) {
+        target.textContent = 'Waiting for system inventory from collector…';
+        return;
+    }
+    const services = system.services || [];
+    target.innerHTML = services.map(s => `<article class="system-service"><div class="system-service-top"><strong>${escapeHtml(s.name)}</strong><span class="system-state ${s.state === 'active' && !stale ? '' : 'system-bad'}">${stale ? 'STALE' : escapeHtml(s.state.toUpperCase())}</span></div><p>${escapeHtml(s.role)}</p><code>${escapeHtml(s.unit)}</code></article>`).join('');
+    const rt = system.runtime || {}, jobs = system.schedules;
+    const summaries = [
+        ['SERVICE UNITS', `${services.filter(s=>s.state==='active').length} / ${services.length}`, stale ? 'Last collected state' : 'Active on agent-server'],
+        ['DISCORD BRIDGE', rt.status || 'Unknown', rt.discord_connected ? 'Gateway connected' : 'Gateway disconnected'],
+        ['SCHEDULED JOBS', jobs ? `${jobs.enabled} / ${jobs.total}` : '—', 'Enabled · canonical Pi job store'],
+        ['INTEGRATIONS', String(AGENTS.length), 'Activity sources · not subagents'],
+    ];
+    const summaryEl = document.getElementById('system-summary');
+    if (summaryEl) {
+        summaryEl.innerHTML = summaries.map(([name,value,detail]) => `<div class="system-summary-card"><label>${name}</label><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div>`).join('');
+    }
+    const echo = system.echo || {};
+    const states = {'waiting-for-tunnel':'Echo waiting for homescreen tunnel', 'waiting-for-wake-word':'Echo ready · waiting for wake word', 'unavailable':'Echo status unavailable'};
+    const echoEl = document.getElementById('system-echo');
+    if (echoEl) {
+        echoEl.textContent = (stale ? 'Last known: ' : '') + (states[echo.state] || 'Echo: ' + (echo.state || 'unknown')) + ' · Browser: ' + (echo.browser_mode || 'unknown') + (echo.busy ? ' · Echo task running' : '');
+    }
 }
 
 // ── Dynamic Tree Connecting Lines ───────────────────────────────────────────
@@ -286,6 +752,9 @@ function renderCards(results) {
             node.innerHTML = cardHTML(a, d);
         }
     });
+    updateMasterStatus();
+    applyAgentFilters();
+    renderSystemOverview();
     drawTreeLines();
 }
 
@@ -295,6 +764,8 @@ function updateCard(agent, data) {
         // Only touching card #agent.id — card sizes don't change, so the tree
         // lines don't need redrawing here. Callers redraw once after a batch.
         el.outerHTML = cardHTML(agent, data);
+        updateMasterStatus();
+        applyAgentFilters();
     }
 }
 
@@ -317,7 +788,11 @@ function switchTab(tabId) {
     if (location.hash.slice(1) !== next) history.replaceState(null, '', '#' + next);
 
     if (tabId === 'agents') {
+        updateMasterStatus();
+        applyAgentFilters();
         setTimeout(drawTreeLines, 80);
+    } else if (tabId === 'stats') {
+        renderSystemOverview();
     }
 }
 
@@ -363,10 +838,12 @@ function toggleCronPanel() {
         panel.style.display = 'block';
         // Force reflow
         void panel.offsetWidth;
-        panel.style.maxHeight = '2000px';
+        panel.style.maxHeight = '70vh';
+        panel.style.overflowY = 'auto';
         panel.style.opacity = '1';
         isCronPanelOpen = true;
     }
+    document.getElementById('cron-jobs-stat')?.setAttribute('aria-expanded', String(isCronPanelOpen));
 }
 
 function renderCronDetails(cronJobs) {
@@ -411,12 +888,12 @@ function renderCronDetails(cronJobs) {
             <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${color}; flex-shrink: 0; box-shadow: 0 0 8px ${color};"></div>
             <div style="flex: 1; min-width: 0;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <strong style="color: #fff; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${j.name || j.job_id}</strong>
-                    <span style="color: var(--gold); font-size: 0.8rem; font-family: 'Share Tech Mono', monospace; opacity: 0.9;">${j.schedule}</span>
+                    <strong style="color: #fff; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(j.name || j.job_id || 'Unnamed job')}</strong>
+                    <span style="color: var(--gold); font-size: 0.8rem; font-family: 'Share Tech Mono', monospace; opacity: 0.9;">${escapeHtml(j.schedule || '—')}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
-                    <div style="color: var(--text-muted); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${purpose}</div>
-                    <div style="color: var(--text-muted); font-size: 0.75rem; white-space: nowrap; flex-shrink: 0;">Ran: ${lastRun}</div>
+                    <div style="color: var(--text-muted); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${escapeHtml(purpose)}</div>
+                    <div style="color: var(--text-muted); font-size: 0.75rem; white-space: nowrap; flex-shrink: 0;">${j.status === 'ACTIVE' ? 'Enabled' : 'Paused'} · ${escapeHtml(j.last_status || 'not run')} · Ran: ${escapeHtml(lastRun)}</div>
                 </div>
             </div>
         `;
@@ -448,8 +925,12 @@ function updateStatsCounts() {
             info.className = 'stats-agent-info';
             const nameEl = document.createElement('div');
             nameEl.className = 'stats-agent-name';
-            nameEl.textContent = escapeHtml(a.name);
+            nameEl.textContent = a.name;
             info.appendChild(nameEl);
+            const unitEl = document.createElement('small');
+            unitEl.className = 'stats-unit';
+            unitEl.textContent = (d.metric_unit || 'sessions') + ' started today';
+            info.appendChild(unitEl);
             
             const countEl = document.createElement('div');
             countEl.className = 'stats-agent-count' + (count === 0 ? ' zero' : '');
@@ -468,11 +949,9 @@ function updateStatsCounts() {
     // Update "last updated" timestamp so user knows the data is live
     const elUpdated = document.getElementById('stat-last-updated');
     if (elUpdated) {
-        const d = new Date();
-        const h = d.getHours().toString().padStart(2,'0');
-        const m = d.getMinutes().toString().padStart(2,'0');
-        const s = d.getSeconds().toString().padStart(2,'0');
-        elUpdated.textContent = `updated ${h}:${m}:${s} · auto-refresh 30s`;
+        const generated = _agentsJson?._generated_at;
+        elUpdated.textContent = generated ? `Collected ${new Date(generated).toLocaleTimeString()} · refresh 30s` : 'Collector unavailable';
+        elUpdated.classList.toggle('system-bad', agentsDataAgeMs() > STALE_DATA_MS);
     }
 }
 
@@ -503,7 +982,7 @@ function updateCronStats() {
         } else if (cronJobs.length === 0) {
             elBadge.style.opacity = '0';
         } else {
-            elBadge.textContent = 'All ' + cronJobs.length + ' healthy';
+            elBadge.textContent = 'No recorded failures · ' + cronJobs.filter(j => !j.last_run).length + ' never run';
             elBadge.style.background = 'rgba(143, 163, 130, 0.15)';
             elBadge.style.color = 'var(--sage)';
             elBadge.style.border = '1px solid var(--sage)';
@@ -515,7 +994,7 @@ function updateCronStats() {
     renderCronDetails(cronJobs);
 }
 
-// "Sessions · 24h" = real agent sessions in the last 24h (from state.db).
+// Activity totals combine chat turns, job executions and distinct Pi sessions.
 function updateTotalSessionCounts() {
     const el = document.getElementById('stat-total-sessions-all');
     if (!el) return;
@@ -527,6 +1006,11 @@ function updateTotalSessionCounts() {
 // ── Dynamic renderers for panels ───────────────────────────────────────────
 
 function renderStatsPanel(h) {
+    renderResourceStats(h);
+}
+
+// Retained legacy markup renderer; resource stats now use escaped, quality-aware rows.
+function renderLegacyStatsPanel(h) {
     if (!h) return;
     
     const local = h.local || {};
@@ -554,8 +1038,8 @@ function renderStatsPanel(h) {
                 <div class="health-item-value">${local.docker || 'Unavailable'}</div>
             </div>
             <div class="health-item">
-                <div class="health-item-hdr"><span>Hermes Process</span><span class="status-dot ${local.hermes === 'Running' ? 'green' : 'red'}"></span></div>
-                <div class="health-item-value">${local.hermes || 'Not running'}</div>
+                <div class="health-item-hdr"><span>Pi Runtime · Discord & Scheduler</span><span class="status-dot ${local.pi === 'Running' ? 'green' : 'red'}"></span></div>
+                <div class="health-item-value">${escapeHtml(local.pi || 'Unavailable')} · Discord ${local.pi_runtime?.discord_connected ? 'connected' : 'disconnected'}<br>Heartbeat: ${local.pi_runtime?.heartbeat_age_s ?? '—'}s ago</div>
             </div>
         `;
     }
@@ -1928,7 +2412,7 @@ window.addEventListener('load', () => {
 
     // #hash routing: "#stats" opens a tab; "#missions/<repo>" opens a mission modal
     // once the missions grid has rendered (renderMissions consumes _pendingMissionModal).
-    const TABS = ['agents', 'stats', 'missions', 'r-server'];
+    const TABS = ['agents', 'stats', 'missions', 'r-server', 'motorcycle', 'crypto'];
     const applyHash = () => {
         const [tab, sub] = location.hash.slice(1).split('/');
         if (TABS.includes(tab)) switchTab(tab);

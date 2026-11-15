@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hermes Multi-Agent Monitor</title>
+    <title>Pi Agent Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -16,8 +16,8 @@
 <!-- Left vertical ribbon dock -->
 <div class="sidebar">
     <div class="sidebar-logo">
-        <img src="assets/logo.svg" alt="Hermes Logo">
-        <span class="sidebar-logo-text">Hermes Monitor</span>
+        <img src="assets/pi.svg" alt="Pi Logo">
+        <span class="sidebar-logo-text">Pi Monitor</span>
     </div>
     <div class="sidebar-tabs">
         <div class="tab-item active" data-tab="agents" onclick="switchTab('agents')">
@@ -29,6 +29,10 @@
             </svg>
             <span class="tab-label">Agents</span>
             <span class="tab-error-badge" id="tab-error-agents"></span>
+        </div>
+        <div class="tab-item" data-tab="crypto" onclick="switchTab('crypto')">
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M9 6v12m3-12v2m0 8v2M9 8h4a2 2 0 0 1 0 4H9m0 0h5a2 2 0 0 1 0 4H9"/></svg>
+            <span class="tab-label">Crypto</span>
         </div>
         <div class="tab-item" data-tab="stats" onclick="switchTab('stats')">
             <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -78,31 +82,138 @@
     
     <!-- 1. AGENTS TAB -->
     <div class="panel active" id="panel-agents">
-        <h2 class="panel-title">Agents Tree Layout</h2>
-        <div class="tree-container">
-            <svg id="treeLinesSvg" class="tree-lines-svg"></svg>
-            
-            <!-- Row 1: AARZ (root orchestrator) -->
-            <div class="tree-row row-1">
-                <div class="tree-node" id="node-aarz"></div>
+        <div class="agents-heading">
+            <div>
+                <div class="agents-eyebrow">AI FLEET OPERATIONS · AGENT ROSTER</div>
+                <h2 class="panel-title">Agent Fleet & Integrations</h2>
+                <p class="agents-subtitle">Real-time health, operational availability, and live execution telemetry across all agent interfaces.</p>
             </div>
+            <div class="agents-header-right">
+                <span id="agents-live-badge" class="agents-live-badge">
+                    <span class="live-dot pulse-green"></span>
+                    <span id="agents-updated-text">Live Telemetry</span>
+                </span>
+            </div>
+        </div>
 
-            <!-- Row 2: delegated agents — populated from agents.json by rebuildRoster() -->
-            <div class="tree-row row-2" id="agent-row"></div>
+        <!-- Master Health Status Banner: INSTANT AT-A-GLANCE STATUS (ALL GREEN / DOWN) -->
+        <div id="agents-master-status" class="master-status-card status-all-green">
+            <!-- Populated dynamically by updateMasterStatus() -->
+        </div>
+
+        <!-- Control Bar: Quick Status Filter Pills & Instant Filter Search -->
+        <div class="agents-control-bar">
+            <div class="agents-filter-pills" role="tablist" aria-label="Filter agents by status">
+                <button class="filter-btn active" data-filter="all" onclick="filterAgents('all')">
+                    <span>All Agents</span>
+                    <span class="filter-count" id="filter-count-all">6</span>
+                </button>
+                <button class="filter-btn" data-filter="healthy" onclick="filterAgents('healthy')">
+                    <span class="filter-dot green"></span>
+                    <span>Operational</span>
+                    <span class="filter-count" id="filter-count-healthy">6</span>
+                </button>
+                <button class="filter-btn" data-filter="active" onclick="filterAgents('active')">
+                    <span class="filter-dot cyan"></span>
+                    <span>Active Recently</span>
+                    <span class="filter-count" id="filter-count-active">4</span>
+                </button>
+                <button class="filter-btn" data-filter="standby" onclick="filterAgents('standby')">
+                    <span class="filter-dot gold"></span>
+                    <span>Standby / Ready</span>
+                    <span class="filter-count" id="filter-count-standby">2</span>
+                </button>
+                <button class="filter-btn" data-filter="issues" id="filter-issues-btn" onclick="filterAgents('issues')">
+                    <span class="filter-dot red"></span>
+                    <span>Issues / Down</span>
+                    <span class="filter-count alert-zero" id="filter-count-issues">0</span>
+                </button>
+            </div>
+            <div class="agents-search-box">
+                <svg class="search-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="agents-search-input" placeholder="Quick find by name or role..." oninput="onAgentSearch(this.value)" autocomplete="off" />
+                <button id="agents-search-clear" onclick="clearAgentSearch()" title="Clear filter" style="display:none;">&times;</button>
+            </div>
+        </div>
+
+        <!-- Agents Grid -->
+        <div class="tree-container agents-fleet-grid">
+            <div class="tree-node" id="node-aarz"></div>
+            <div id="agent-row" style="display: contents;"></div>
+        </div>
+
+        <div id="agents-empty-state" class="agents-empty-state" style="display: none;">
+            <p>No agents match the selected filter or search query.</p>
+            <button class="btn-reset-filters" onclick="filterAgents('all'); clearAgentSearch();">Show All Agents</button>
         </div>
     </div>
 
     <!-- 2. STATS TAB -->
+    <div class="panel" id="panel-crypto">
+        <div class="crypto-heading"><div><div class="crypto-eyebrow">MINING & TELEMETRY</div><h2 class="panel-title">Crypto Observatory</h2><p>Your Bitcoin & Aleo mining operations. Live from F2Pool.</p></div><span class="crypto-pill">F2POOL · READ-ONLY</span></div>
+        <div id="mining-panels" class="mining-panels" aria-label="F2Pool mining accounts"></div>
+        <p class="crypto-footnote">Graphs use the same F2Pool source data: 24-hour history in 30-minute samples or 30-day history in daily samples. Times are shown in your browser’s timezone. Revenue settlement follows UTC; today’s revenue is an estimate, not a guaranteed payout. Mining sources are cached for up to two minutes.</p>
+        <div class="crypto-section-heading"><div><div class="crypto-eyebrow">RASPBERRY PI · ENVIRONMENT</div><h3>Cooling & Climate</h3></div><span id="crypto-pi-status" class="crypto-pill">Connecting…</span></div>
+        <div class="crypto-sensors">
+            <div class="crypto-card crypto-sensor"><label>AMBIENT TEMPERATURE</label><strong id="crypto-temp">—</strong><small>DHT11 · not CPU temperature</small></div>
+            <div class="crypto-card crypto-sensor"><label>RELATIVE HUMIDITY</label><strong id="crypto-humidity">—</strong><small>Environmental sensor</small></div>
+            <div class="crypto-card crypto-sensor"><label>FAN 01 · GPIO 18</label><strong id="crypto-fan1">—</strong><div class="crypto-meter"><i id="crypto-fan1-bar"></i></div><small>Commanded duty cycle · not RPM</small></div>
+            <div class="crypto-card crypto-sensor"><label>FAN 02 · GPIO 19</label><strong id="crypto-fan2">—</strong><div class="crypto-meter"><i id="crypto-fan2-bar"></i></div><small>Commanded duty cycle · not RPM</small></div>
+        </div>
+        <div class="crypto-card crypto-schedule"><div><label>ACTIVE SCHEDULE</label><h4 id="crypto-mode">Awaiting telemetry</h4><small id="crypto-sensor-time">Read-only monitoring · refreshes every 30 seconds</small></div><div class="crypto-schedule-times"><span>08–18 <b>60%</b></span><span>18–20 <b>80%</b></span><span>20–08 <b>100%</b></span></div></div>
+        <p class="crypto-footnote">Schedule uses the Pi’s local clock. Fan speed is schedule-based, not temperature-based. Mining data is read-only; no payout or miner controls are exposed.</p>
+    </div>
     <div class="panel" id="panel-stats">
-        <h2 class="panel-title">System & Session Stats</h2>
+        <div class="system-heading">
+            <div>
+                <div class="system-eyebrow">AGENT-SERVER & R-SERVER · TELEMETRY</div>
+                <h2 class="panel-title">System & Activity Stats</h2>
+                <p>Infrastructure services, runtime health, host metrics, and scheduled operations.</p>
+            </div>
+            <div class="stats-badges-wrap" style="display: flex; gap: 10px; align-items: center;">
+                <span id="system-updated" class="system-badge">Waiting for collector…</span>
+                <span id="stats-freshness" class="system-badge">Loading telemetry…</span>
+            </div>
+        </div>
+
+        <!-- SECTION 1: System Services & Runtime Overview -->
+        <div id="system-summary" class="system-summary"></div>
+
+        <div class="system-section-title">
+            <h3>Runtime & Infrastructure Daemons</h3>
+            <span>systemd service units · background workers & bridges</span>
+        </div>
+        <div id="system-services" class="system-services"></div>
+
+        <div class="system-connections">
+            <div>
+                <span class="system-eyebrow">VOICE PATHWAY</span>
+                <p>Echo → homescreen relay → Voice Gateway → Pi + GPU speech</p>
+                <small id="system-echo">Checking Echo transport…</small>
+            </div>
+            <div>
+                <span class="system-eyebrow">INDEPENDENT CHANNELS</span>
+                <p>Terminal Pi · Discord · WhatsApp · Browser voice / Echo</p>
+                <small>Discord and scheduler share a runner. WhatsApp has its own profile. Speech workers are shared.</small>
+            </div>
+        </div>
+
+        <div class="system-section-title" style="margin-top: 36px;">
+            <h3>Activity Telemetry & Schedules</h3>
+            <span>Persistent Pi sessions, Discord turns, and scheduled executions</span>
+        </div>
+        <p class="system-note" style="margin-top: 4px; margin-bottom: 20px;">Activity combines Discord turns, scheduled/tool runs, and persisted Pi sessions. “Today” follows the collector’s clock; 24h is a rolling window.</p>
         
         <!-- SECTION A: Session Stats — Hero + Per-agent grid -->
         <div class="stats-hero-row" style="display: flex; gap: 24px; margin-bottom: 28px; align-items: stretch; flex-wrap: wrap;">
             <div class="stats-hero" style="flex: 1 1 500px; margin-bottom: 0;">
                 <div class="stats-hero-total">
                     <div class="stats-hero-number" id="stat-total-sessions">0</div>
-                    <div class="stats-hero-label">Agent Sessions Today</div>
-                    <div class="stat-cron-subtitle" id="stat-last-updated" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; opacity: 0.75;">updated just now</div>
+                    <div class="stats-hero-label">Mixed Activity · Today</div>
+                    <div class="stat-cron-subtitle" id="stat-last-updated" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; opacity: 0.75;">Waiting for collector…</div>
                 </div>
                 <div class="stats-hero-divider"></div>
                 <div class="stats-agent-grid" id="stats-agent-grid">
@@ -111,12 +222,12 @@
             </div>
             <div class="stat-card" id="total-sessions-stat" style="flex: 1 1 240px; min-width: 200px; height: auto; background: var(--card-bg); border: 1.2px solid var(--card-border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 24px 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                 <div class="stats-hero-number" id="stat-total-sessions-all" style="font-family: 'Share Tech Mono', monospace; font-size: 4.5rem; font-weight: 700; color: var(--gold); line-height: 1; text-shadow: 0 0 20px rgba(196, 154, 108, 0.3);">0</div>
-                <div class="stats-hero-label" style="font-family: 'DM Sans', sans-serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-top: 6px; font-weight: 600;">Sessions · 24h</div>
+                <div class="stats-hero-label" style="font-family: 'DM Sans', sans-serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-top: 6px; font-weight: 600;">Mixed Activity · 24h</div>
             </div>
-            <div class="stat-card" id="cron-jobs-stat" onclick="toggleCronPanel()" style="cursor: pointer; transition: all 0.2s ease; flex: 1 1 240px; min-width: 200px; height: auto; background: var(--card-bg); border: 1.2px solid var(--card-border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 24px 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--gold)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--card-border)';" >
+            <div class="stat-card" id="cron-jobs-stat" role="button" tabindex="0" aria-controls="cron-details-panel" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCronPanel()}" onclick="toggleCronPanel()" style="cursor: pointer; transition: all 0.2s ease; flex: 1 1 240px; min-width: 200px; height: auto; background: var(--card-bg); border: 1.2px solid var(--card-border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 24px 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--gold)';" onmouseout="this.style.transform='none'; this.style.borderColor='var(--card-border)';" >
                 <div class="stats-hero-number" id="stat-cron-count" style="font-family: 'Share Tech Mono', monospace; font-size: 4.5rem; font-weight: 700; color: var(--gold); line-height: 1; text-shadow: 0 0 20px rgba(196, 154, 108, 0.3);">0</div>
-                <div class="stats-hero-label" style="font-family: 'DM Sans', sans-serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-top: 6px; font-weight: 600;">Cron Jobs</div>
-                <div class="stat-cron-subtitle" id="stat-cron-subtitle" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500;"><span style="color: var(--sage);" id="stat-cron-active">0</span> active / <span style="color: var(--text-muted);" id="stat-cron-paused">0</span> paused</div>
+                <div class="stats-hero-label" style="font-family: 'DM Sans', sans-serif; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-top: 6px; font-weight: 600;">Enabled Schedules</div>
+                <div class="stat-cron-subtitle" id="stat-cron-subtitle" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500;"><span style="color: var(--sage);" id="stat-cron-active">0</span> enabled / <span style="color: var(--text-muted);" id="stat-cron-paused">0</span> paused</div>
                 <div id="stat-cron-health-badge" style="margin-top: 12px; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; display: inline-block; opacity: 0; transition: opacity 0.2s;"></div>
             </div>
         </div>
@@ -124,7 +235,7 @@
         <!-- NEW CRON DETAILS PANEL -->
         <div id="cron-details-panel" style="display: none; background: var(--card-bg); border: 1.2px solid var(--card-border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); padding: 24px 28px; margin-bottom: 28px; overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.3s ease-out, opacity 0.3s ease-out;">
              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                 <h3 style="margin: 0; color: var(--gold); font-family: 'DM Sans', sans-serif; font-size: 1.1rem; letter-spacing: 0.05em;">CRON JOBS DETAIL</h3>
+                 <h3 style="margin: 0; color: var(--gold); font-family: 'DM Sans', sans-serif; font-size: 1.1rem; letter-spacing: 0.05em;">Scheduled Operations</h3>
                  <button onclick="toggleCronPanel()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.5rem; line-height: 1; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'">&times;</button>
              </div>
              <div id="cron-details-list" style="display: flex; flex-direction: column; gap: 8px;">
@@ -135,7 +246,7 @@
         <!-- SECTION B: System Health side-by-side -->
         <div class="health-grid">
             <div class="health-panel">
-                <h3 class="health-panel-hdr">Local Device <span class="ip-label">100.100.35.6</span></h3>
+                <h3 class="health-panel-hdr">agent-server <span class="ip-label">100.100.35.6</span></h3>
                 <div class="health-list" id="local-health-list">
                     <!-- Dynamic -->
                 </div>
@@ -441,6 +552,11 @@
       <circle cx="12" cy="12" r="10" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="32 8"/>
     </svg>
 </div>
-<script src="js/dashboard.js"></script>
+<script src="js/dashboard.js?v=pi-20261101"></script>
+<link rel="stylesheet" href="css/crypto.css">
+<link rel="stylesheet" href="css/system.css">
+<link rel="stylesheet" href="css/stats.css">
+<script src="js/crypto.js"></script>
+<script src="js/stats.js"></script>
 </body>
 </html>

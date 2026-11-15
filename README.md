@@ -4,7 +4,7 @@ The deployed dashboard monitors Pi-backed Discord/scheduled jobs, CLI, voice/Ech
 
 **[Current system documentation →](docs/current-system/README.md)**
 
-Verified documentation baseline: **2026-11-15**. The documentation describes inspected production state. **The implementation in this repository still trails the production working tree**; this update is not a complete source synchronization or a deployable backup.
+Verified source/documentation baseline: **2026-11-15**. Reviewed production frontend, Pi collectors/adapters, crypto API and system-overview code have been synchronized without modifying production. This is an allowlisted source baseline, **not a complete deployment backup**; private/generated state and unrelated local scratch/harness artifacts are excluded. See [publication scope and test results](docs/current-system/source-publication.md).
 
 Live URL: `http://100.100.35.6:8000/agent-dashboard/` (private Tailscale access).
 
@@ -28,4 +28,4 @@ Agents are independent integration/activity cards, **not the old Hermes speciali
 
 `INTEGRATION.md` and `MISSION.md` contain historical contracts/notes. Prefer the dated current-system guide when they conflict. Existing mission-detail tooling and its contracts remain in the repository; this documentation pass does not change operational state.
 
-Production source lives at `/home/Aarz/agent-dashboard`. Runtime, voice and WhatsApp deployment sources need separate sanitized publication/review. Never bulk add generated JSON, private state, logs, session files, credentials or backups. Review source diffs and tests before deploying anything from GitHub.
+Production source lives at `/home/Aarz/agent-dashboard`. Runtime, voice and WhatsApp deployment baselines are preserved in separate private owner-controlled repositories linked from the publication guide. Never bulk add generated JSON, private state, logs, session files, credentials or backups. Review source diffs and tests before deploying anything from GitHub.
