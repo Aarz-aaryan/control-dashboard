@@ -6,7 +6,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path('/home/Aarz/hermes-replacement')
+ROOT = Path('/home/Aarz/pi-agent-runtime')
 SESSION_DIRS = {
     'pi-cli': Path('/home/Aarz/.pi/agent/sessions'),
     'pi-voice': Path('/home/Aarz/pi-live-voice/sessions'),
@@ -84,13 +84,16 @@ def runtime_activity(root=None):
             for r in rows:
                 if r['kind'] != kind or r['started'] is None:
                     continue
+                if kind == 'cron' and r['job_id'] not in jobs:
+                    continue  # Retired-job history stays in SQLite, not current fleet activity.
                 title = 'Discord conversation' if kind == 'chat' else jobs.get(r['job_id'], 'Scheduled job')
                 entries.append(dict(started=r['started'], ts=int((r['finished'] or r['started']) * 1000),
                                     title=f"{title} · {r['state']}", source='pi-discord' if kind == 'chat' else 'pi-cron',
                                     state=r['state'], msgs=0))
             agents[agent_id] = summarize(entries, unit)
-            agents[agent_id]['running'] = sum(r['kind'] == kind and r['state'] == 'running' for r in rows)
-            agents[agent_id]['queued'] = sum(r['kind'] == kind and r['state'] == 'queued' for r in rows)
+            current = [r for r in rows if r['kind'] == kind and (kind != 'cron' or r['job_id'] in jobs)]
+            agents[agent_id]['running'] = sum(r['state'] == 'running' for r in current)
+            agents[agent_id]['queued'] = sum(r['state'] == 'queued' for r in current)
     except (OSError, ValueError, KeyError, sqlite3.Error) as exc:
         for agent in agents.values():
             agent['error'] = 'Pi runtime data unavailable'

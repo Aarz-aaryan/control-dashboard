@@ -1,0 +1,27 @@
+// node tests/test_tab_alerts.js
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const tooltip={textContent:'r-server',attrs:{},setAttribute(k,v){this.attrs[k]=v;}};
+let clicks=0;
+const item={attrs:{},setAttribute(k,v){this.attrs[k]=v;},querySelector(){return tooltip;},click(){clicks++;}};
+const badge={classes:new Set(),attrs:{},setAttribute(k,v){this.attrs[k]=v;},closest(){return item;}};
+badge.classList={toggle(name,on){if(on)badge.classes.add(name);else badge.classes.delete(name);}};
+const context={window:{},document:{getElementById(id){return id==='tab-error-r-server'?badge:null;}}};
+vm.runInNewContext(fs.readFileSync('js/tab-alerts.js','utf8'),context);
+const {set}=context.window.DashboardAlerts;
+set('r-server','backups','Backup check unavailable','warning');
+assert(badge.classes.has('visible'));assert(badge.classes.has('tab-warning'));
+set('r-server','docker','Container unhealthy');
+assert(!badge.classes.has('tab-warning'));assert.match(tooltip.attrs['data-alert'],/Backup check unavailable\nContainer unhealthy/);
+assert.match(item.attrs['aria-label'],/Container unhealthy/);
+assert.equal(item.attrs.tabindex,'0');
+item.onkeydown({key:'Enter',preventDefault(){}});assert.equal(clicks,1);
+set('r-server','backups',null);
+assert(badge.classes.has('visible'),'A healthy backup must not clear the Docker alert');
+set('r-server','docker',null);
+assert(!badge.classes.has('visible'));assert.equal(badge.attrs['aria-hidden'],'true');
+assert.equal(tooltip.attrs['data-alert'],'');
+assert.equal(item.attrs['aria-label'],'r-server');
+set('absent','test','No badge element');
+console.log('Per-tab alert aggregation and recovery tests passed');

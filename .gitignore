@@ -3,6 +3,7 @@ health.json
 agents.json
 missions.json
 r_server_info.json
+backup_health.json
 repos.json
 missions_state.json
 missions_state.*.bak
@@ -15,6 +16,9 @@ update_data.log
 
 # Local secrets
 .dashboard_token
+.env
+*.key
+*.pem
 
 # Weekly audit outputs
 orphan-audit-report-*.md
@@ -22,4 +26,11 @@ orphan-audit-log.jsonl
 
 # Editor / python noise
 __pycache__/
+.pytest_cache/
 index.html.bak*
+
+# Local probes and screenshots (recoverable history lives in server-ops/archive)
+probe_output.json
+probe_report.json
+screenshot.png
+screenshot_hover.png

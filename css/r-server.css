@@ -1,0 +1,15 @@
+#r-server-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 24px 0; }
+.r-metric-card { min-width: 0; padding: 20px; border: 1px solid rgba(196,154,108,.2); border-radius: 12px; background: rgba(18,25,27,.65); }
+.r-metric-label { font: 500 .8rem 'DM Sans', sans-serif; text-transform: uppercase; letter-spacing: .09em; color: var(--text-muted, #aaa); margin: 0 0 12px; }
+.r-metric-value { font: 500 1.8rem 'Share Tech Mono', monospace; color: var(--gold, #c49a6c); overflow-wrap: anywhere; }
+.r-metric-detail { margin: 12px 0 0; font-size: .82rem; line-height: 1.7; color: var(--text-muted, #aaa); overflow-wrap: anywhere; }
+.r-meter { width: 100%; height: 9px; margin-top: 14px; accent-color: #7eb5a6; }
+.r-storage { grid-column: 1 / -1; }
+.r-storage-title { margin: 4px 0 14px; font-size: 1rem; font-weight: 500; }
+.r-storage-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.r-storage-grid .r-metric-value { font-size: 1.35rem; }
+.r-metric-warning { border-color: #b58c41; }
+.r-metric-updated { grid-column: 1 / -1; margin: 0; font-size: .75rem; opacity: .65; }
+#panel-r-server .r-docker-single { grid-template-columns: minmax(0, 1fr); margin-bottom: 24px; }
+@media (max-width: 1000px) { .r-storage-grid { grid-template-columns: 1fr; } }
+@media (max-width: 650px) { #r-server-metrics { grid-template-columns: 1fr; } }

@@ -1,4 +1,5 @@
-#panel-crypto { max-width:1440px; margin:auto; }
+/* Use the shared full-width panel so its scrollbar stays at the viewport edge. */
+#panel-crypto { max-width:none; margin:0; }
 .crypto-heading,.crypto-section-heading,.crypto-schedule { display:flex; justify-content:space-between; align-items:center; gap:24px; }
 .crypto-heading { margin-bottom:28px; }
 .crypto-heading .panel-title { margin:8px 0; }
@@ -19,18 +20,33 @@
 .mining-live label,.mining-revenue label { display:block; color:var(--text-muted); }
 .mining-live strong { display:block; font:clamp(1.2rem,2.5vw,2.25rem) 'Share Tech Mono',monospace; color:var(--cream); margin:10px 0 6px; }
 .mining-live small { display:block; color:var(--text-muted); font-size:.7rem; line-height:1.6; }
-.mining-revenue { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:18px; border-top:1px solid var(--card-border); border-bottom:1px solid var(--card-border); padding:20px 0; }
+.mining-revenue { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px; border-top:1px solid var(--card-border); border-bottom:1px solid var(--card-border); padding:20px 0; }
 .mining-revenue strong { display:block; margin:10px 0 4px; font:clamp(.85rem,1.3vw,1.15rem) 'Share Tech Mono',monospace; overflow-wrap:anywhere; }
+.mining-usdt-balance strong { color:var(--sage); }
 .mining-revenue small { color:var(--gold); font:11px 'Share Tech Mono',monospace; }
 .mining-source-status { font:11px 'Share Tech Mono',monospace; line-height:1.7; color:var(--text-muted); margin:12px 0 0; overflow-wrap:anywhere; }
-.mining-controls { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; margin-top:24px; }
-.mining-chart-wrap { position:relative; margin-top:18px; min-width:0; }
-.mining-chart { display:block; width:100%; height:260px; color:var(--text-muted); font-family:'Share Tech Mono',monospace; }
-.mining-tooltip { position:absolute; top:20px; left:50px; max-width:calc(100% - 55px); background:var(--bg-overlay); border:1px solid var(--card-border); border-radius:8px; padding:9px 12px; color:var(--cream); font:12px 'Share Tech Mono',monospace; pointer-events:none; line-height:1.5; }
-.mining-legend { display:flex; flex-wrap:wrap; gap:18px; color:var(--gold); font:11px 'Share Tech Mono',monospace; margin:8px 0; }
-.mining-rejected { color:var(--terracotta); }
+.mining-controls { margin-top:24px; padding:0 20px; background:#f4f9ff; border-radius:12px 12px 0 0; }
+.mining-views { border:0; border-bottom:1px solid #dce6f0; border-radius:0; padding:0; gap:24px; }
+.mining-views button { font:14px Arial,sans-serif; color:#687e91; padding:18px 0 13px; border-radius:0; border-bottom:3px solid transparent; }
+.mining-views button.selected { color:#2053e9; border-bottom-color:#2053e9; background:transparent; }
+.mining-plot-shell { background:#f4f9ff; color:#34495e; border-radius:0 0 12px 12px; padding:20px 16px 12px; }
+.mining-plot-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:0 3px; }
+.mining-chart-title { color:#34495e; font:600 16px Arial,sans-serif; }
+.mining-periods { flex-wrap:nowrap; border:1px solid #2889fc; border-radius:20px; padding:2px; gap:0; }
+.mining-periods button { color:#2053e9; min-width:56px; padding:3px 9px; border-radius:20px; font:12px Arial,sans-serif; white-space:nowrap; }
+.mining-periods button.selected { color:white; background:#2889fc; }
+.mining-chart-wrap { position:relative; margin-top:4px; min-width:0; }
+.mining-chart { display:block; width:100%; height:380px; font-family:Arial,sans-serif; }
+.mining-chart:focus-visible { outline-color:#2889fc; }
+.mining-legend { color:#8d9ea7; font:12px Arial,sans-serif; margin:10px 3px 0; line-height:1.5; }
 .crypto-section-heading { margin:34px 0 18px; }
 .crypto-section-heading h3 { font:2rem 'Cormorant Garamond',serif; color:var(--cream); margin:6px 0; }
+.crypto-gpu-hosts { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:16px; }
+.crypto-gpu-host { padding:24px; min-width:0; }
+.crypto-gpu-host h4 { margin:0 0 16px; color:var(--gold); font:18px 'Share Tech Mono',monospace; }
+.crypto-gpu-row { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:12px 0; border-bottom:1px solid var(--card-border); }
+.crypto-gpu-row span { color:var(--text-muted); font-size:.8rem; overflow-wrap:anywhere; }
+.crypto-gpu-row strong { color:var(--cream); font:1.7rem 'Share Tech Mono',monospace; white-space:nowrap; }
 .crypto-sensors { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
 .crypto-sensor { padding:24px; }
 .crypto-sensor label { color:var(--text-muted); display:block; font-size:.6rem; }
@@ -44,9 +60,20 @@
 .crypto-schedule-times b { display:block; color:var(--gold); margin-top:8px; font-size:18px; }
 .crypto-footnote { line-height:1.7; font-size:.7rem; margin:18px 0 30px; }
 .crypto-warning { color:var(--terracotta)!important; }
+.mining-master-status.status-mining-warning { background:linear-gradient(135deg,rgba(245,158,11,.09),rgba(15,19,24,.9) 60%),#12110c; border:1.2px solid rgba(245,158,11,.35); }
+.mining-master-status .status-core-dot.amber { background:#f59e0b; box-shadow:0 0 16px rgba(245,158,11,.65); }
+.mining-master-status .status-pulse-ring.amber { border-color:rgba(245,158,11,.6); }
+.mining-master-status .badge-amber { color:#fbbf24; background:rgba(245,158,11,.12); border-color:rgba(245,158,11,.3); }
+.mining-master-status .status-chip { flex-wrap:wrap; max-width:100%; line-height:1.5; border-radius:12px; }
+.mining-master-status .mining-chip-detail { font-size:.75rem; color:var(--text-muted); }
+.mining-master-status .chip-amber { background:rgba(245,158,11,.05); border-color:rgba(245,158,11,.3); }
+.mining-master-status .chip-amber strong { color:#fbbf24; }
+.mining-master-status .chip-amber .chip-dot { width:7px; height:7px; border-radius:50%; background:#f59e0b; box-shadow:0 0 6px #f59e0b; }
+@media(prefers-reduced-motion:reduce) { .mining-master-status .status-pulse-ring { animation:none; opacity:.4; } }
+@media(max-width:600px) { .mining-master-status { padding:20px 16px; } .mining-master-status .mining-chip-detail { flex-basis:100%; } }
 @media(max-width:1000px) {
     .crypto-sensors { grid-template-columns:repeat(2,minmax(0,1fr)); }
-    .mining-revenue { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .mining-revenue { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media(max-width:600px) {
     .crypto-heading,.crypto-schedule { align-items:flex-start; flex-direction:column; gap:16px; }
@@ -57,7 +84,15 @@
     .mining-live strong { font-size:1.3rem; }
     .mining-revenue { grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 10px; }
     .mining-revenue strong { font-size:1rem; }
-    .crypto-ranges button { padding:10px 8px; }
+    .mining-controls { padding:0 12px; }
+    .mining-views { gap:14px; }
+    .mining-views button { font-size:12px; padding:13px 0 10px; }
+    .mining-plot-shell { padding:16px 7px 12px; }
+    .mining-plot-heading { align-items:flex-start; flex-direction:column; }
+    .mining-chart-title { font-size:14px; }
+    .mining-periods { align-self:flex-end; }
+    .mining-periods button { min-height:30px; min-width:62px; }
+    .mining-chart { height:320px; }
     .crypto-sensor { padding:18px 13px; }
     .crypto-sensor strong { font-size:1.9rem; }
     .crypto-section-heading { gap:8px; flex-wrap:wrap; }

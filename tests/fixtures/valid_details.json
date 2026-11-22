@@ -1,0 +1,64 @@
+{
+  "_updated_at": "2026-10-10T12:00:00Z",
+  "_updated_by": "missions_detail_probe.py",
+  "missions": {
+    "project-alpha": {
+      "summary": "Alpha summary current",
+      "summary_updated_at": "2026-10-10T12:00:00Z",
+      "github": {
+        "url": "https://github.com/Aarz-aaryan/project-alpha",
+        "private": false,
+        "empty": false,
+        "has_readme": true,
+        "default_branch": "main",
+        "description": "Alpha active repo",
+        "pushed_at": "2026-10-10T12:00:00Z",
+        "created_at": "2026-01-01T00:00:00Z",
+        "open_issues": 1,
+        "commit_count": 5,
+        "last_commit": {
+          "sha": "1234567",
+          "message": "feat: initial feature",
+          "at": "2026-10-10T12:00:00Z"
+        }
+      },
+      "activity": [
+        {
+          "at": "2026-10-10T12:00:00Z",
+          "text": "Commit: feat: initial feature",
+          "source": "github"
+        }
+      ],
+      "question": {
+        "id": "q-alpha-101",
+        "text": "What is the target architecture?",
+        "asked_at": "2026-10-09T10:00:00Z",
+        "status": "open"
+      },
+      "question_history": []
+    },
+    "project-beta": {
+      "summary": "Old summary",
+      "summary_updated_at": "2026-09-01T12:00:00Z",
+      "github": {
+        "url": "https://github.com/Aarz-aaryan/project-beta",
+        "private": true,
+        "empty": false,
+        "has_readme": true,
+        "default_branch": "main",
+        "description": "Beta repo",
+        "pushed_at": "2026-10-09T12:00:00Z",
+        "created_at": "2026-02-01T00:00:00Z",
+        "open_issues": 0,
+        "commit_count": 2,
+        "last_commit": {
+          "sha": "abcdef0",
+          "message": "fix: bug fix",
+          "at": "2026-10-09T12:00:00Z"
+        }
+      },
+      "activity": [],
+      "question_history": []
+    }
+  }
+}

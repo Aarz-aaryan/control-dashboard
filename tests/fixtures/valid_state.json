@@ -1,0 +1,24 @@
+{
+  "_version": 2,
+  "_last_modified": "2026-10-11T12:00:00.000000Z",
+  "_modified_by": "system",
+  "missions": {
+    "project-alpha": {
+      "status": "active",
+      "priority": 1,
+      "order": 0,
+      "updated_at": "2026-10-11T12:00:00.000000Z",
+      "description": "Alpha active mission"
+    },
+    "project-beta": {
+      "status": "inactive",
+      "priority": 5,
+      "order": 1,
+      "updated_at": "2026-10-10T12:00:00.000000Z",
+      "description": "Beta inactive mission"
+    }
+  },
+  "projects": [
+    "project-gamma"
+  ]
+}
