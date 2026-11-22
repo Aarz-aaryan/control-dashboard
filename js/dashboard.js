@@ -54,7 +54,7 @@ const STALE_DATA_MS = 3 * 60 * 1000;     // collector output older than this = s
 
 async function fetchJSON(url) {
     try {
-        const r = await fetch(url, { cache: 'no-store' });
+        const r = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(12000) });
         return r.ok ? await r.json() : null;
     } catch { return null; }
 }
@@ -88,7 +88,7 @@ async function loadAgentsJson() {
 // Per-integration activity from Pi runtime history and JSONL session metadata.
 function getAgentData(id) {
     const a = (_agentsJson && _agentsJson.agents && _agentsJson.agents[id]) || null;
-    if (!a) return { status: 'dormant', ts: 0, sessions_today: 0, sessions_24h: 0, recent: [] };
+    if (!a) return { status: 'dormant', ts: 0, sessions_today: 0, sessions_24h: 0, recent: [], error: 'Integration telemetry unavailable' };
     return {
         status: a.status || 'dormant',
         ts: a.last_active_ms || 0,
@@ -104,9 +104,14 @@ function getAgentData(id) {
     };
 }
 
+function telemetryAgeMs(generated, now = Date.now()) {
+    const at = Date.parse(generated);
+    const age = now - at;
+    return Number.isFinite(age) && age >= -5000 ? Math.max(0, age) : Infinity;
+}
+
 function agentsDataAgeMs() {
-    if (!_agentsJson || !_agentsJson._generated_at) return Infinity;
-    return Date.now() - new Date(_agentsJson._generated_at).getTime();
+    return telemetryAgeMs(_agentsJson?._generated_at);
 }
 
 // ── Toast notifications (replaces alert()) ─────────────────────────────────
@@ -135,7 +140,7 @@ function toast_ok(msg) { toast(msg, 'ok', 4000); }
 // ── Formatters ─────────────────────────────────────────────────────────────
 
 function formatAge(ms) {
-    if (!ms || ms < 0) return null;
+    if (!Number.isFinite(ms) || !ms || ms < 0) return null;
     const s = Math.floor(ms / 1000);
     const m = Math.floor(s / 60);
     const h = Math.floor(m / 60);
@@ -167,24 +172,38 @@ function getAgentHealth(id, data, system) {
     let issueDetail = '';
     let daemonInfo = '';
 
-    if (error) {
+    if (error || agentsDataAgeMs() > STALE_DATA_MS) {
         return {
             isHealthy: false,
             status: 'down',
             statusLabel: 'UNAVAILABLE',
-            issueDetail: error,
+            issueDetail: error || 'Collector telemetry stale or unavailable',
             daemonInfo: 'Runtime data unavailable',
             isWorking: false
         };
     }
 
+    const required = {
+        aarz: ['aarz-agent.service', 'modelrelay.service'],
+        'pi-scheduler': ['aarz-agent.service', 'modelrelay.service'],
+        'pi-voice': ['pi-live-voice.service', 'whatsapp-stt.service', 'whatsapp-tts.service', 'modelrelay.service'],
+        'pi-whatsapp': ['whatsapp-pi.service', 'whatsapp-stt.service', 'whatsapp-tts.service', 'modelrelay.service'],
+    }[id] || [];
+    const unavailable = required.find(unit => services.find(s => s.unit === unit)?.state !== 'active');
+    const needsRuntime = id === 'aarz' || id === 'pi-scheduler';
+    if (unavailable || needsRuntime && (runtime.discord_connected !== true || !Number.isFinite(runtime.heartbeat_age_s) || runtime.heartbeat_age_s < 0 || runtime.heartbeat_age_s >= 90)) {
+        return {isHealthy:false, status:'degraded', statusLabel:'HEALTH UNVERIFIED',
+            issueDetail:unavailable ? `${unavailable}: inactive or unknown` : 'Discord disconnected or heartbeat stale/missing',
+            daemonInfo:'Service/runtime health could not be confirmed', isWorking:false};
+    }
+
     switch (id) {
         case 'aarz': {
             const svc = services.find(s => s.unit === 'aarz-agent.service');
-            const svcOk = svc ? svc.state === 'active' : true;
-            const discordOk = runtime.discord_connected ?? true;
+            const svcOk = svc?.state === 'active';
+            const discordOk = runtime.discord_connected === true;
             const heartbeatAge = runtime.heartbeat_age_s;
-            const heartbeatOk = heartbeatAge === null || heartbeatAge === undefined || heartbeatAge < 90;
+            const heartbeatOk = Number.isFinite(heartbeatAge) && heartbeatAge >= 0 && heartbeatAge < 90;
 
             if (!svcOk) {
                 isHealthy = false;
@@ -224,6 +243,8 @@ function getAgentHealth(id, data, system) {
             const svc = services.find(s => s.unit === 'aarz-agent.service');
             const svcOk = svc ? svc.state === 'active' : true;
             const sched = system?.schedules;
+            const failedJobs = telemetryAgeMs(latestMissionsJson?._generated_at) <= STALE_DATA_MS
+                ? (latestMissionsJson.cron || []).filter(j => j.status === 'ACTIVE' && (j.last_status === 'error' || j.last_error)).length : 0;
 
             if (!svcOk) {
                 isHealthy = false;
@@ -231,6 +252,18 @@ function getAgentHealth(id, data, system) {
                 statusLabel = 'OFFLINE · STOPPED';
                 issueDetail = 'Scheduler runner service inactive';
                 daemonInfo = 'aarz-agent.service: inactive';
+            } else if (telemetryAgeMs(latestMissionsJson?._generated_at) > STALE_DATA_MS) {
+                isHealthy = false;
+                status = 'degraded';
+                statusLabel = 'SCHEDULE DATA STALE';
+                issueDetail = 'Scheduled-job results are stale or unavailable; runner service is active';
+                daemonInfo = issueDetail;
+            } else if (failedJobs) {
+                isHealthy = false;
+                status = 'degraded';
+                statusLabel = 'JOB FAILURES';
+                issueDetail = `${failedJobs} enabled schedules have last-run errors; runner service is active`;
+                daemonInfo = issueDetail;
             } else if (working) {
                 status = 'running';
                 statusLabel = 'RUNNING JOB';
@@ -238,11 +271,11 @@ function getAgentHealth(id, data, system) {
             } else if (isRecent) {
                 status = 'active';
                 statusLabel = 'ONLINE · ACTIVE';
-                daemonInfo = `${sched ? sched.enabled : 27} active schedules · runs executing`;
+                daemonInfo = `${sched ? sched.enabled : 'unknown'} enabled schedules · recent executions`;
             } else {
                 status = 'standby';
                 statusLabel = 'ONLINE · SCHEDULED';
-                daemonInfo = `${sched ? sched.enabled : 27} schedules enabled`;
+                daemonInfo = `${sched ? sched.enabled : 'unknown'} schedules enabled`;
             }
             break;
         }
@@ -513,7 +546,8 @@ function updateMasterStatus() {
     const activeCount = agentsList.filter(x => x.health.status === 'active' || x.health.status === 'running').length;
     const standbyCount = agentsList.filter(x => x.health.status === 'standby').length;
     const issues = agentsList.filter(x => !x.health.isHealthy || x.health.status === 'down' || x.health.status === 'degraded');
-    const issueCount = issues.length;
+    const infrastructureIssues = (system?.services || []).filter(s => s.state !== 'active');
+    const issueCount = issues.length + infrastructureIssues.length;
 
     const elAll = document.getElementById('filter-count-all');
     if (elAll) elAll.textContent = total;
@@ -529,20 +563,12 @@ function updateMasterStatus() {
         elIssues.className = 'filter-count ' + (issueCount > 0 ? 'alert-active' : 'alert-zero');
     }
 
-    const tabBadge = document.getElementById('tab-error-agents');
-    if (tabBadge) {
-        if (issueCount > 0 || stale) {
-            tabBadge.textContent = issueCount > 0 ? String(issueCount) : '!';
-            tabBadge.classList.add('visible');
-        } else {
-            tabBadge.classList.remove('visible');
-        }
-    }
+    window.DashboardAlerts?.set('agents', 'fleet', stale ? 'Agent telemetry stale / unavailable' : issueCount ? `${issueCount} health issues — see fleet panel` : null, stale ? 'warning' : 'error');
 
     const updateText = document.getElementById('agents-updated-text');
     if (updateText) {
         if (stale) {
-            updateText.textContent = 'Collector Stale (' + (formatAge(agentsDataAgeMs()) || '') + ')';
+            updateText.textContent = 'Telemetry unverified · ' + (formatAge(agentsDataAgeMs()) || 'missing / invalid timestamp');
         } else {
             updateText.textContent = 'Live Telemetry · ' + (formatAge(agentsDataAgeMs()) || 'just now');
         }
@@ -551,10 +577,10 @@ function updateMasterStatus() {
     if (liveBadge) liveBadge.classList.toggle('system-bad', stale);
 
     const rt = system?.runtime || {};
-    const discordOk = rt.discord_connected === true;
-    const schedOk = (system?.schedules?.enabled || 0) > 0;
-    const voiceOk = system?.services?.find(s => s.unit === 'pi-live-voice.service')?.state === 'active';
-    const waOk = system?.services?.find(s => s.unit === 'whatsapp-pi.service')?.state === 'active';
+    const discordOk = !stale && rt.discord_connected === true;
+    const schedOk = !stale && (system?.schedules?.enabled || 0) > 0;
+    const voiceOk = !stale && system?.services?.find(s => s.unit === 'pi-live-voice.service')?.state === 'active';
+    const waOk = !stale && system?.services?.find(s => s.unit === 'whatsapp-pi.service')?.state === 'active';
 
     if (issueCount === 0 && !stale) {
         masterEl.className = 'master-status-card status-all-green';
@@ -566,8 +592,8 @@ function updateMasterStatus() {
                 </div>
                 <div class="master-status-info">
                     <div class="master-status-badge">SYSTEM STATUS: OPTIMAL</div>
-                    <div class="master-status-title">ALL AGENTS & SERVICES OPERATIONAL</div>
-                    <div class="master-status-sub">All ${total} agent interfaces are online and responding normally. 0 issues detected across agent-server.</div>
+                    <div class="master-status-title">INTEGRATIONS & SERVICES REPORTING</div>
+                    <div class="master-status-sub">${total} integration activity sources reporting; monitored service units are active. Activity history is not a live connection test.</div>
                 </div>
             </div>
             <div class="master-status-chips">
@@ -591,10 +617,11 @@ function updateMasterStatus() {
     } else {
         masterEl.className = 'master-status-card status-has-issues';
         const issueDescriptions = [];
-        if (stale) issueDescriptions.push('Telemetry collector is stale (' + formatAge(agentsDataAgeMs()) + ')');
+        if (stale) issueDescriptions.push('Telemetry collector unverified: ' + (formatAge(agentsDataAgeMs()) || 'missing / invalid timestamp'));
         issues.forEach(x => {
             issueDescriptions.push(`${x.agent.name}: ${x.health.issueDetail || x.health.statusLabel}`);
         });
+        infrastructureIssues.forEach(s => issueDescriptions.push(`${s.name || s.unit}: ${s.state || 'unknown'}`));
 
         masterEl.innerHTML = `
             <div class="master-status-main">
@@ -604,22 +631,22 @@ function updateMasterStatus() {
                 </div>
                 <div class="master-status-info">
                     <div class="master-status-badge badge-red">ATTENTION REQUIRED</div>
-                    <div class="master-status-title">${issueCount > 0 ? `${issueCount} AGENT${issueCount > 1 ? 'S' : ''} WITH ISSUES` : 'COLLECTOR STALE'}</div>
+                    <div class="master-status-title">${issueCount > 0 ? `${issueCount} HEALTH ISSUE${issueCount > 1 ? 'S' : ''}` : 'COLLECTOR STALE'}</div>
                     <div class="master-status-sub">${escapeHtml(issueDescriptions.join(' · '))}</div>
                 </div>
             </div>
             <div class="master-status-chips">
                 <div class="status-chip ${discordOk ? 'chip-green' : 'chip-red'}">
-                    <span class="chip-dot"></span><span class="chip-label">Discord:</span> <strong>${discordOk ? 'Connected' : 'Disconnected'}</strong>
+                    <span class="chip-dot"></span><span class="chip-label">Discord:</span> <strong>${stale ? 'Unverified' : discordOk ? 'Connected' : 'Disconnected / unknown'}</strong>
                 </div>
                 <div class="status-chip ${schedOk ? 'chip-green' : 'chip-red'}">
-                    <span class="chip-dot"></span><span class="chip-label">Schedulers:</span> <strong>${system?.schedules?.enabled || 0} Active</strong>
+                    <span class="chip-dot"></span><span class="chip-label">Schedulers:</span> <strong>${stale ? 'Unverified' : (system?.schedules?.enabled || 0) + ' Enabled'}</strong>
                 </div>
                 <div class="status-chip ${voiceOk ? 'chip-green' : 'chip-red'}">
-                    <span class="chip-dot"></span><span class="chip-label">Voice Gateway:</span> <strong>${voiceOk ? 'Ready' : 'Down'}</strong>
+                    <span class="chip-dot"></span><span class="chip-label">Voice Gateway:</span> <strong>${stale ? 'Unverified' : voiceOk ? 'Ready' : 'Down / unknown'}</strong>
                 </div>
                 <div class="status-chip ${waOk ? 'chip-green' : 'chip-red'}">
-                    <span class="chip-dot"></span><span class="chip-label">WhatsApp · Pi:</span> <strong>${waOk ? 'Ready' : 'Down'}</strong>
+                    <span class="chip-dot"></span><span class="chip-label">WhatsApp · Pi:</span> <strong>${stale ? 'Unverified' : waOk ? 'Ready' : 'Down / unknown'}</strong>
                 </div>
                 <button class="status-chip-btn" onclick="filterAgents('issues')">Filter Issues Only &rarr;</button>
             </div>
@@ -634,6 +661,9 @@ function renderSystemOverview() {
     const target = document.getElementById('system-services');
     if (!target) return;
     const stale = agentsDataAgeMs() > STALE_DATA_MS;
+    const badServices = system?.services?.filter(s => s.state !== 'active') || [];
+    const runtimeOk = system?.runtime?.discord_connected === true && Number.isFinite(system?.runtime?.heartbeat_age_s) && system.runtime.heartbeat_age_s < 90 && system.runtime.heartbeat_age_s >= 0;
+    window.DashboardAlerts?.set('stats', 'services', stale || !system ? 'System telemetry stale / unavailable' : badServices.length ? `${badServices.length} service units inactive / unknown` : !runtimeOk ? 'Discord runtime disconnected or heartbeat unverified' : null, stale || !system ? 'warning' : 'error');
     const label = document.getElementById('system-updated');
     if (label) {
         label.textContent = stale ? 'Collector data stale' : 'Updated ' + (formatAge(agentsDataAgeMs()) || 'just now');
@@ -961,6 +991,8 @@ function updateCronStats() {
     const activeCount = cronJobs.filter(j => j.status === 'ACTIVE').length;
     const pausedCount = cronJobs.filter(j => j.status !== 'ACTIVE').length;
     const failingCount = cronJobs.filter(j => j.last_status === 'error' || j.last_error).length;
+    const stale = telemetryAgeMs(latestMissionsJson._generated_at) > STALE_DATA_MS;
+    window.DashboardAlerts?.set('stats', 'schedules', stale ? 'Scheduled job results stale / unavailable' : failingCount ? `${failingCount} scheduled jobs with last-run errors` : null, stale ? 'warning' : 'error');
 
     const elCronCount = document.getElementById('stat-cron-count');
     const elCronActive = document.getElementById('stat-cron-active');
@@ -973,7 +1005,11 @@ function updateCronStats() {
 
     // Health badge on the tile — visible without expanding
     if (elBadge) {
-        if (failingCount > 0) {
+        if (stale) {
+            elBadge.textContent = 'Job results stale / unavailable';
+            elBadge.style.color = 'var(--terracotta)';
+            elBadge.style.opacity = '1';
+        } else if (failingCount > 0) {
             elBadge.textContent = failingCount === 1 ? '1 failing' : failingCount + ' failing';
             elBadge.style.background = 'rgba(196, 108, 78, 0.15)';
             elBadge.style.color = 'var(--terracotta)';
@@ -1071,8 +1107,14 @@ function renderLegacyStatsPanel(h) {
 let _lastReposEnvelope = null;
 let _pendingMissionModal = null;
 
+function updateMissionSyncHealth() {
+    const stale = telemetryAgeMs(_lastReposEnvelope?._fetched_at) > 26 * 60 * 60 * 1000;
+    window.DashboardAlerts?.set('missions', 'sync', stale ? 'Repository sync stale / unavailable (26-hour limit)' : null, 'warning');
+}
+
 function renderMissions(data) {
     if (data && data.repos) _lastReposEnvelope = data;
+    updateMissionSyncHealth();
     // Support envelope format {_fetched_at, repos} and legacy plain array
     const isEnvelope = data && typeof data === 'object' && !Array.isArray(data) && data.repos;
     const repos = isEnvelope ? data.repos : (Array.isArray(data) ? data : null);
@@ -1173,16 +1215,16 @@ function renderMissions(data) {
                 }
             });
             // Card body → detail modal (ignore clicks on the GitHub mark / buttons)
-            reposGrid.addEventListener('click', (e) => {
+            reposGrid.onclick = (e) => {
                 if (e.target.closest('[data-stop], [data-mission-action], [data-priority-badge-for], .priority-editor')) return;
                 const link = e.target.closest('.repo-card-link');
                 if (link) openMissionDetail(link.getAttribute('data-repo'));
-            });
-            reposGrid.addEventListener('keydown', (e) => {
+            };
+            reposGrid.onkeydown = (e) => {
                 if (e.key !== 'Enter' && e.key !== ' ') return;
                 const link = e.target.closest('.repo-card-link');
                 if (link) { e.preventDefault(); openMissionDetail(link.getAttribute('data-repo')); }
-            });
+            };
         }
         if (emptyMsg) emptyMsg.style.display = 'none';
         updateQuestionCount();
@@ -1198,20 +1240,10 @@ function renderMissions(data) {
             renderMissionDetail();  // keep an open modal fresh on re-render
         }
 
-        // Update counts
-        const missionsObj = (state && state.missions) || {};
-        const activeCount = Object.values(missionsObj).filter(m => m.status === 'active').length;
-        const inactiveCount = Object.values(missionsObj).filter(m => m.status === 'inactive').length;
-        const projectCount = (state && Array.isArray(state.projects)) ? state.projects.length : 0;
-        const acEl = document.getElementById('missions-count-active');
-        if (acEl) acEl.textContent = activeCount;
-        const icEl = document.getElementById('missions-count-inactive');
-        if (icEl) icEl.textContent = inactiveCount;
-        const pcEl = document.getElementById('missions-count-projects');
-        if (pcEl) pcEl.textContent = projectCount;
-        // Legacy count badge
+        // Section counts come from the deduplicated renderer; include unclassified
+        // cards in the overall total instead of counting raw state entries twice.
         const totalEl = document.getElementById('missions-count');
-        if (totalEl) totalEl.textContent = activeCount + inactiveCount + projectCount;
+        if (totalEl) totalEl.textContent = reposGrid?.querySelectorAll('.repo-card-link').length || 0;
     });
 
     // Show last-synced timestamp + sync dot state
@@ -1461,12 +1493,14 @@ async function loadMissionsState() {
         return _missionsStateCache;
     }
     try {
-        const res = await fetch('/agent-dashboard/missions_state.json', { cache: 'no-store' });
+        const res = await fetch('/agent-dashboard/missions_state.json', { cache: 'no-store', signal: AbortSignal.timeout(12000) });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         _missionsStateCache = await res.json();
         _missionsStateTs = Date.now();
+        window.DashboardAlerts?.set('missions', 'state', null);
         return _missionsStateCache;
     } catch (e) {
+        window.DashboardAlerts?.set('missions', 'state', 'Mission state refresh failed; displayed classification may be last known', 'warning');
         console.warn('Failed to load missions_state.json:', e);
         return _missionsStateCache || { _version: 1, missions: {}, projects: [] };
     }
@@ -2120,37 +2154,21 @@ async function onDropOnMissionCard(e) {
 const _missionActionInFlight = new Set();
 
 function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function renderRServerPanel(rData) {
     if (!rData) return;
+    const stale = telemetryAgeMs(rData._generated_at) > STALE_DATA_MS;
+    const docker = rData.docker_ps;
+    const badContainers = (docker?.output || '').split('\n').filter(line => {
+        const status = line.split('\t')[1];
+        return status && (!/^up\b/i.test(status) || /\bunhealthy\b/i.test(status));
+    });
+    window.DashboardAlerts?.set('r-server', 'docker', stale ? 'Docker telemetry stale / unavailable' : !docker?.ok ? 'Docker status collection failed' : badContainers.length ? `${badContainers.length} containers stopped / unhealthy` : null, stale || !docker?.ok ? 'warning' : 'error');
     
-    const system = rData.system || {};
-    const upVal = document.getElementById('r-up-val');
-    const memVal = document.getElementById('r-mem-val');
-    const diskVal = document.getElementById('r-disk-val');
-    
-    if (upVal) upVal.innerHTML = system.uptime?.ok ? system.uptime.output : '<span style="color:var(--terracotta)">Error</span>';
-    if (memVal) {
-        if (system.free_h?.ok) {
-            const lines = system.free_h.output.split('\n');
-            const memLine = lines.find(l => l.startsWith('Mem:'));
-            memVal.textContent = memLine ? memLine : system.free_h.output;
-        } else {
-            memVal.innerHTML = '<span style="color:var(--terracotta)">Error</span>';
-        }
-    }
-    if (diskVal) {
-        if (system.df_h?.ok) {
-            const lines = system.df_h.output.split('\n');
-            const rootLine = lines.find(l => l.includes('/'));
-            diskVal.textContent = rootLine ? rootLine : system.df_h.output;
-        } else {
-            diskVal.innerHTML = '<span style="color:var(--terracotta)">Error</span>';
-        }
-    }
+    if (window.renderRServerStats) window.renderRServerStats(rData);
     
     const dockerStatusTbody = document.getElementById('r-docker-status-tbody');
     if (dockerStatusTbody) {
@@ -2162,18 +2180,18 @@ function renderRServerPanel(rData) {
                 const name = parts[0];
                 const status = parts[1];
                 const ports = parts[2] || '—';
-                const isRunning = status.toLowerCase().includes('up');
+                const isRunning = /^up\b/i.test(status) && !/\bunhealthy\b/i.test(status) && !stale;
                 const dotClass = isRunning ? 'green' : 'red';
                 return `
                     <tr>
-                        <td><strong>${name}</strong></td>
+                        <td><strong>${escapeHtml(name)}</strong></td>
                         <td>
                             <div class="docker-status-col">
                                 <span class="status-dot ${dotClass}"></span>
-                                <span>${status}</span>
+                                <span>${escapeHtml(status)}${stale ? ' · STALE / last known' : ''}</span>
                             </div>
                         </td>
-                        <td style="font-family: 'Share Tech Mono', monospace; font-size: 0.78rem;">${ports}</td>
+                        <td style="font-family: 'Share Tech Mono', monospace; font-size: 0.78rem;">${escapeHtml(ports)}</td>
                     </tr>
                 `;
             }).join('');
@@ -2182,38 +2200,14 @@ function renderRServerPanel(rData) {
         }
     }
     
-    const dockerImagesTbody = document.getElementById('r-docker-images-tbody');
-    if (dockerImagesTbody) {
-        if (rData.docker_images?.ok && rData.docker_images.output) {
-            const lines = rData.docker_images.output.split('\n');
-            dockerImagesTbody.innerHTML = lines.map(line => {
-                const parts = line.split('\t');
-                if (parts.length < 3) return '';
-                const repo = parts[0];
-                const tag = parts[1];
-                const size = parts[2];
-                return `
-                    <tr>
-                        <td><strong>${repo}</strong></td>
-                        <td style="font-family: 'Share Tech Mono', monospace; font-size: 0.78rem;">${tag}</td>
-                        <td style="font-family: 'Share Tech Mono', monospace; font-size: 0.78rem;">${size}</td>
-                    </tr>
-                `;
-            }).join('');
-        } else {
-            dockerImagesTbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--terracotta); font-style:italic;">Connection error or no images</td></tr>`;
-        }
-    }
 }
 
 // ── r-server iframe: load / error / retry + reachability ping ───────────────
-// The iframe points at http://100.84.224.18:8383 (r-server Homepage), cross-origin.
-// We can't introspect its contents, so reachability is decided by: (a) the
-// iframe element's own `load` event, and (b) a periodic no-cors fetch probe.
-// The error overlay only shows when BOTH say it's down.
+// Cross-origin iframe load events also fire for browser error pages. Only the
+// bounded network probe establishes reachability (not application health).
 
 const R_SERVER_HOMEPAGE = 'http://100.84.224.18:8383';
-let _iframeLoaded = false;
+let _rServerProbeBusy = false;
 
 function _setRServerPing(state, text) {
     const wrap = document.getElementById('r-server-ping');
@@ -2226,11 +2220,7 @@ function _showIframeOverlay(show) {
     if (overlay) overlay.classList.toggle('visible', show);
 }
 
-function onIframeLoad() {
-    _iframeLoaded = true;
-    _showIframeOverlay(false);
-    _setRServerPing('ok', 'reachable');
-}
+function onIframeLoad() { probeRServer(); }
 
 // Kept for the inline onerror= hook; real failure detection is probeRServer().
 function onIframeError() { probeRServer(); }
@@ -2238,7 +2228,6 @@ function onIframeError() { probeRServer(); }
 function retryIframe() {
     const iframe = document.getElementById('homepage-iframe');
     if (!iframe) return;
-    _iframeLoaded = false;
     _setRServerPing('checking', 'checking…');
     _showIframeOverlay(false);
     iframe.src = R_SERVER_HOMEPAGE + '/?_r=' + Date.now();
@@ -2246,15 +2235,19 @@ function retryIframe() {
 }
 
 async function probeRServer() {
+    if (_rServerProbeBusy) return;
+    _rServerProbeBusy = true;
     try {
-        await fetch(R_SERVER_HOMEPAGE, { mode: 'no-cors', cache: 'no-store' });
-        onIframeLoad();
+        await fetch(R_SERVER_HOMEPAGE, { mode: 'no-cors', cache: 'no-store', signal: AbortSignal.timeout(8000) });
+        _showIframeOverlay(false);
+        _setRServerPing('ok', 'reachable');
+        window.DashboardAlerts?.set('r-server', 'homepage', null);
     } catch {
-        // Only declare failure if the iframe element also never fired `load`.
-        if (!_iframeLoaded) {
-            _showIframeOverlay(true);
-            _setRServerPing('down', 'unreachable');
-        }
+        _showIframeOverlay(true);
+        _setRServerPing('down', 'unreachable / browser blocked');
+        window.DashboardAlerts?.set('r-server', 'homepage', 'Homepage unreachable or blocked by browser', 'warning');
+    } finally {
+        _rServerProbeBusy = false;
     }
 }
 
@@ -2263,11 +2256,26 @@ async function probeRServer() {
 // ── Boot ───────────────────────────────────────────────────────────────────
 
 let isFetching = false;
+let _lastHealthData = null;
+let _lastRServerData = null;
+
+function refreshTelemetryFreshness() {
+    window.renderAgentSchedules?.(latestMissionsJson);
+    renderCards(AGENTS.map(a => ({a, d:getAgentData(a.id)})));
+    updateStaleBanner();
+    updateStatsCounts();
+    updateCronStats();
+    updateMissionSyncHealth();
+    if (_lastHealthData) renderStatsPanel(_lastHealthData);
+    if (_lastRServerData) renderRServerPanel(_lastRServerData);
+}
 
 async function loadAll() {
     if (isFetching) return;
     isFetching = true;
-    document.getElementById('refreshRing').classList.add('on');
+    const ring = document.getElementById('refreshRing');
+    ring?.classList.add('on');
+    try {
 
     // Instant paint from last-known agent cache while the fetch runs.
     const firstNode = document.getElementById('node-aarz');
@@ -2286,6 +2294,8 @@ async function loadAll() {
             loadMissionExtras(),
         ]);
 
+    if (missionsJson) latestMissionsJson = missionsJson;
+    window.renderAgentSchedules?.(latestMissionsJson);
     // Roster + cards from agents.json
     rebuildRoster();
     renderCards(AGENTS.map(a => ({ a, d: getAgentData(a.id) })));
@@ -2294,14 +2304,21 @@ async function loadAll() {
     updateTotalSessionCounts();
     updateStaleBanner();
 
-    if (healthData) renderStatsPanel(healthData);
+    window.DashboardAlerts?.set('missions', 'fetch', reposData ? null : 'Repository list refresh failed', 'warning');
+    if (healthData) _lastHealthData = healthData;
     if (reposData) renderMissions(reposData);
-    if (rServerData) renderRServerPanel(rServerData);
-    if (missionsJson) { latestMissionsJson = missionsJson; updateCronStats(); }
+    if (rServerData) _lastRServerData = rServerData;
+    if (_lastHealthData) renderStatsPanel(_lastHealthData);
+    if (_lastRServerData) renderRServerPanel(_lastRServerData);
+    if (missionsJson) updateCronStats();
 
-    document.getElementById('refreshRing').classList.remove('on');
-    isFetching = false;
     drawTreeLines();
+    } catch (error) {
+        console.error('Dashboard refresh failed:', error);
+    } finally {
+        ring?.classList.remove('on');
+        isFetching = false;
+    }
 }
 
 // Amber strip when the background collector output goes stale (collector down).
@@ -2315,9 +2332,10 @@ function updateStaleBanner() {
         document.body.appendChild(el);
     }
     const ageMs = agentsDataAgeMs();
-    if (ageMs > STALE_DATA_MS && isFinite(ageMs)) {
-        el.querySelector('span:last-child').textContent =
-            `Live data stale — collector last ran ${formatAge(ageMs)}. Check agent-dashboard-collector.service.`;
+    if (ageMs > STALE_DATA_MS) {
+        el.querySelector('span:last-child').textContent = Number.isFinite(ageMs)
+            ? `Live data stale — collector last ran ${formatAge(ageMs)}. Check agent-dashboard-collector.service.`
+            : 'Live telemetry unavailable or timestamp invalid. Check agent-dashboard-collector.service.';
         el.classList.add('visible');
     } else {
         el.classList.remove('visible');
@@ -2432,6 +2450,10 @@ window.addEventListener('load', () => {
 
     loadAll();
     setInterval(loadAll, REFRESH_MS);
+    setInterval(refreshTelemetryFreshness, 10000);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refreshTelemetryFreshness();
+    });
 
     if (!REDUCED_MOTION) {
         setInterval(spawnParticle, 1600);
@@ -2473,8 +2495,10 @@ async function loadMotoIndex() {
         const res = await fetch('motorcycle_index.json?_t=' + Date.now());
         if (!res.ok) throw new Error('Network error loading motorcycle index');
         motoIndexData = await res.json();
+        window.DashboardAlerts?.set('motorcycle', 'index', null);
         return motoIndexData;
     } catch (e) {
+        window.DashboardAlerts?.set('motorcycle', 'index', 'Maintenance index failed to load', 'warning');
         console.error("Failed to load motorcycle index:", e);
         return null;
     }

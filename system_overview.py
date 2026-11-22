@@ -8,8 +8,8 @@ UNITS = [
     ('aarz-agent.service', 'Discord & Scheduler', 'Authenticated Discord bridge and scheduled jobs'),
     ('pi-live-voice.service', 'Voice Gateway', 'Browser voice and Echo transport'),
     ('whatsapp-pi.service', 'WhatsApp · Pi', 'Independent personal assistant'),
-    ('whatsapp-stt.service', 'GPU Speech Recognition', 'Shared Whisper worker · voice + WhatsApp'),
-    ('whatsapp-tts.service', 'GPU Voice Generation', 'Shared Kokoro worker · voice + WhatsApp'),
+    ('whatsapp-stt.service', 'Speech Recognition', 'Shared offline Whisper worker · voice + WhatsApp'),
+    ('whatsapp-tts.service', 'Voice Generation', 'Shared offline Kokoro worker · voice + WhatsApp'),
     ('modelrelay.service', 'Model Relay', 'Model provider routing'),
 ]
 

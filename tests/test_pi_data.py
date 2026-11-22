@@ -43,6 +43,24 @@ class PiDataTests(unittest.TestCase):
         self.assertEqual(agents['pi-scheduler']['queued'], 1)
         self.assertNotIn('private-channel', json.dumps(agents))
 
+    def test_retired_jobs_excluded_from_current_activity_but_history_preserved(self):
+        now = time.time()
+        with sqlite3.connect(self.root / 'state/runtime.db') as db:
+            db.execute('CREATE TABLE runs(job_id,kind,state,scheduled,started,finished)')
+            db.executemany('INSERT INTO runs VALUES(?,?,?,?,?,?)', [
+                ('one', 'cron', 'ok', now, now, now),
+                ('retired-deck', 'cron', 'ok', now, now, now),
+                ('retired-memory', 'cron', 'running', now, now, None),
+                ('retired-memory', 'cron', 'queued', now, None, None),
+            ])
+        data = pi_data.runtime_activity(self.root)['pi-scheduler']
+        self.assertEqual(data['sessions_24h'], 1)
+        self.assertEqual(data['running'], 0)
+        self.assertEqual(data['queued'], 0)
+        self.assertNotIn('Scheduled job', json.dumps(data))
+        with sqlite3.connect(self.root / 'state/runtime.db') as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM runs').fetchone()[0], 4)
+
     def test_jsonl_partial_line_and_no_mtime_activity(self):
         now = datetime.now(timezone.utc).isoformat()
         path = self.root / 'session.jsonl'

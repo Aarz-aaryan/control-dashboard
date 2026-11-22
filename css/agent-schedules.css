@@ -1,0 +1,11 @@
+.agent-schedules {margin-top:24px;padding:22px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;color:var(--text-primary, #e6e4df)}
+.agent-schedules-heading {display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.agent-schedules h3 {margin:0;color:var(--gold)}
+.agent-schedules-heading span,.agent-schedules p {font-size:.82rem;color:var(--text-muted);line-height:1.6}
+.agent-schedules-scroll {overflow-x:auto}
+.agent-schedules table {width:100%;border-collapse:collapse;font-size:.83rem;text-align:left}
+.agent-schedules th,.agent-schedules td {padding:12px 10px;border-bottom:1px solid var(--card-border);vertical-align:top}
+.agent-schedules th {font-weight:600;color:var(--text-muted);white-space:nowrap}
+.agent-schedules td:nth-child(2),.agent-schedules td:nth-child(3) {white-space:nowrap}
+.agent-schedules .schedule-failed {color:#f3a4a4}
+.agent-schedules .agent-schedules-note {margin-bottom:0;font-size:.76rem}

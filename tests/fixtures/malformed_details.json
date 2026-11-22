@@ -1,0 +1,10 @@
+{
+  "_updated_at": 123456,
+  "missions": {
+    "bad-repo": {
+      "summary": 9999,
+      "github": "not-a-dict",
+      "activity": "not-a-list"
+    }
+  }
+}

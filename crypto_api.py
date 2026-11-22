@@ -4,12 +4,16 @@ import threading
 import time
 from urllib.request import Request, urlopen
 import mining_api
+import market_api
+import gpu_api
 
 _lock = threading.Lock()
 _cache = {}
 SOURCES = {
     '/api/crypto/pi': ('http://100.110.11.122:5000/api', 20),
     **{path: (None, 120) for path in mining_api.SOURCES},
+    **{path: (None, 60) for path in market_api.SOURCES},
+    **{path: (None, 300) for path in gpu_api.SOURCES},
 }
 _source_locks = {path: threading.Lock() for path in SOURCES}
 
@@ -28,6 +32,10 @@ def _serve(handler, path):
         try:
             if path in mining_api.SOURCES:
                 data = mining_api.load(*mining_api.SOURCES[path])
+            elif path in market_api.SOURCES:
+                data = market_api.load(market_api.SOURCES[path])
+            elif path in gpu_api.SOURCES:
+                data = gpu_api.load(gpu_api.SOURCES[path])
             else:
                 with urlopen(Request(url, headers={'User-Agent': 'PiMonitor/1.0'}), timeout=8) as response:
                     data = json.load(response)

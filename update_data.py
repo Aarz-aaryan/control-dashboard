@@ -13,6 +13,8 @@ import time
 from datetime import datetime, timezone
 
 import pi_data
+import backup_health
+import r_server_metrics
 
 OUTPUT_DIR = '/home/Aarz/agent-dashboard'
 AGY_LOG_DIR = os.path.expanduser('~/.gemini/antigravity-cli/log')
@@ -133,8 +135,7 @@ def get_r_server_info():
     return {
         '_generated_at': now_iso(),
         'docker_ps': remote("sudo docker ps -a --format '{{.Names}}\\t{{.Status}}\\t{{.Ports}}'"),
-        'docker_images': remote("sudo docker images --format '{{.Repository}}\\t{{.Tag}}\\t{{.Size}}'"),
-        'system': {key: remote(cmd) for key, cmd in [('uptime', 'uptime'), ('free_h', 'free -h'), ('df_h', 'df -h /')]},
+        'metrics': r_server_metrics.collect(run_ssh_cmd),
     }
 
 
@@ -158,6 +159,7 @@ def main():
             ('missions.json', lambda: {'_generated_at': now_iso(), '_source': 'pi',
                                      'cron': get_cron_jobs(), 'kanban': get_kanban_tasks()}),
             ('r_server_info.json', get_r_server_info),
+            ('backup_health.json', lambda: backup_health.collect(run_ssh_cmd)),
         ]:
             try:
                 write_json(name, collect())
